@@ -3790,6 +3790,8 @@ function lockApp(){
 /* V24-3: تحذير النسخ الاحتياطي اليومي — حماية من فقدان البيانات              */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 function showBackupBanner(dataSize){
+  // إذا Supabase متصل — لا حاجة للتحذير
+  if(typeof SUPA !== 'undefined' && SUPA) return;
   // إنشاء البانر فوق الصفحة
   var existing=document.getElementById('backupWarningBanner');
   if(existing)existing.remove();
@@ -8045,15 +8047,16 @@ function startLiveClock() {
 }
 
 function updateLiveTime() {
-  var el = document.getElementById('liveTime');
-  if (el) {
+  try {
+    var el = document.getElementById('liveTime');
+    if (!el) return;
     var now = new Date();
-    var h = now.getHours();
-    var m = now.getMinutes();
-    var hh = h < 10 ? '0' + h : h;
-    var mm = m < 10 ? '0' + m : m;
-    el.textContent = hh + ':' + mm;
-  }
+    var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+    var hh = h < 10 ? '0'+h : ''+h;
+    var mm = m < 10 ? '0'+m : ''+m;
+    var ss = s < 10 ? '0'+s : ''+s;
+    el.textContent = hh + ':' + mm + ':' + ss;
+  } catch(e) {}
 }
 
 // بدء الساعة فوراً
