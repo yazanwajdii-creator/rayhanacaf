@@ -3450,38 +3450,38 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v24-3';
+      const CACHE_NAME = 'rayhana-v25-2';
       const urlsToCache = [self.location.href];
-      
+
       self.addEventListener('install', function(event) {
         event.waitUntil(
-          caches.open(CACHE_NAME)
-            .then(function(cache) {
-              return cache.addAll(urlsToCache);
-            })
+          caches.open(CACHE_NAME).then(function(cache) {
+            return cache.addAll(urlsToCache);
+          })
         );
         self.skipWaiting();
       });
-      
+
       self.addEventListener('fetch', function(event) {
+        // Network-first: always try to get fresh content, fall back to cache offline
         event.respondWith(
-          caches.match(event.request)
-            .then(function(response) {
-              if (response) return response;
-              return fetch(event.request).then(function(response) {
-                if (!response || response.status !== 200) return response;
-                var responseToCache = response.clone();
-                caches.open(CACHE_NAME).then(function(cache) {
-                  cache.put(event.request, responseToCache);
-                });
-                return response;
-              }).catch(function() {
-                return caches.match(self.location.href);
+          fetch(event.request).then(function(response) {
+            if (!response || response.status !== 200) {
+              return caches.match(event.request).then(function(cached) {
+                return cached || response;
               });
-            })
+            }
+            var responseToCache = response.clone();
+            caches.open(CACHE_NAME).then(function(cache) {
+              cache.put(event.request, responseToCache);
+            });
+            return response;
+          }).catch(function() {
+            return caches.match(event.request);
+          })
         );
       });
-      
+
       self.addEventListener('activate', function(event) {
         event.waitUntil(
           caches.keys().then(function(cacheNames) {
@@ -3494,6 +3494,7 @@ function registerServiceWorker() {
             );
           })
         );
+        self.clients.claim();
       });
     `;
     
