@@ -436,6 +436,12 @@ body.dark{
 }
 body.dark .card,body.dark .obl-row,body.dark .att-card,body.dark .sup-card,body.dark .kpi-tile{background:var(--surf);border-color:var(--br)}
 body.dark .card-hd{background:var(--surf2);border-color:var(--br)}
+body.dark th{background:linear-gradient(135deg,#0A0604,#0F172A)}
+body.dark .profit-hero{box-shadow:0 16px 48px rgba(5,150,105,.2),0 0 0 1px rgba(255,255,255,.06) inset}
+body.dark .btn-g{background:linear-gradient(135deg,#047857,#059669);box-shadow:0 2px 8px rgba(5,150,105,.2)}
+body.dark .kpi-v22{background:var(--surf);border-color:var(--br)}
+body.dark .live-stats-bar{background:linear-gradient(135deg,#0A0604 0%,#140E08 50%,#1C1408 100%)}
+body.dark tfoot td{background:linear-gradient(135deg,#0A0604,#0F172A)!important}
 body.dark .fi,body.dark .fs,body.dark .inp,body.dark .att-ri,body.dark .who-sel{background:var(--surf2);border-color:var(--br);color:var(--tx)}
 body.dark .mo-sh{background:#1C2128;border:1px solid var(--br)}
 body.dark .mo-x{background:var(--surf);color:var(--tx2);border:1px solid var(--br)}
@@ -3547,18 +3553,27 @@ setTimeout(registerServiceWorker, 3000);
 var DEFAULT_PWD = '1234';
 var PWD_KEY = 'rh_mgr_pwd';
 
-function checkPwd() {
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str+'__rh_v25__'));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkPwd() {
   var input = document.getElementById('pwdInput');
   var err = document.getElementById('pwd-err');
   if (!input) return;
   var val = input.value;
   var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
-  if (btoa(val) === stored) {
-    input.value = '';
+  input.value = '';
+  var hash = await sha256(val);
+  if (hash === stored) {
+    doLogin('manager');
+  } else if (btoa(val) === stored) {
+    // migration: re-store as SHA-256
+    safeLS.setItem(PWD_KEY, hash);
     doLogin('manager');
   } else {
     err.textContent = '❌ كلمة المرور غير صحيحة';
-    input.value = '';
     input.focus();
     // shake animation
     input.style.borderColor = 'rgba(239,68,68,.8)';
@@ -3592,7 +3607,7 @@ function doLogin(role) {
     
     // V15 ULTIMATE - تحديث كل الميزات الجديدة
     setTimeout(function() {
-      try { startLiveClock(); } catch(e) { console.log('LiveClock:', e); }
+      try { startLiveClock(); } catch(e) {}
       try { updateLiveStats(); } catch(e) { console.log('LiveStats:', e); }
       try { updateGoalTracker(); } catch(e) { console.log('GoalTracker:', e); }
       try { updateAnalyticsCards(); } catch(e) { console.log('Analytics:', e); }
@@ -3717,6 +3732,9 @@ function getMonth(key){
   }
   return S.months[key];
 }
+
+/* HTML ESCAPE */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* LOG */
 function log(d){try{const ls=JSON.parse(safeLS.getItem(LK)||"[]");ls.unshift({t:new Date().toLocaleString("ar-JO"),u:CRN||"نظام",r:CR||"sys",d});if(ls.length>500)ls.splice(500);safeLS.setItem(LK,JSON.stringify(ls));}catch(e){}}
@@ -3850,7 +3868,7 @@ function doSearch(q){
   [...S.monthlyEmps,...S.dailyEmps].filter(e=>e.name.includes(q)).forEach(e=>r.push({ico:"👤",text:e.name,sub:"موظف",act:"pg('sal',document.querySelectorAll('.ntab')[5])"}));
   G().obligations.filter(o=>o.name.includes(q)).forEach(o=>r.push({ico:"📋",text:o.name,sub:`${n3(o.amt)} JD ${o.paid?"✅":"❌"}`,act:"pg('oblig',document.querySelectorAll('.ntab')[4])"}));
   if(!r.length){res.innerHTML='<div class="sri">لا نتائج</div>';res.classList.add("open");return;}
-  res.innerHTML=r.slice(0,7).map(x=>`<div class="sri" onclick="${x.act};closeSearch()"><span>${x.ico}</span><div style="flex:1"><div style="font-size:13px;font-weight:600">${x.text}</div><div style="font-size:11px;color:var(--tx3)">${x.sub}</div></div></div>`).join("");
+  res.innerHTML=r.slice(0,7).map(x=>`<div class="sri" onclick="${x.act};closeSearch()"><span>${x.ico}</span><div style="flex:1"><div style="font-size:13px;font-weight:600">${esc(x.text)}</div><div style="font-size:11px;color:var(--tx3)">${esc(x.sub)}</div></div></div>`).join("");
   res.classList.add("open");
 }
 function closeSearch(){$("sres").classList.remove("open");$("gSearch").value="";}
@@ -10397,7 +10415,6 @@ function supaInit(){
     SUPA = supabase.createClient(url, key);
     supaUpdateUI(true);
     // رفع تلقائي عند كل حفظ
-    console.log('☁️ Supabase connected');
   } catch(e){
     console.warn('Supabase init error:', e);
     SUPA = null;
