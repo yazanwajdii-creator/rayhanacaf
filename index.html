@@ -3659,13 +3659,6 @@ function cmo(id){$(id).classList.remove("open");document.body.style.overflow="";
 function moOut(e,id){if(e.target===$(id))cmo(id);}
 ["click","touchstart","keydown","scroll"].forEach(e=>document.addEventListener(e,resetInact,{passive:true}));
 
-// Auto-save when leaving page
-document.addEventListener("visibilitychange", function(){
-  if(document.hidden && CR){ try{saveAll();}catch(e){} }
-});
-window.addEventListener("beforeunload", function(){
-  try{saveAll();}catch(e){}
-});
 function resetInact(){
   clearTimeout(iT);clearTimeout(wT);
   const b=$("lkbanner");if(b)b.style.display="none";
@@ -4632,7 +4625,8 @@ function calcCash(){
   const open=pf("cfOpen"),act=pf("cfAct");G().cashflow={opening:open,actual:act};
   const t=totals();
   const oblPaid=G().obligations.filter(o=>o.paid).reduce((s,o)=>s+(o.amt||0),0);
-  const advAll=G().advances.reduce((s,a)=>s+(a.amt||0),0);
+  // السلف المستحقة فقط (مستحقة أو مسددة جزئياً) — لا تُحتسب المسددة بالكامل
+  const advAll=G().advances.filter(a=>a.status==="مستحقة"||a.status==="مسددة جزئياً").reduce((s,a)=>s+(a.amt||0),0);
   // الصندوق: رصيد أول المدة + نقد مستلم − مشتريات − التزامات مدفوعة − سلف
   const exp=open+t.cash-t.bycat.total-oblPaid-advAll;
   const diff=act-exp;
@@ -4960,7 +4954,7 @@ window.addEventListener('beforeunload', function() {
 /* STORAGE */
 function saveAll(){
   try{
-    safeLS.setItem(SK,JSON.stringify({
+    var data = JSON.stringify({
       activeKey:S.activeKey,
       months:S.months,
       suppliers:S.suppliers,
@@ -4968,15 +4962,23 @@ function saveAll(){
       dailyEmps:S.dailyEmps,
       monthlyEmps:S.monthlyEmps,
       savedAt:new Date().toISOString()
-    }));
+    });
+    safeLS.setItem(SK, data);
     lastSaveTime = Date.now();
     pendingSave = false;
-    
+
     // إظهار مؤشر الحفظ
     showSaveIndicator('saved');
     setTimeout(hideSaveIndicator, 1500);
-    
-  }catch(e){console.warn("saveAll error:",e);}
+
+  }catch(e){
+    var isQuota = e && (e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||e.code===22||e.code===1014);
+    if(isQuota){
+      toast('⚠️ الذاكرة المحلية ممتلئة! صدّر نسخة احتياطية الآن ثم امسح البيانات القديمة');
+      showSaveIndicator('error');
+    }
+    console.warn("saveAll error:",e);
+  }
 }
 function loadStore(){
   try{
@@ -10412,7 +10414,7 @@ function supaConnectAndTest(){
     safeLS.setItem('rh_supa_auto','1');
     if(SUPA_TIMER) clearInterval(SUPA_TIMER);
     SUPA_TIMER=setInterval(function(){
-      if(SUPA) supaSync('push').catch(function(e){console.warn('auto-sync:',e);});
+      if(SUPA) supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError);
     },5*60*1000);
   }).catch(function(e){
     if(errEl) errEl.textContent='❌ '+e.message+' — تأكد من تنفيذ SQL في الخطوة ٣';
@@ -10489,7 +10491,7 @@ function toggleSupaAuto(){
     if(btn) btn.textContent='إيقاف';
     if(SUPA_TIMER) clearInterval(SUPA_TIMER);
     SUPA_TIMER = setInterval(function(){
-      if(SUPA) supaSync('push').catch(function(e){console.warn('Auto-sync error:',e);});
+      if(SUPA) supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError);
     }, 5*60*1000);
     toast('🔄 مزامنة تلقائية كل 5 دقائق');
   } else {
@@ -10541,7 +10543,7 @@ function supaUpdateUI(connected){
     T('supaLastSync',last?'آخر مزامنة: '+last:'لم تتم مزامنة بعد');
     if(autoOn&&!SUPA_TIMER){
       SUPA_TIMER=setInterval(function(){
-        if(SUPA) supaSync('push').catch(function(e){console.warn('auto:',e);});
+        if(SUPA) supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError);
       },5*60*1000);
     }
   } else {
@@ -10579,6 +10581,47 @@ function copySupaSQL(){
   }
 }
 
+/* ── معالجة أخطاء المزامنة مع retry تلقائي ── */
+var _supaRetryCount = 0;
+var _supaRetryTimer = null;
+var _supaLastErrorMsg = '';
+
+function supaHandleSyncError(e) {
+  _supaRetryCount++;
+  var errMsg = (e && e.message) ? e.message : String(e);
+  var isNetwork = /fetch|network|failed|timeout/i.test(errMsg);
+
+  if (_supaRetryCount <= 3) {
+    var delay = Math.pow(2, _supaRetryCount) * 1000; // 2s → 4s → 8s
+    var delaySec = delay / 1000;
+    _supaLastErrorMsg = '⚠️ فشل الحفظ في السحابة — إعادة المحاولة خلال ' + delaySec + 'ث';
+    toast(_supaLastErrorMsg);
+    supaSetStatus('error', _supaLastErrorMsg);
+    if (_supaRetryTimer) clearTimeout(_supaRetryTimer);
+    _supaRetryTimer = setTimeout(function() {
+      if (!SUPA) return;
+      supaSync('push').then(function() {
+        _supaRetryCount = 0;
+        _supaRetryTimer = null;
+        toast('✅ تم الحفظ في السحابة');
+        supaSetStatus('ok', '✅ متصل بـ Supabase');
+      }).catch(function(e2) {
+        supaHandleSyncError(e2);
+      });
+    }, delay);
+  } else {
+    // بعد 3 محاولات فاشلة
+    _supaRetryCount = 0;
+    _supaRetryTimer = null;
+    var finalMsg = '❌ تعذّر الوصول للسحابة — بياناتك محفوظة محلياً فقط';
+    toast(finalMsg);
+    supaSetStatus('error', finalMsg);
+    if (typeof addNotification === 'function') {
+      addNotification('warn', finalMsg);
+    }
+  }
+}
+
 /* ── Hook: رفع تلقائي بعد كل حفظ ── */
 var _origSaveAll = saveAll;
 saveAll = function(){
@@ -10587,8 +10630,10 @@ saveAll = function(){
     // debounce: لا ترفع أكثر من مرة كل 3 ثواني
     if(window._supaDebounce) clearTimeout(window._supaDebounce);
     window._supaDebounce = setTimeout(function(){
-      supaSync('push').catch(function(e){
-        console.warn('Auto push error:',e);
+      supaSync('push').then(function(){
+        _supaRetryCount = 0; // reset retry counter on success
+      }).catch(function(e){
+        supaHandleSyncError(e);
       });
     }, 3000);
   }
