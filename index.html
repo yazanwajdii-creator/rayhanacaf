@@ -4961,6 +4961,8 @@ function saveAll(){
       lockedMonths:S.lockedMonths||[],
       dailyEmps:S.dailyEmps,
       monthlyEmps:S.monthlyEmps,
+      targets:S.targets||{},
+      inventory:S.inventory||[],
       savedAt:new Date().toISOString()
     });
     safeLS.setItem(SK, data);
@@ -4993,6 +4995,8 @@ function loadStore(){
       if(sv.lockedMonths)S.lockedMonths=sv.lockedMonths;
       if(sv.dailyEmps&&sv.dailyEmps.length)S.dailyEmps=sv.dailyEmps;
       if(sv.monthlyEmps&&sv.monthlyEmps.length)S.monthlyEmps=sv.monthlyEmps;
+      if(sv.targets&&Object.keys(sv.targets).length)S.targets=sv.targets;
+      if(sv.inventory&&sv.inventory.length)S.inventory=sv.inventory;
     }
     if(!S.months[S.activeKey])getMonth(S.activeKey);
     if(!S.months["2026-02"])getMonth("2026-02");
@@ -10470,15 +10474,16 @@ async function supaSync(direction){
       throw new Error(res.error.message);
     }
     var sv = res.data.value;
-    // Conflict detection — warn if cloud data came from a different device
+    // Conflict info — note if cloud data is from a different device (non-blocking)
     var _localDevice = navigator.userAgent.slice(0,60);
-    if(sv.device && sv.device !== _localDevice){
-      var _remoteWhen = sv.savedAt ? new Date(sv.savedAt).toLocaleString('ar-SA') : '—';
-      var _localLastPush = safeLS.getItem('rh_last_push_at');
-      var _localWhen = _localLastPush ? new Date(_localLastPush).toLocaleString('ar-SA') : 'لم يتم الرفع من هذا الجهاز بعد';
-      if(!confirm('⚠️ تنبيه: السحابة تحتوي بيانات من جهاز مختلف\n\n• رُفعت في: '+_remoteWhen+'\n• آخر رفع من هذا الجهاز: '+_localWhen+'\n\nتحميل البيانات سيحل محل بياناتك الحالية على هذا الجهاز.\nهل تريد الاستمرار؟')){
-        supaSetStatus('ok','⏹ تم إلغاء التحميل — بياناتك المحلية سليمة');
-        return;
+    var _localLastPush = safeLS.getItem('rh_last_push_at');
+    if(sv.device && sv.device !== _localDevice && _localLastPush && sv.savedAt){
+      var _localT = new Date(_localLastPush).getTime();
+      var _remoteT = new Date(sv.savedAt).getTime();
+      if(_localT > _remoteT + 60000){
+        // Local push is newer than cloud by more than 1 minute — warn via toast
+        toast('⚠️ تنبيه: بياناتك المحلية أحدث من السحابة — تحقق من آخر رفع');
+        addNotification('warn','تحذير تعارض: آخر رفع محلي أحدث من بيانات السحابة المُحمَّلة');
       }
     }
     if(sv.months) Object.keys(sv.months).forEach(function(k){S.months[k]=sv.months[k];});
