@@ -10439,6 +10439,8 @@ async function supaSync(direction){
       dailyEmps: S.dailyEmps,
       lockedMonths: S.lockedMonths||[],
       suppliers: S.suppliers||[],
+      targets: S.targets||{},
+      inventory: S.inventory||[],
       savedAt: new Date().toISOString(),
       device: navigator.userAgent.slice(0,60)
     };
@@ -10448,6 +10450,7 @@ async function supaSync(direction){
     if(res.error) throw new Error(res.error.message);
     var now = new Date().toLocaleTimeString('ar');
     safeLS.setItem('rh_supa_last', now);
+    safeLS.setItem('rh_last_push_at', payload.savedAt);
     supaSetStatus('ok', '✅ محفوظ في السحابة · '+now);
     T('supaLastSync', 'آخر مزامنة: '+now);
     setTimeout(function(){supaSetStatus('ok','✅ متصل بـ Supabase');},3000);
@@ -10467,11 +10470,25 @@ async function supaSync(direction){
       throw new Error(res.error.message);
     }
     var sv = res.data.value;
+    // Conflict detection — warn if cloud data came from a different device
+    var _localDevice = navigator.userAgent.slice(0,60);
+    if(sv.device && sv.device !== _localDevice){
+      var _remoteWhen = sv.savedAt ? new Date(sv.savedAt).toLocaleString('ar-SA') : '—';
+      var _localLastPush = safeLS.getItem('rh_last_push_at');
+      var _localWhen = _localLastPush ? new Date(_localLastPush).toLocaleString('ar-SA') : 'لم يتم الرفع من هذا الجهاز بعد';
+      if(!confirm('⚠️ تنبيه: السحابة تحتوي بيانات من جهاز مختلف\n\n• رُفعت في: '+_remoteWhen+'\n• آخر رفع من هذا الجهاز: '+_localWhen+'\n\nتحميل البيانات سيحل محل بياناتك الحالية على هذا الجهاز.\nهل تريد الاستمرار؟')){
+        supaSetStatus('ok','⏹ تم إلغاء التحميل — بياناتك المحلية سليمة');
+        return;
+      }
+    }
     if(sv.months) Object.keys(sv.months).forEach(function(k){S.months[k]=sv.months[k];});
     if(sv.monthlyEmps&&sv.monthlyEmps.length) S.monthlyEmps=sv.monthlyEmps;
     if(sv.dailyEmps&&sv.dailyEmps.length) S.dailyEmps=sv.dailyEmps;
     if(sv.activeKey) S.activeKey=sv.activeKey;
     if(sv.lockedMonths) S.lockedMonths=sv.lockedMonths;
+    if(sv.suppliers&&sv.suppliers.length) S.suppliers=sv.suppliers;
+    if(sv.targets&&Object.keys(sv.targets).length) S.targets=sv.targets;
+    if(sv.inventory&&sv.inventory.length) S.inventory=sv.inventory;
     saveAll();
     renderAll();
     var when = res.data.updated_at ? new Date(res.data.updated_at).toLocaleString('ar') : '—';
