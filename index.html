@@ -59,6 +59,7 @@
   --trans:all .2s cubic-bezier(.4,0,.2,1);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea,a,.ntab,.tbtn,.btn,.att-d,.qe-who-btn,.obl-toggle,.qe-save,[role="button"]{touch-action:manipulation}
 html{font-size:14px;scroll-behavior:smooth}
 body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.55;overflow-x:hidden}
 
@@ -2873,79 +2874,6 @@ body.dark .ss-card{background:var(--surf)}
 
     </div>
 
-          <!-- ══ SUPABASE SYNC ══ -->
-          <div style="margin-top:14px;border:1.5px solid rgba(34,197,94,.25);border-radius:var(--rm);overflow:hidden">
-            <div style="background:rgba(34,197,94,.08);padding:11px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(34,197,94,.15)">
-              <div id="supaDot" style="width:9px;height:9px;border-radius:50%;background:var(--tx4);transition:background .3s;flex-shrink:0"></div>
-              <div style="flex:1">
-                <div style="font-size:13px;font-weight:700;color:var(--gn)">☁️ Supabase — مزامنة سحابية مجانية</div>
-                <div style="font-size:10.5px;color:var(--tx3);margin-top:1px" id="supaStatusTxt">غير مفعّل — بياناتك على هذا الجهاز فقط</div>
-              </div>
-            </div>
-
-            <!-- Setup View -->
-            <div style="padding:13px" id="supaSetupView">
-              <div class="alert al-w" style="font-size:11.5px;margin-bottom:10px">
-                🔗 بعد الربط: بياناتك تُحفظ تلقائياً في السحابة ويزن وعبدالرحمن يرون نفس البيانات
-              </div>
-              <div class="fg">
-                <label>Supabase Project URL</label>
-                <input type="text" class="fi" id="supaUrl" placeholder="https://abcdefgh.supabase.co" style="direction:ltr;font-size:12px;font-family:monospace">
-              </div>
-              <div class="fg">
-                <label>Anon Public Key</label>
-                <input type="password" class="fi" id="supaAnonKey" placeholder="eyJhbGciOiJIUzI1NiIs..." style="direction:ltr;font-size:11px;font-family:monospace">
-              </div>
-              <button class="btn btn-g btn-full" onclick="supaConnect()">🔗 ربط وتفعيل المزامنة</button>
-
-              <div style="margin-top:12px;background:var(--surf3);border-radius:var(--r);padding:11px;border:1px solid var(--br)">
-                <div style="font-size:11.5px;font-weight:700;color:var(--tx2);margin-bottom:8px">📋 خطوات الإعداد (مرة واحدة فقط):</div>
-                <div style="font-size:11px;color:var(--tx3);line-height:2">
-                  <span style="color:var(--gn);font-weight:700">١.</span> اذهب لـ <strong style="color:var(--gold2)">supabase.com</strong> ← سجّل بحساب Google ← New Project<br>
-                  <span style="color:var(--gn);font-weight:700">٢.</span> انتظر الإنشاء (دقيقة) ← اذهب لـ <strong>Settings ← API</strong><br>
-                  <span style="color:var(--gn);font-weight:700">٣.</span> انسخ <strong>Project URL</strong> و <strong>anon public key</strong><br>
-                  <span style="color:var(--gn);font-weight:700">٤.</span> اذهب لـ <strong>SQL Editor</strong> ← الصق الكود التالي ← اضغط <strong>Run</strong>
-                </div>
-                <div style="margin-top:8px;background:var(--bg);border-radius:6px;padding:9px;border:1px solid var(--br2)">
-                  <div style="font-size:10px;color:var(--tx4);margin-bottom:4px;display:flex;justify-content:space-between">
-                    <span>SQL — انسخه وشغّله في Supabase SQL Editor:</span>
-                    <button onclick="copySupaSQL()" style="background:var(--gold-dim);border:1px solid rgba(200,146,15,.3);color:var(--gold2);border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer;font-family:var(--font)">📋 نسخ</button>
-                  </div>
-                  <pre id="supaSQL" style="font-size:10.5px;color:var(--gn);direction:ltr;white-space:pre-wrap;line-height:1.6;margin:0">create table if not exists rh_store (
-  key text primary key,
-  value jsonb not null,
-  updated_at timestamptz default now()
-);
-alter table rh_store enable row level security;
-create policy "allow_all" on rh_store
-  for all using (true) with check (true);</pre>
-                </div>
-                <div style="margin-top:8px;font-size:11px;color:var(--tx3)">
-                  <span style="color:var(--gn);font-weight:700">٥.</span> ارجع هنا ← أدخل URL والمفتاح ← اضغط ربط ✅
-                </div>
-              </div>
-            </div>
-
-            <!-- Connected View -->
-            <div style="padding:13px;display:none" id="supaConnectedView">
-              <div class="alert al-ok" style="font-size:11.5px;margin-bottom:10px" id="supaConnInfo">
-                ✅ متصل — البيانات تُحفظ تلقائياً في السحابة
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-                <button class="btn btn-g" onclick="supaSync('push')">↑ رفع الآن</button>
-                <button class="btn btn-ghost" onclick="supaSync('pull')">↓ تحميل</button>
-              </div>
-              <div style="font-size:11px;color:var(--tx3);text-align:center;margin-bottom:8px" id="supaLastSync">—</div>
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surf3);border-radius:var(--r);margin-bottom:8px">
-                <span style="font-size:12px;font-weight:600;color:var(--tx2)">🔄 مزامنة تلقائية كل 5 دقائق</span>
-                <button class="btn btn-ghost btn-sm" id="supaAutoBtn" onclick="toggleSupaAuto()">تشغيل</button>
-              </div>
-              <button class="btn btn-ghost btn-sm btn-full" onclick="supaDisconnect()" style="color:var(--rd);border-color:rgba(239,68,68,.3)">⛔ قطع الاتصال</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- CLOUD PAGE -->
     <div id="cloud" class="pg">
@@ -2973,6 +2901,7 @@ create policy "allow_all" on rh_store
           <input type="file" id="impFile" accept=".json" style="display:none" onchange="importJSON(event)">
           <div style="font-size:11px;color:var(--tx4);text-align:center;margin-top:7px">يدعم ملفات V22 وV24 وV25</div>
         </div>
+        <div class="cloud-wizard-card">
           <div class="cloud-wizard-title">🚀 إعداد Supabase — مرة واحدة فقط</div>
           <div class="cloud-wizard-sub">بعد الإعداد: بياناتك محمية في السحابة مجاناً، ويزن وعبدالرحمن يرون نفس البيانات</div>
 
@@ -4196,17 +4125,7 @@ function updateMgrTotals(){
   var yn=document.getElementById("mgr-yz-n"), an=document.getElementById("mgr-ab-n");
   if(yn){yn.textContent=n3(yN)+" JD";yn.style.color=yN>=0?"var(--gn)":"var(--rd)";}
   if(an){an.textContent=n3(aN)+" JD";an.style.color=aN>=0?"var(--gn)":"var(--rd)";}
-  
-  // ═══ صافي بيده = النقد الصافي المستلم - المشتريات فقط ═══
-  // اليوميات خُصمت مسبقاً من قبل الموظفة قبل التسليم
-  // الالتزامات تُدفع بشكل منفصل وليست من حساب المدير
-  var yN = yz.r - yz.p;
-  var aN = ab.r - ab.p;
-  
-  var e1=document.getElementById("mgr-yz-n"),e2=document.getElementById("mgr-ab-n");
-  if(e1){e1.textContent=n3(yN)+" JD";e1.style.color=yN>=0?"var(--gn)":"var(--rd)";}
-  if(e2){e2.textContent=n3(aN)+" JD";e2.style.color=aN>=0?"var(--gn)":"var(--rd)";}
-  
+
   var tR=yz.r+ab.r||1,tP=yz.p+ab.p||1;
   var b1=document.getElementById("b-yz-r"),b2=document.getElementById("b-ab-r");
   var b3=document.getElementById("b-yz-p"),b4=document.getElementById("b-ab-p");
@@ -4258,7 +4177,7 @@ function updateDash(){
   var kpiExpenses = document.getElementById('kpiExpenses');
   if (kpiExpenses) kpiExpenses.textContent = n3(t.totalExp);
   
-  var activeDays = d.sales.filter(function(s) { return (s.cash||0)+(s.visa||0)+(s.pmts||0) > 0; }).length;
+  var activeDays = (d.sales||[]).filter(function(s) { return (s.cash||0)+(s.visa||0)+(s.pmts||0) > 0; }).length;
   var kpiAvgDaily = document.getElementById('kpiAvgDaily');
   if (kpiAvgDaily) kpiAvgDaily.textContent = activeDays > 0 ? n3(t.rev / activeDays) : '0';
   
@@ -8043,7 +7962,6 @@ function startLiveClock() {
   updateLiveTime();
   if (liveClockInterval) clearInterval(liveClockInterval);
   liveClockInterval = setInterval(updateLiveTime, 1000);
-  console.log('⏰ Clock started');
 }
 
 function updateLiveTime() {
@@ -8059,9 +7977,7 @@ function updateLiveTime() {
   } catch(e) {}
 }
 
-// بدء الساعة فوراً
 startLiveClock();
-setTimeout(startLiveClock, 3000);
 
 function updateLiveStats() {
   // فحص أمان
@@ -10599,9 +10515,7 @@ function supaDisconnect(){
 
 /* ── واجهة الحالة ── */
 function supaUpdateUI(connected){
-  // الـ dot في header
   var dot=document.getElementById('supaDot');
-  var statusTxt=document.getElementById('supaStatusTxt');
   // cloud page elements
   var setupWizard=document.getElementById('cloudSetupWizard');
   var connPanel=document.getElementById('cloudConnectedPanel');
@@ -10612,7 +10526,6 @@ function supaUpdateUI(connected){
 
   if(connected&&SUPA){
     if(dot){dot.style.background='var(--gn)';dot.classList.add('on');}
-    if(statusTxt) statusTxt.textContent='☁️ متصل — بياناتك في السحابة';
     if(statusTitle) statusTitle.textContent='Supabase — متصل ✅';
     if(statusSub) statusSub.textContent=last?'آخر مزامنة: '+last:'جاهز للمزامنة';
     if(setupWizard) setupWizard.style.display='none';
@@ -10633,7 +10546,6 @@ function supaUpdateUI(connected){
     }
   } else {
     if(dot){dot.style.background='var(--tx4)';dot.classList.remove('on');}
-    if(statusTxt) statusTxt.textContent='غير مفعّل — بياناتك محلية فقط';
     if(statusTitle) statusTitle.textContent='Supabase — غير مفعّل';
     if(statusSub) statusSub.textContent='بياناتك محلية فقط — خطر الفقدان';
     if(setupWizard) setupWizard.style.display='block';
@@ -10645,9 +10557,9 @@ function supaUpdateUI(connected){
 }
 
 function supaSetStatus(type, txt){
-  var statusTxt = document.getElementById('supaStatusTxt');
+  var statusSub = document.getElementById('cloudStatusSub');
   var dot = document.getElementById('supaDot');
-  if(statusTxt) statusTxt.textContent=txt;
+  if(statusSub) statusSub.textContent=txt;
   if(dot) dot.style.background = type==='ok'?'var(--gn)':type==='saving'||type==='loading'?'var(--yw)':'var(--rd)';
 }
 
