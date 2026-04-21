@@ -9856,15 +9856,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof updateLiveStats === 'function') updateLiveStats();
     try { updateDash(); } catch(e) {}
     if (typeof updateDash === 'function') updateDash();
-    
-    // تحديث الساعة
-    setInterval(function() {
-      var el = document.getElementById('liveTime');
-      if (el) {
-        var now = new Date();
-        el.textContent = now.toLocaleTimeString('ar-JO', {hour: '2-digit', minute: '2-digit'});
-      }
-    }, 1000);
   }, 500);
 });
 
