@@ -71,7 +71,7 @@ body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--bg
 #pinScreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#EDEAD8 0%,#E6E2CC 50%,#EBE8D5 100%);display:flex;align-items:center;justify-content:center;padding:20px}
 #pinScreen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 30%,rgba(26,92,40,.06) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(193,127,36,.08) 0%,transparent 60%);pointer-events:none}
 .pin-wrap{width:100%;max-width:360px;text-align:center;position:relative}
-.pin-logo{width:80px;height:80px;border-radius:22px;background:linear-gradient(145deg,rgba(26,92,40,.12),rgba(26,92,40,.06));border:1.5px solid rgba(26,92,40,.25);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 14px;box-shadow:0 4px 20px rgba(26,92,40,.12)}
+.pin-logo{width:100px;height:100px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;filter:drop-shadow(0 6px 24px rgba(15,45,24,.35))}
 .pin-brand{font-size:22px;font-weight:800;color:#1A3D1E;margin-bottom:2px;letter-spacing:.5px}
 .pin-ver{font-size:10.5px;color:rgba(26,61,30,.4);letter-spacing:2px;text-transform:uppercase;margin-bottom:28px;font-weight:500}
 /* Login screen password input */
@@ -1758,7 +1758,18 @@ body.dark .ss-card{background:var(--surf)}
 <!-- LOGIN SCREEN -->
 <div id="pinScreen">
   <div class="pin-wrap">
-    <div class="pin-logo">🌿</div>
+    <div class="pin-logo" style="background:none;border:none;box-shadow:none;width:100px;height:100px">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+        <rect width="100" height="100" rx="24" fill="#0F2D18"/>
+        <rect x="1" y="1" width="98" height="98" rx="23" fill="none" stroke="rgba(193,127,36,.6)" stroke-width="1.5"/>
+        <line x1="50" y1="72" x2="50" y2="42" stroke="#C17F24" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M50 56 C42 48 30 50 30 50 C30 50 32 64 50 56Z" fill="#2A7A3A"/>
+        <path d="M50 50 C58 42 70 44 70 44 C70 44 68 58 50 50Z" fill="#2A7A3A"/>
+        <path d="M50 42 C44 32 50 22 50 22 C50 22 56 32 50 42Z" fill="#C17F24"/>
+        <path d="M44 74 Q50 78 56 74" stroke="#C17F24" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <line x1="38" y1="72" x2="62" y2="72" stroke="rgba(193,127,36,.35)" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+    </div>
     <div class="pin-brand">ريحانة كافيه</div>
     <div class="pin-ver">نظام إدارة المقهى</div>
     <div style="margin-bottom:8px">
@@ -1883,7 +1894,7 @@ body.dark .ss-card{background:var(--surf)}
   </div>
 
   <div class="topbar" style="position:relative">
-    <div class="tb-logo" onclick="pg('dash',document.querySelector('.ntab'))" style="cursor:pointer"><div class="tb-ico">☕</div><div class="tb-name" style="display:none;display:block">ريحانة</div></div>
+    <div class="tb-logo" onclick="pg('dash',document.querySelector('.ntab'))" style="cursor:pointer"><div class="tb-ico"><svg viewBox="0 0 30 30" width="18" height="18" xmlns="http://www.w3.org/2000/svg"><line x1="15" y1="22" x2="15" y2="12" stroke="#C17F24" stroke-width="2" stroke-linecap="round"/><path d="M15 17 C11 14 6 15 6 15 C6 15 7 20 15 17Z" fill="#5AC18E"/><path d="M15 14 C19 11 24 12 24 12 C24 12 23 17 15 14Z" fill="#5AC18E"/><path d="M15 12 C12 8 15 4 15 4 C15 4 18 8 15 12Z" fill="#C17F24"/></svg></div><div class="tb-name">ريحانة</div></div>
     <div class="tb-sep"></div>
     <div class="tb-mid">
       <div class="gsearch">
@@ -1893,7 +1904,7 @@ body.dark .ss-card{background:var(--surf)}
     </div>
     <div class="tb-right">
       <div id="syncPill" style="display:none;align-items:center;gap:4px;background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);border-radius:6px;padding:3px 8px;font-size:10.5px;font-weight:600;color:#5AC18E;white-space:nowrap;transition:all .3s"><span id="syncPillDot" style="width:5px;height:5px;border-radius:50%;background:#5AC18E;display:inline-block"></span><span id="syncPillTxt">محفوظ</span></div>
-      <button class="tbtn" onclick="exportJSON()" title="💾 نسخة احتياطية" style="background:rgba(217,119,6,.2);border-color:rgba(217,119,6,.4);font-size:12px">💾</button>
+      <button class="tbtn" id="syncRefreshBtn" onclick="tbSyncRefresh()" title="تحديث البيانات من السحابة" style="font-size:13px;display:none">🔄</button>
       <button class="tbtn" onclick="toggleNotifications()" title="الإشعارات" id="notifBtn" style="position:relative">
         🔔
         <span id="notifDot" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--rd);border-radius:50%"></span>
@@ -5040,7 +5051,7 @@ function loadStore(){
         Object.keys(sv.months).forEach(k=>{S.months[k]=sv.months[k];});
       }
       if(sv.suppliers&&sv.suppliers.length)S.suppliers=sv.suppliers;
-      if(sv.activeKey)S.activeKey=sv.activeKey;
+      if(sv.activeKey) S.activeKey = sv.activeKey >= _ck ? sv.activeKey : _ck;
       if(sv.lockedMonths)S.lockedMonths=sv.lockedMonths;
       if(sv.dailyEmps&&sv.dailyEmps.length)S.dailyEmps=sv.dailyEmps;
       if(sv.monthlyEmps&&sv.monthlyEmps.length)S.monthlyEmps=sv.monthlyEmps;
@@ -10529,7 +10540,7 @@ async function supaSync(direction){
     if(sv.months) Object.keys(sv.months).forEach(function(k){S.months[k]=sv.months[k];});
     if(sv.monthlyEmps&&sv.monthlyEmps.length) S.monthlyEmps=sv.monthlyEmps;
     if(sv.dailyEmps&&sv.dailyEmps.length) S.dailyEmps=sv.dailyEmps;
-    if(sv.activeKey) S.activeKey=sv.activeKey;
+    if(sv.activeKey) S.activeKey = sv.activeKey >= _ck ? sv.activeKey : _ck;
     if(sv.lockedMonths) S.lockedMonths=sv.lockedMonths;
     if(sv.suppliers&&sv.suppliers.length) S.suppliers=sv.suppliers;
     if(sv.targets&&Object.keys(sv.targets).length) S.targets=sv.targets;
@@ -10583,6 +10594,19 @@ function supaDisconnect(){
   log('قطع اتصال Supabase');
 }
 
+function tbSyncRefresh(){
+  var btn=document.getElementById('syncRefreshBtn');
+  if(btn){btn.style.opacity='.5';btn.style.pointerEvents='none';}
+  if(!SUPA){toast('⚠️ لا يوجد اتصال بالسحابة — فعّل Supabase أولاً');if(btn){btn.style.opacity='';btn.style.pointerEvents='';}return;}
+  supaSync('pull').then(function(){
+    toast('✅ تم تحديث البيانات');
+    if(btn){btn.style.opacity='';btn.style.pointerEvents='';}
+  }).catch(function(){
+    toast('❌ تعذّر التحديث');
+    if(btn){btn.style.opacity='';btn.style.pointerEvents='';}
+  });
+}
+
 /* ── واجهة الحالة ── */
 function supaUpdateUI(connected){
   var dot=document.getElementById('supaDot');
@@ -10601,6 +10625,8 @@ function supaUpdateUI(connected){
     if(setupWizard) setupWizard.style.display='none';
     if(connPanel) connPanel.style.display='block';
     if(whyBox) whyBox.style.display='none';
+    var syncRefBtn=document.getElementById('syncRefreshBtn');
+    if(syncRefBtn) syncRefBtn.style.display='flex';
     // cloud tab indicator
     var cloudTab=document.getElementById('cloudTab');
     if(cloudTab) cloudTab.textContent='☁️✅ السحابة';
@@ -10621,6 +10647,8 @@ function supaUpdateUI(connected){
     if(setupWizard) setupWizard.style.display='block';
     if(connPanel) connPanel.style.display='none';
     if(whyBox) whyBox.style.display='block';
+    var syncRefBtn=document.getElementById('syncRefreshBtn');
+    if(syncRefBtn) syncRefBtn.style.display='none';
     var cloudTab=document.getElementById('cloudTab');
     if(cloudTab) cloudTab.textContent='☁️ السحابة';
   }
