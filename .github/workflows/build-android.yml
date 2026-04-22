@@ -47,12 +47,15 @@ jobs:
           key: gradle-${{ hashFiles('android/**/*.gradle*') }}
           restore-keys: gradle-
 
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          cat android/local.properties
+
       - name: Build debug APK
         run: |
           cd android
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1
 
       - name: Show APK info
         run: |
