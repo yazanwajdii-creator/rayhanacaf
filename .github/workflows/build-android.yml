@@ -28,13 +28,12 @@ jobs:
       - name: Sync latest index.html into Android assets
         run: cp index.html android/app/src/main/assets/public/index.html
 
-      - name: Download gradle-wrapper.jar
+      - name: Generate Gradle wrapper
         run: |
-          mkdir -p android/gradle/wrapper
-          curl -sL "https://github.com/gradle/gradle/raw/v8.2.0/gradle/wrapper/gradle-wrapper.jar" \
-            -o android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || \
-          wget -q "https://services.gradle.org/distributions/gradle-8.2-wrapper.jar" \
-            -O android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
+          cd android
+          gradle wrapper --gradle-version=8.2
+          chmod +x gradlew
+          ls -lh gradle/wrapper/
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -42,16 +41,19 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          key: gradle-${{ hashFiles('android/**/*.gradle*') }}
           restore-keys: gradle-
 
       - name: Build debug APK
         run: |
           cd android
-          chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
         env:
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+
+      - name: Show APK info
+        run: |
+          find android/app/build/outputs -name "*.apk" -exec ls -lh {} \;
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
