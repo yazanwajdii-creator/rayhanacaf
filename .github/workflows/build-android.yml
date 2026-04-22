@@ -1,0 +1,73 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, claude/implement-todo-item-q6IWC]
+    paths:
+      - 'index.html'
+      - 'android/**'
+      - '.github/workflows/build-android.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Sync latest index.html into Android assets
+        run: cp index.html android/app/src/main/assets/public/index.html
+
+      - name: Set up Gradle wrapper
+        run: |
+          cd android
+          gradle wrapper --gradle-version=8.2 2>/dev/null || true
+          chmod +x gradlew 2>/dev/null || true
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle-wrapper.properties') }}
+          restore-keys: gradle-
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rayhana-cafe-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+
+      - name: Create Release on tag
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/app/build/outputs/apk/debug/*.apk
+          name: ريحانة كافيه ${{ github.ref_name }}
+          body: |
+            ## تطبيق ريحانة كافيه للأندرويد
+
+            ### التثبيت:
+            1. حمّل ملف `app-debug.apk`
+            2. افتح الملف على جهازك
+            3. اسمح بتثبيت التطبيقات من مصادر غير معروفة إذا طُلب منك
+
+            ### المتطلبات:
+            - Android 7.0 (API 24) أو أحدث
