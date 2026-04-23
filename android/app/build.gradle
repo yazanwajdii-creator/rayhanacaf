@@ -2,13 +2,13 @@ apply plugin: 'com.android.application'
 
 android {
     namespace 'com.rayhanacafe.app'
-    compileSdk 34
+    compileSdk 33
     buildToolsVersion "33.0.2"
 
     defaultConfig {
         applicationId "com.rayhanacafe.app"
         minSdk 24
-        targetSdk 34
+        targetSdk 33
         versionCode 1
         versionName "1.0.0"
     }
