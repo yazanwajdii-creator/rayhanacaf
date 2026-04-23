@@ -9,6 +9,9 @@ on:
       - '.github/workflows/build-android.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -29,7 +32,11 @@ jobs:
         run: cp index.html android/app/src/main/assets/public/index.html
 
       - name: Create local.properties
-        run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms/" || true
+          ls "$ANDROID_HOME/build-tools/" || true
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -42,10 +49,20 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee ../BUILD_LOG.txt
+        continue-on-error: true
 
-      - name: Show APK info
-        run: find android/app/build/outputs -name "*.apk" -exec ls -lh {} \;
+      - name: Push build log to branch
+        if: always()
+        run: |
+          git config user.email "ci@github.com"
+          git config user.name "CI"
+          git add BUILD_LOG.txt
+          git diff --cached --quiet || git commit -m "[ci] build log run #${{ github.run_number }}"
+          git push origin HEAD:claude/implement-todo-item-q6IWC || true
+
+      - name: Fail if no APK
+        run: test -f android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
