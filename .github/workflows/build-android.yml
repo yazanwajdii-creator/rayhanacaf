@@ -28,12 +28,6 @@ jobs:
       - name: Sync latest index.html into Android assets
         run: cp index.html android/app/src/main/assets/public/index.html
 
-      - name: Generate Gradle wrapper
-        run: |
-          cd android
-          gradle wrapper --gradle-version=7.6.1
-          chmod +x gradlew
-
       - name: Create local.properties
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
