@@ -63,20 +63,15 @@ jobs:
           name: gradle-build-log
           path: /tmp/gradle_build.log
 
-      - name: Post error to GitHub issue
+      - name: Commit build log to branch
         if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            let log = 'Log not found';
-            try { log = fs.readFileSync('/tmp/gradle_build.log', 'utf8').slice(-4000); } catch(e) {}
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `[CI Debug] Gradle log run #${context.runNumber}`,
-              body: '```\n' + log + '\n```'
-            });
+        run: |
+          cp /tmp/gradle_build.log BUILD_LOG.txt 2>/dev/null || echo "no log" > BUILD_LOG.txt
+          git config --local user.email "ci@github.com"
+          git config --local user.name "CI"
+          git add BUILD_LOG.txt
+          git diff --cached --quiet || git commit -m "[debug] build log run #${{ github.run_number }}"
+          git push origin HEAD:claude/implement-todo-item-q6IWC || true
 
       - name: Fail if build failed
         working-directory: android
