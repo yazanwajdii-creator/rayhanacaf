@@ -1775,7 +1775,10 @@ body.dark .ss-card{background:var(--surf)}
       </button>
       <div id="pwd-err" style="color:#B91C1C;font-size:12px;margin-top:10px;min-height:18px;text-align:center;font-weight:600"></div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v25</div>
+    <div style="margin-top:16px;font-size:11px;color:rgba(26,61,30,.4);text-align:center">
+      <span style="cursor:pointer;text-decoration:underline;text-underline-offset:2px" onclick="resetPwd()">نسيت كلمة المرور؟</span>
+    </div>
+    <div style="margin-top:10px;font-size:10px;color:rgba(26,61,30,.3);letter-spacing:1px">Powered by Rayhana ERP v25</div>
   </div>
 </div>
 
@@ -3557,7 +3560,6 @@ async function checkPwd() {
   var err = document.getElementById('pwd-err');
   if (!input) return;
 
-  // حماية من brute force — حظر مؤقت بعد 5 محاولات فاشلة
   var now = Date.now();
   if (_pwdLockUntil > now) {
     var remaining = Math.ceil((_pwdLockUntil - now) / 1000);
@@ -3566,29 +3568,56 @@ async function checkPwd() {
   }
 
   var val = input.value;
+  if (!val) { err.textContent = '⚠️ أدخل كلمة المرور'; return; }
   var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
   input.value = '';
-  var hash = await sha256(val);
-  if (hash === stored) {
+
+  // btoa fallback first (default password or old-format stored value)
+  if (btoa(val) === stored) {
+    var hash = null;
+    try { hash = await sha256(val); } catch(e) {}
+    if (hash) safeLS.setItem(PWD_KEY, hash);
     _pwdFailCount = 0;
     doLogin('manager');
-  } else if (btoa(val) === stored) {
-    // ترقية: حفظ كـ SHA-256
-    safeLS.setItem(PWD_KEY, hash);
+    return;
+  }
+
+  // SHA-256 check
+  var hash = null;
+  try { hash = await sha256(val); } catch(e) {}
+  if (hash && hash === stored) {
     _pwdFailCount = 0;
     doLogin('manager');
+    return;
+  }
+
+  _pwdFailCount++;
+  if (_pwdFailCount >= 5) {
+    _pwdLockUntil = Date.now() + 5 * 60 * 1000;
+    _pwdFailCount = 0;
+    err.textContent = '🔒 5 محاولات فاشلة — محظور 5 دقائق';
   } else {
-    _pwdFailCount++;
-    if (_pwdFailCount >= 5) {
-      _pwdLockUntil = Date.now() + 5 * 60 * 1000;
-      _pwdFailCount = 0;
-      err.textContent = '🔒 5 محاولات فاشلة — محظور 5 دقائق';
-    } else {
-      err.textContent = '❌ كلمة المرور غير صحيحة (' + _pwdFailCount + '/5)';
-    }
-    input.focus();
-    input.style.borderColor = 'rgba(239,68,68,.8)';
-    setTimeout(function(){ input.style.borderColor = 'rgba(255,255,255,.15)'; }, 1200);
+    err.textContent = '❌ كلمة المرور غير صحيحة (' + _pwdFailCount + '/5)';
+  }
+  input.focus();
+  input.style.borderColor = 'rgba(239,68,68,.8)';
+  setTimeout(function(){ input.style.borderColor = 'rgba(255,255,255,.15)'; }, 1200);
+}
+
+function resetPwd() {
+  var code = prompt('أدخل رمز إعادة التعيين (راجع المدير):');
+  if (!code) return;
+  // رمز ثابت للطوارئ: تاريخ اليوم بصيغة DDMM + "rh"
+  var d = new Date();
+  var expected = String(d.getDate()).padStart(2,'0') + String(d.getMonth()+1).padStart(2,'0') + 'rh';
+  if (code === expected) {
+    safeLS.removeItem(PWD_KEY);
+    _pwdFailCount = 0;
+    _pwdLockUntil = 0;
+    var err = document.getElementById('pwd-err');
+    if (err) err.textContent = '✅ تمت إعادة التعيين — كلمة المرور: 1234';
+  } else {
+    alert('رمز خاطئ');
   }
 }
 
