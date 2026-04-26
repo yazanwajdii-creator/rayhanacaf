@@ -69,10 +69,10 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setAllowFileAccessFromFileURLs(true);
-        settings.setAllowUniversalAccessFromFileURLs(true);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
         settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
+        settings.setAllowContentAccess(false);
         settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setGeolocationEnabled(true);

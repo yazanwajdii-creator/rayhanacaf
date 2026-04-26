@@ -2903,9 +2903,9 @@ body.dark .ss-card{background:var(--surf)}
             <span class="rpt-row-lbl">⏳ رواتب مستحقة <small>(لا تُطرح — لم تُدفع بعد)</small></span>
             <span class="rpt-row-val muted" id="r-msal-accrued">0.000 JD</span>
           </div>
-          <div class="rpt-row rpt-row-sub rpt-row-muted">
-            <span class="rpt-row-lbl">👷 أجور يومية <small>(توثيق — خُصمت من الكاش)</small></span>
-            <span class="rpt-row-val muted" id="r-dwages">0.000 JD</span>
+          <div class="rpt-row rpt-row-sub">
+            <span class="rpt-row-lbl">👷 أجور يومية مدفوعة <small>(خُصمت من الكاش قبل التسليم)</small></span>
+            <span class="rpt-row-val red" id="r-dwages">0.000 JD</span>
           </div>
         </div>
 
@@ -3632,24 +3632,44 @@ async function sha256(str){
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
+var _pwdFailCount = 0;
+var _pwdLockUntil = 0;
+
 async function checkPwd() {
   var input = document.getElementById('pwdInput');
   var err = document.getElementById('pwd-err');
   if (!input) return;
+
+  // حماية من brute force — حظر مؤقت بعد 5 محاولات فاشلة
+  var now = Date.now();
+  if (_pwdLockUntil > now) {
+    var remaining = Math.ceil((_pwdLockUntil - now) / 1000);
+    err.textContent = '🔒 محظور مؤقتاً — انتظر ' + remaining + ' ثانية';
+    return;
+  }
+
   var val = input.value;
   var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
   input.value = '';
   var hash = await sha256(val);
   if (hash === stored) {
+    _pwdFailCount = 0;
     doLogin('manager');
   } else if (btoa(val) === stored) {
-    // migration: re-store as SHA-256
+    // ترقية: حفظ كـ SHA-256
     safeLS.setItem(PWD_KEY, hash);
+    _pwdFailCount = 0;
     doLogin('manager');
   } else {
-    err.textContent = '❌ كلمة المرور غير صحيحة';
+    _pwdFailCount++;
+    if (_pwdFailCount >= 5) {
+      _pwdLockUntil = Date.now() + 5 * 60 * 1000;
+      _pwdFailCount = 0;
+      err.textContent = '🔒 5 محاولات فاشلة — محظور 5 دقائق';
+    } else {
+      err.textContent = '❌ كلمة المرور غير صحيحة (' + _pwdFailCount + '/5)';
+    }
     input.focus();
-    // shake animation
     input.style.borderColor = 'rgba(239,68,68,.8)';
     setTimeout(function(){ input.style.borderColor = 'rgba(255,255,255,.15)'; }, 1200);
   }
@@ -3710,16 +3730,20 @@ function doLogin(role) {
   }, 100);
 }
 
-function changePwd() {
+async function changePwd() {
   var old = document.getElementById('pwdOld') ? document.getElementById('pwdOld').value : '';
   var nw  = document.getElementById('pwdNew') ? document.getElementById('pwdNew').value : '';
   var cf  = document.getElementById('pwdConf') ? document.getElementById('pwdConf').value : '';
   var err = document.getElementById('pwdChgErr');
   var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
-  if (btoa(old) !== stored) { if(err) err.textContent = 'كلمة المرور الحالية غير صحيحة'; return; }
+  // يقبل كلمة المرور سواء كانت SHA-256 أو base64 (للتوافق مع الأجهزة القديمة)
+  var oldHash = await sha256(old);
+  var oldValid = (oldHash === stored) || (btoa(old) === stored);
+  if (!oldValid) { if(err) err.textContent = 'كلمة المرور الحالية غير صحيحة'; return; }
   if (nw.length < 4) { if(err) err.textContent = 'يجب أن تكون 4 أحرف على الأقل'; return; }
   if (nw !== cf) { if(err) err.textContent = 'كلمتا المرور غير متطابقتين'; return; }
-  safeLS.setItem(PWD_KEY, btoa(nw));
+  // حفظ كلمة المرور الجديدة بـ SHA-256
+  safeLS.setItem(PWD_KEY, await sha256(nw));
   if(err) err.textContent = '';
   ['pwdOld','pwdNew','pwdConf'].forEach(id => { var e = document.getElementById(id); if(e) e.value = ''; });
   cmo('moPwd');
@@ -4120,9 +4144,9 @@ function totals(){
   const d=G();let cash=0,visa=0,pmts=0;
   d.sales.forEach(s=>{cash+=s.cash||0;visa+=s.visa||0;pmts+=s.pmts||0;});
   
-  // صافي البيع = نقدي + فيزا (هذا هو الإيراد الحقيقي)
+  // صافي الكاش المسلّم + فيزا (بعد خصم الأجور اليومية)
   const netSales=cash+visa;
-  // إجمالي الإيراد = صافي البيع + المدفوعات (للتوثيق)
+  // الإيراد الحقيقي = كاش + فيزا + أجور يومية (إجمالي ما تم تحصيله)
   const rev=cash+visa+pmts;
   
   const bycat={COGS:0,OPS:0,ADM:0,MKT:0,OTHER:0,total:0};
@@ -4155,34 +4179,30 @@ function totals(){
   // لذا نستخدمها بدلاً من dwTotal لتجنب الحساب المزدوج
   const dailyWagesPaid = pmts; // المدفوعات الفعلية من الكاش
   
-  const grossP=netSales-bycat.COGS;
-  
-  // ═══════════════════════════════════════════════════════════════════════════
-  // V24-2 FIX: خطأ محاسبي حرج - الالتزامات المدفوعة فقط
-  // المشكلة: كان يحسب جميع الالتزامات (المدفوعة وغير المدفوعة) ضمن المصاريف
-  // الإصلاح: أصبح يحسب فقط الالتزامات المدفوعة (oblPaid)
-  // الأثر: القوائم المالية الآن تعكس الواقع — لا خسارة وهمية بسبب التزامات لم تُدفع بعد
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ═══════════════════════════════════════════════════════════════════════════
-  // V24-3 FIX: فقط الرواتب المدفوعة + الالتزامات المدفوعة تدخل في المصاريف
-  // الرواتب غير المدفوعة = مستحقات معلقة لا تؤثر على الربح حتى تُدفع
-  // ═══════════════════════════════════════════════════════════════════════════
-  const totalExp=bycat.total+oblPaid+mSalPaid;
-  
-  // صافي الربح = صافي البيع - إجمالي المصروفات الفعلية
-  const profit=netSales-totalExp;
-  const margin=netSales>0?profit/netSales*100:0;
-  
+  // الربح الإجمالي = الإيراد الكامل - تكلفة البضاعة
+  const grossP=rev-bycat.COGS;
+
+  // الأجور اليومية المدفوعة = المدفوعات (ما دفعه الكاشير للمياومين قبل الإغلاق)
+  const dailyWagesPaid=pmts;
+
+  // إجمالي المصروفات الفعلية: مشتريات + التزامات مدفوعة + رواتب شهرية مدفوعة + أجور يومية
+  const totalExp=bycat.total+oblPaid+mSalPaid+dailyWagesPaid;
+
+  // صافي الربح = الإيراد الكامل - جميع المصروفات
+  // رياضياً: = (cash+visa+pmts) - (bycat.total+oblPaid+mSalPaid+pmts) = netSales - (bycat.total+oblPaid+mSalPaid)
+  const profit=rev-totalExp;
+  const margin=rev>0?profit/rev*100:0;
+
   let advP=0;d.advances.filter(a=>a.status==="مستحقة"||a.status==="مسددة جزئياً").forEach(a=>advP+=a.amt||0);
-  
-  // حقول محسوبة إضافية لتسهيل استهلاك البطاقات
+
+  // النسب المئوية — كلها على أساس الإيراد الكامل (rev) للدقة
   const _active=d.sales.filter(s=>(s.cash||0)+(s.visa||0)+(s.pmts||0)>0);
   const avgDaily=_active.length?rev/_active.length:0;
   const daysActive=_active.length;
-  const cogsRatio=netSales>0?bycat.COGS/netSales*100:0;
-  const salaryRatio=netSales>0?mSalPaid/netSales*100:0;
-  const oblPaidRatio=netSales>0?oblPaid/netSales*100:0;
-  const expRatio=netSales>0?totalExp/netSales*100:0;
+  const cogsRatio=rev>0?bycat.COGS/rev*100:0;
+  const salaryRatio=rev>0?(mSalPaid+dailyWagesPaid)/rev*100:0;
+  const oblPaidRatio=rev>0?oblPaid/rev*100:0;
+  const expRatio=rev>0?totalExp/rev*100:0;
   
   return{
     cash,visa,pmts,netSales,rev,bycat,
@@ -4840,10 +4860,10 @@ function updateRpt(){
     </div>`).join('');
 
   // Salaries
-  T('r-sal-total', n3(t.mSalPaid)+' JD');
+  T('r-sal-total', n3(t.mSalPaid + t.dailyWagesPaid)+' JD');
   T('r-msal', n3(t.mSalPaid)+' JD');
   T('r-msal-accrued', n3(t.mSalAccrued)+' JD');
-  T('r-dwages', n3(t.dwTotal)+' JD');
+  T('r-dwages', n3(t.dailyWagesPaid)+' JD');
   // Hide accrued row if zero
   var accRow=document.getElementById('r-accrued-row');
   if(accRow) accRow.style.display=t.mSalAccrued>0?'flex':'none';
@@ -4879,6 +4899,7 @@ function updateRpt(){
   t.obls.filter(o=>o.paid&&o.amt>0).forEach(o=>{cats.push(o.name+' ✅');vals.push(o.amt);colors.push(PAL[ci++%PAL.length]);});
   if(t.mSalPaid>0){cats.push('رواتب ✅');vals.push(t.mSalPaid);colors.push(PAL[ci++%PAL.length]);}
   if(t.mSalAccrued>0){cats.push('رواتب ⏳');vals.push(t.mSalAccrued);colors.push('#4B5563');}
+  if(t.dailyWagesPaid>0){cats.push('أجور يومية');vals.push(t.dailyWagesPaid);colors.push(PAL[ci++%PAL.length]);}
   if(t.bycat.OPS>0){cats.push('تشغيلية');vals.push(t.bycat.OPS);colors.push(PAL[ci++%PAL.length]);}
   if(t.bycat.ADM>0){cats.push('إدارية');vals.push(t.bycat.ADM);colors.push(PAL[ci++%PAL.length]);}
   if(t.bycat.MKT>0){cats.push('تسويقية');vals.push(t.bycat.MKT);colors.push(PAL[ci++%PAL.length]);}
