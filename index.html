@@ -4160,9 +4160,6 @@ function totals(){
   // الربح الإجمالي = إيراد المدير الصافي - تكلفة البضاعة
   const grossP=netSales-bycat.COGS;
 
-  // الأجور اليومية للتوثيق فقط — مدفوعة من الكاش قبل تسليمه للمدير (ليست مصروفاً إضافياً)
-  const dailyWagesPaid=pmts;
-
   // إجمالي المصروفات الفعلية على المدير: مشتريات + التزامات مدفوعة + رواتب شهرية مدفوعة
   const totalExp=bycat.total+oblPaid+mSalPaid;
 
@@ -5189,7 +5186,7 @@ function importJSON(ev){
       }
       
       // استيراد البيانات المالية فقط — لا يمس الموظفين أو الموردين أو الهيكل الحالي
-      var isOldVersion = !data.v || data.v < 25;
+      var isOldVersion = !data.version;
       if(data.months){
         Object.keys(data.months).forEach(function(k){
           var incoming = data.months[k];
@@ -6045,52 +6042,12 @@ function _appendMsg(text,role){
   return div;
 }
 
-function aiQuick(q){
-  var inp=document.getElementById('aiInput');
-  if(inp)inp.value=q;
-  sendAiMsg();
-}
-
-async function sendAiMsg(){
-  if(_aiLoading)return;
-  var inp=document.getElementById('aiInput');if(!inp)return;
-  var q=inp.value.trim();if(!q)return;
-  inp.value='';inp.style.height='auto';
-  _appendMsg(q,'user');
-  _aiHistory.push({role:'user',content:q});
-  _aiLoading=true;
-  var btn=document.getElementById('aiSendBtn');if(btn)btn.disabled=true;
-  var think=_appendMsg('⏳ يحلل بيانات الكافيه...','bot');
-  if(think)think.className='ai-msg bot thinking';
-  try{
-    var sys=buildCafeContext();
-    var msgs=_aiHistory.slice(-12);
-    var res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system:sys,messages:msgs})
-    });
-    var data=await res.json();
-    if(think)think.remove();
-    var reply='';
-    if(data.content&&data.content.length&&data.content[0].text){
-      reply=data.content[0].text;
-    } else {
-      reply='⚠️ خطأ: '+(data.error?data.error.message:JSON.stringify(data));
-    }
-    _appendMsg(reply,'bot');
-    _aiHistory.push({role:'assistant',content:reply});
-  }catch(e){
-    if(think)think.remove();
-    _appendMsg('⚠️ تعذّر الاتصال. تأكد من الإنترنت وأعد المحاولة.','bot');
-  }
-  _aiLoading=false;if(btn)btn.disabled=false;
-}
+function aiQuick(q){ askAI(q); }
 
 function clearAiChat(){
-  _aiHistory=[];
-  var msgs=document.getElementById('aiMsgs');
-  if(msgs)msgs.innerHTML='<div class="ai-msg bot">تم المسح. كيف يمكنني مساعدتك؟ 🌿</div>';
+  aiHistory=[];
+  var msgs=document.getElementById('aiMessages');
+  if(msgs)msgs.innerHTML='<div class="ai-msg assistant ai-welcome">تم المسح. كيف يمكنني مساعدتك؟ 🌿</div>';
 }
 
 // ════════════════════════════════════════════════
@@ -6111,26 +6068,7 @@ renderAll=function(){
   try{updateAiContext();}catch(e){}
 };
 
-var _saOrig=saveAll;
-saveAll=function(){
-  try{
-    if(!S.targets)S.targets={};
-    if(!S.inventory)S.inventory=[];
-    var sv={months:S.months,suppliers:S.suppliers,activeKey:S.activeKey,lockedMonths:S.lockedMonths||[],dailyEmps:S.dailyEmps,monthlyEmps:S.monthlyEmps,targets:S.targets,inventory:S.inventory};
-    safeLS.setItem(SK,JSON.stringify(sv));
-  }catch(e){}
-};
-
-var _lsOrig=loadStore;
-loadStore=function(){
-  _lsOrig();
-  try{
-    var r=safeLS.getItem(SK);
-    if(r){var sv=JSON.parse(r);if(sv.targets)S.targets=sv.targets;if(sv.inventory)S.inventory=sv.inventory;}
-    if(!S.targets)S.targets={};
-    if(!S.inventory)S.inventory=[];
-  }catch(e){}
-};
+// saveAll و loadStore يتضمنان targets و inventory أصلاً — لا حاجة لـ override
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SMART ANALYTICS V14 PRO - البطاقات الذكية الجديدة
