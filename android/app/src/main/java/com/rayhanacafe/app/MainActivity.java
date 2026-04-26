@@ -3,6 +3,8 @@ package com.rayhanacafe.app;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
@@ -13,12 +15,15 @@ import android.view.View;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
+import android.webkit.JsPromptResult;
+import android.webkit.JsResult;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -47,7 +52,7 @@ public class MainActivity extends Activity {
         }
 
         FrameLayout layout = new FrameLayout(this);
-        layout.setBackgroundColor(Color.parseColor("#1a1a2e"));
+        layout.setBackgroundColor(Color.parseColor("#EDEAD8"));
         setContentView(layout);
 
         // WebView
@@ -126,6 +131,60 @@ public class MainActivity extends Activity {
                 startActivityForResult(fileChooserParams.createIntent(), FILE_CHOOSER_REQUEST);
                 return true;
             }
+
+            @Override
+            public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
+                new AlertDialog.Builder(MainActivity.this)
+                    .setMessage(message)
+                    .setPositiveButton("موافق", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface d, int w) { result.confirm(); }
+                    })
+                    .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        public void onCancel(DialogInterface d) { result.cancel(); }
+                    })
+                    .show();
+                return true;
+            }
+
+            @Override
+            public boolean onJsConfirm(WebView view, String url, String message, final JsResult result) {
+                new AlertDialog.Builder(MainActivity.this)
+                    .setMessage(message)
+                    .setPositiveButton("نعم", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface d, int w) { result.confirm(); }
+                    })
+                    .setNegativeButton("لا", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface d, int w) { result.cancel(); }
+                    })
+                    .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        public void onCancel(DialogInterface d) { result.cancel(); }
+                    })
+                    .show();
+                return true;
+            }
+
+            @Override
+            public boolean onJsPrompt(WebView view, String url, String message,
+                    String defaultValue, final JsPromptResult result) {
+                final EditText input = new EditText(MainActivity.this);
+                if (defaultValue != null) input.setText(defaultValue);
+                new AlertDialog.Builder(MainActivity.this)
+                    .setMessage(message)
+                    .setView(input)
+                    .setPositiveButton("موافق", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface d, int w) {
+                            result.confirm(input.getText().toString());
+                        }
+                    })
+                    .setNegativeButton("إلغاء", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface d, int w) { result.cancel(); }
+                    })
+                    .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        public void onCancel(DialogInterface d) { result.cancel(); }
+                    })
+                    .show();
+                return true;
+            }
         });
 
         webView.loadUrl("file:///android_asset/public/index.html");
@@ -133,11 +192,11 @@ public class MainActivity extends Activity {
 
     private View buildSplash() {
         FrameLayout splash = new FrameLayout(this);
-        splash.setBackgroundColor(Color.parseColor("#1a1a2e"));
+        splash.setBackgroundColor(Color.parseColor("#EDEAD8"));
 
         TextView label = new TextView(this);
         label.setText("ريحانة كافيه");
-        label.setTextColor(Color.parseColor("#d4a853"));
+        label.setTextColor(Color.parseColor("#1A4A28"));
         label.setTextSize(32f);
         label.setGravity(Gravity.CENTER);
         label.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);

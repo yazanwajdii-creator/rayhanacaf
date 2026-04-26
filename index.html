@@ -1776,7 +1776,14 @@ body.dark .ss-card{background:var(--surf)}
       <div id="pwd-err" style="color:#B91C1C;font-size:12px;margin-top:10px;min-height:18px;text-align:center;font-weight:600"></div>
     </div>
     <div style="margin-top:16px;font-size:11px;color:rgba(26,61,30,.4);text-align:center">
-      <span style="cursor:pointer;text-decoration:underline;text-underline-offset:2px" onclick="resetPwd()">نسيت كلمة المرور؟</span>
+      <span style="cursor:pointer;text-decoration:underline;text-underline-offset:2px" onclick="showResetBox()">نسيت كلمة المرور؟</span>
+    </div>
+    <div id="resetBox" style="display:none;margin-top:12px;background:rgba(255,255,255,.7);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:12px;color:#5A3E1B;margin-bottom:10px">سيتم إعادة كلمة المرور إلى <strong>1234</strong></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="doReset()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#1A4A28;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif">تأكيد الإعادة</button>
+        <button onclick="showResetBox()" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(26,74,40,.3);background:transparent;font-size:13px;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;color:#1A4A28">إلغاء</button>
+      </div>
     </div>
     <div style="margin-top:10px;font-size:10px;color:rgba(26,61,30,.3);letter-spacing:1px">Powered by Rayhana ERP v25</div>
   </div>
@@ -3555,42 +3562,67 @@ async function sha256(str){
 var _pwdFailCount = 0;
 var _pwdLockUntil = 0;
 
-async function checkPwd() {
+function checkPwd() {
   var input = document.getElementById('pwdInput');
   var err = document.getElementById('pwd-err');
-  if (!input) return;
+  if (!input || !err) return;
 
   var now = Date.now();
   if (_pwdLockUntil > now) {
-    var remaining = Math.ceil((_pwdLockUntil - now) / 1000);
-    err.textContent = '🔒 محظور مؤقتاً — انتظر ' + remaining + ' ثانية';
+    err.textContent = '🔒 محظور مؤقتاً — انتظر ' + Math.ceil((_pwdLockUntil - now) / 1000) + ' ثانية';
     return;
   }
 
   var val = input.value;
   if (!val) { err.textContent = '⚠️ أدخل كلمة المرور'; return; }
-  var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
   input.value = '';
 
-  // btoa fallback first (default password or old-format stored value)
-  if (btoa(val) === stored) {
-    var hash = null;
-    try { hash = await sha256(val); } catch(e) {}
-    if (hash) safeLS.setItem(PWD_KEY, hash);
-    _pwdFailCount = 0;
-    doLogin('manager');
+  var stored = safeLS.getItem(PWD_KEY);
+
+  // No stored password → first launch, only accept default
+  if (!stored) {
+    if (val === DEFAULT_PWD) {
+      _pwdFailCount = 0;
+      safeLS.setItem(PWD_KEY, btoa(DEFAULT_PWD));
+      doLogin('manager');
+      // upgrade to SHA-256 in background if available
+      if (typeof sha256 === 'function') {
+        sha256(val).then(function(h){ safeLS.setItem(PWD_KEY, h); }).catch(function(){});
+      }
+    } else {
+      _loginFail(input, err);
+    }
     return;
   }
 
-  // SHA-256 check
-  var hash = null;
-  try { hash = await sha256(val); } catch(e) {}
-  if (hash && hash === stored) {
+  // btoa-format stored password
+  if (stored === btoa(val)) {
     _pwdFailCount = 0;
     doLogin('manager');
+    if (typeof sha256 === 'function') {
+      sha256(val).then(function(h){ safeLS.setItem(PWD_KEY, h); }).catch(function(){});
+    }
     return;
   }
 
+  // SHA-256 check (async)
+  if (typeof sha256 === 'function') {
+    sha256(val).then(function(hash) {
+      if (hash === stored) {
+        _pwdFailCount = 0;
+        doLogin('manager');
+      } else {
+        _loginFail(input, err);
+      }
+    }).catch(function() {
+      _loginFail(input, err);
+    });
+  } else {
+    _loginFail(input, err);
+  }
+}
+
+function _loginFail(input, err) {
   _pwdFailCount++;
   if (_pwdFailCount >= 5) {
     _pwdLockUntil = Date.now() + 5 * 60 * 1000;
@@ -3604,21 +3636,19 @@ async function checkPwd() {
   setTimeout(function(){ input.style.borderColor = 'rgba(255,255,255,.15)'; }, 1200);
 }
 
-function resetPwd() {
-  var code = prompt('أدخل رمز إعادة التعيين (راجع المدير):');
-  if (!code) return;
-  // رمز ثابت للطوارئ: تاريخ اليوم بصيغة DDMM + "rh"
-  var d = new Date();
-  var expected = String(d.getDate()).padStart(2,'0') + String(d.getMonth()+1).padStart(2,'0') + 'rh';
-  if (code === expected) {
-    safeLS.removeItem(PWD_KEY);
-    _pwdFailCount = 0;
-    _pwdLockUntil = 0;
-    var err = document.getElementById('pwd-err');
-    if (err) err.textContent = '✅ تمت إعادة التعيين — كلمة المرور: 1234';
-  } else {
-    alert('رمز خاطئ');
-  }
+function showResetBox() {
+  var box = document.getElementById('resetBox');
+  if (box) { box.style.display = box.style.display === 'none' ? 'block' : 'none'; }
+}
+
+function doReset() {
+  safeLS.removeItem(PWD_KEY);
+  _pwdFailCount = 0;
+  _pwdLockUntil = 0;
+  var box = document.getElementById('resetBox');
+  if (box) box.style.display = 'none';
+  var err = document.getElementById('pwd-err');
+  if (err) { err.style.color = '#166534'; err.textContent = '✅ تمت إعادة التعيين — كلمة المرور: 1234'; }
 }
 
 function doLogin(role) {
@@ -3682,10 +3712,11 @@ async function changePwd() {
   var nw  = document.getElementById('pwdNew') ? document.getElementById('pwdNew').value : '';
   var cf  = document.getElementById('pwdConf') ? document.getElementById('pwdConf').value : '';
   var err = document.getElementById('pwdChgErr');
-  var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
-  // يقبل كلمة المرور سواء كانت SHA-256 أو base64 (للتوافق مع الأجهزة القديمة)
-  var oldHash = await sha256(old);
-  var oldValid = (oldHash === stored) || (btoa(old) === stored);
+  var stored = safeLS.getItem(PWD_KEY);
+  if (!stored) stored = btoa(DEFAULT_PWD);
+  var oldHash = null;
+  try { oldHash = await sha256(old); } catch(e) {}
+  var oldValid = (oldHash && oldHash === stored) || (btoa(old) === stored) || (!safeLS.getItem(PWD_KEY) && old === DEFAULT_PWD);
   if (!oldValid) { if(err) err.textContent = 'كلمة المرور الحالية غير صحيحة'; return; }
   if (nw.length < 4) { if(err) err.textContent = 'يجب أن تكون 4 أحرف على الأقل'; return; }
   if (nw !== cf) { if(err) err.textContent = 'كلمتا المرور غير متطابقتين'; return; }
