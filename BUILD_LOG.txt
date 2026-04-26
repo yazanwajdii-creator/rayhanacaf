@@ -27,14 +27,14 @@ use a newer Android Gradle Plugin that has been tested with compileSdk = 34
 > Task :app:compileDebugAidl NO-SOURCE
 > Task :app:compileDebugRenderscript NO-SOURCE
 > Task :app:generateDebugBuildConfig
-> Task :app:checkDebugAarMetadata
 > Task :app:javaPreCompileDebug
 > Task :app:generateDebugResValues
+> Task :app:checkDebugAarMetadata
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
 > Task :app:createDebugCompatibleScreenManifests
-> Task :app:extractDeepLinksDebug
 > Task :app:mergeDebugResources
+> Task :app:extractDeepLinksDebug
 
 > Task :app:processDebugMainManifest
 package="com.rayhanacafe.app" found in source AndroidManifest.xml: /home/runner/work/rayhanacaf/rayhanacaf/android/app/src/main/AndroidManifest.xml.
@@ -52,12 +52,12 @@ This migration can be done automatically using the AGP Upgrade Assistant, please
 > Task :app:checkDebugDuplicateClasses
 > Task :app:desugarDebugFileDependencies
 > Task :app:processDebugManifestForPackage
+> Task :app:mergeLibDexDebug
 > Task :app:mergeExtDexDebug
 > Task :app:mergeDebugJavaResource
 > Task :app:mergeDebugJniLibFolders
 > Task :app:mergeDebugNativeLibs NO-SOURCE
 > Task :app:stripDebugDebugSymbols NO-SOURCE
-> Task :app:mergeLibDexDebug
 > Task :app:processDebugResources
 > Task :app:validateSigningDebug
 
@@ -73,5 +73,5 @@ Note: Recompile with -Xlint:deprecation for details.
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 13s
+BUILD SUCCESSFUL in 14s
 29 actionable tasks: 29 executed
