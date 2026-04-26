@@ -85,7 +85,7 @@ body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--bg
 /* TOP BAR */
 .topbar{height:52px;background:linear-gradient(135deg,#071A0C 0%,#0F2D18 40%,#1A4A28 70%,#0A2014 100%);color:#fff;display:flex;align-items:center;gap:8px;padding:0 12px;position:sticky;top:0;z-index:300;box-shadow:0 1px 0 rgba(255,255,255,.07),0 4px 20px rgba(0,0,0,.45);flex-shrink:0;backdrop-filter:blur(20px)}
 .tb-logo{display:flex;align-items:center;gap:7px;flex-shrink:0}
-.tb-ico{width:30px;height:30px;background:linear-gradient(135deg,rgba(193,127,36,.35),rgba(193,127,36,.12));border:1px solid rgba(193,127,36,.45);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 12px rgba(193,127,36,.2)}
+.tb-ico{width:40px;height:40px;background:linear-gradient(135deg,rgba(193,127,36,.35),rgba(193,127,36,.12));border:1px solid rgba(193,127,36,.45);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 12px rgba(193,127,36,.2)}
 .tb-name{font-size:14px;font-weight:700;white-space:nowrap;background:linear-gradient(90deg,#F5F0E8,#C17F24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:.3px}
 .tb-sep{width:1px;height:20px;background:rgba(255,255,255,.1);flex-shrink:0}
 .tb-mid{flex:1;display:flex;align-items:center;min-width:0}
@@ -94,7 +94,7 @@ body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--bg
 .gsearch input{background:transparent;border:none;color:#fff;font-size:12px;flex:1;outline:none;font-family:'IBM Plex Sans Arabic',sans-serif}
 .gsearch input::placeholder{color:rgba(255,255,255,.3)}
 .tb-right{display:flex;align-items:center;gap:4px;flex-shrink:0}
-.tbtn{width:32px;height:32px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(255,255,255,.85);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.tbtn{width:40px;height:40px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(255,255,255,.85);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s}
 .tbtn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.2)}
 .tbtn:active{transform:scale(.92)}
 .msel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;height:32px;transition:all .18s}
@@ -3708,6 +3708,7 @@ function doLogin(role) {
       try { updateDailyInsights(); } catch(e) { console.log('Insights:', e); }
       try { updateQuickInsights(); } catch(e) { console.log('QuickIns:', e); }
       try { startAutoSave(); } catch(e) { console.log('AutoSave:', e); }
+      try { initV24Features(); } catch(e) { console.log('V24:', e); }
     // Supabase: تهيئة وتحميل بعد الدخول
     try {
       supaInit();
@@ -10422,18 +10423,18 @@ function exitPresentationMode() {
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* V24-3 PRO: تهيئة الميزات الجديدة                                            */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+var _v24Interval = null;
 function initV24Features() {
   debugLog('🚀 V24-3 Features Initializing...');
-  
-  // تحديث التحليلات
+
   setTimeout(function() {
     renderTrendAnalysis();
     renderMonthComparison();
     renderEmployeeReport();
   }, 500);
-  
-  // تحديث دوري كل دقيقة
-  setInterval(function() {
+
+  if (_v24Interval) clearInterval(_v24Interval);
+  _v24Interval = setInterval(function() {
     renderTrendAnalysis();
     renderMonthComparison();
   }, 60000);
