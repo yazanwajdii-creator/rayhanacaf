@@ -48,16 +48,16 @@ This migration can be done automatically using the AGP Upgrade Assistant, please
 > Task :app:generateDebugAssets UP-TO-DATE
 > Task :app:mergeDebugAssets
 > Task :app:processDebugJavaRes NO-SOURCE
-> Task :app:checkDebugDuplicateClasses
 > Task :app:compressDebugAssets
-> Task :app:processDebugManifestForPackage
-> Task :app:mergeDebugJavaResource
+> Task :app:checkDebugDuplicateClasses
 > Task :app:desugarDebugFileDependencies
+> Task :app:processDebugManifestForPackage
+> Task :app:mergeExtDexDebug
+> Task :app:mergeDebugJavaResource
 > Task :app:mergeDebugJniLibFolders
+> Task :app:mergeLibDexDebug
 > Task :app:mergeDebugNativeLibs NO-SOURCE
 > Task :app:stripDebugDebugSymbols NO-SOURCE
-> Task :app:mergeExtDexDebug
-> Task :app:mergeLibDexDebug
 > Task :app:processDebugResources
 > Task :app:validateSigningDebug
 
@@ -73,5 +73,5 @@ Note: Recompile with -Xlint:deprecation for details.
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 15s
+BUILD SUCCESSFUL in 13s
 29 actionable tasks: 29 executed
