@@ -1,15 +1,18 @@
 package com.rayhanacafe.app;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Build;
+import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
-import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -17,10 +20,12 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 public class MainActivity extends Activity {
 
     private WebView webView;
+    private View splashView;
     private ValueCallback<Uri[]> filePathCallback;
     private static final int FILE_CHOOSER_REQUEST = 1;
 
@@ -28,7 +33,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Full screen immersive
         getWindow().setFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN,
             WindowManager.LayoutParams.FLAG_FULLSCREEN
@@ -43,14 +47,20 @@ public class MainActivity extends Activity {
         }
 
         FrameLayout layout = new FrameLayout(this);
-        layout.setLayoutParams(new FrameLayout.LayoutParams(
+        layout.setBackgroundColor(Color.parseColor("#1a1a2e"));
+        setContentView(layout);
+
+        // WebView
+        webView = new WebView(this);
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        layout.addView(webView, new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ));
-        setContentView(layout);
 
-        webView = new WebView(this);
-        layout.addView(webView, new FrameLayout.LayoutParams(
+        // Splash overlay shown while WebView parses the HTML
+        splashView = buildSplash();
+        layout.addView(splashView, new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ));
@@ -63,7 +73,7 @@ public class MainActivity extends Activity {
         settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setGeolocationEnabled(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
@@ -74,14 +84,25 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                // Open external links in browser, keep internal in WebView
                 if (url.startsWith("file://") || url.contains("rayhanacaf") ||
                     url.contains("supabase.co")) {
                     return false;
                 }
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                startActivity(intent);
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
                 return true;
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                splashView.animate()
+                    .alpha(0f)
+                    .setDuration(300)
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            splashView.setVisibility(View.GONE);
+                        }
+                    });
             }
         });
 
@@ -102,26 +123,42 @@ public class MainActivity extends Activity {
                 ValueCallback<Uri[]> filePathCallback,
                 WebChromeClient.FileChooserParams fileChooserParams) {
                 MainActivity.this.filePathCallback = filePathCallback;
-                Intent intent = fileChooserParams.createIntent();
-                startActivityForResult(intent, FILE_CHOOSER_REQUEST);
+                startActivityForResult(fileChooserParams.createIntent(), FILE_CHOOSER_REQUEST);
                 return true;
             }
         });
 
-        // Load the bundled app
         webView.loadUrl("file:///android_asset/public/index.html");
+    }
+
+    private View buildSplash() {
+        FrameLayout splash = new FrameLayout(this);
+        splash.setBackgroundColor(Color.parseColor("#1a1a2e"));
+
+        TextView label = new TextView(this);
+        label.setText("ريحانة كافيه");
+        label.setTextColor(Color.parseColor("#d4a853"));
+        label.setTextSize(32f);
+        label.setGravity(Gravity.CENTER);
+        label.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.CENTER
+        );
+        splash.addView(label, lp);
+        return splash;
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == FILE_CHOOSER_REQUEST) {
-            if (filePathCallback != null) {
-                Uri[] results = (resultCode == RESULT_OK && data != null)
-                    ? WebChromeClient.FileChooserParams.parseResult(resultCode, data)
-                    : null;
-                filePathCallback.onReceiveValue(results);
-                filePathCallback = null;
-            }
+        if (requestCode == FILE_CHOOSER_REQUEST && filePathCallback != null) {
+            Uri[] results = (resultCode == RESULT_OK && data != null)
+                ? WebChromeClient.FileChooserParams.parseResult(resultCode, data)
+                : null;
+            filePathCallback.onReceiveValue(results);
+            filePathCallback = null;
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
