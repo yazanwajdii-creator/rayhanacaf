@@ -9768,8 +9768,8 @@ function getV22AIResponse(question, ctx) {
     return response;
   }
   
-  // fallback
-  return getEnhancedLocalAIResponse(question, ctx);
+  // fallback — use original (pre-override) to avoid infinite recursion
+  return window._originalGetEnhanced ? window._originalGetEnhanced(question, ctx) : '❓ لم أفهم سؤالك. جرب: "ما الربح؟" أو "ما الوضع المالي؟"';
 }
 
 // ربط V22 AI بالنظام
@@ -10019,6 +10019,22 @@ function listBackups() {
     return backups;
   } catch(e) {
     return [];
+  }
+}
+
+function restoreBackup(date) {
+  var backups = listBackups();
+  var backup = backups.find(function(b) { return b.date === date; });
+  if (!backup || !backup.data) { toast('❌ لم يتم العثور على النسخة'); return; }
+  if (!confirm('⚠️ سيتم استبدال البيانات الحالية ببيانات ' + date + '. متأكد؟')) return;
+  try {
+    safeLS.setItem(SK, backup.data);
+    loadStore();
+    renderAll();
+    cmo('moBackup');
+    toast('✅ تمت الاستعادة من نسخة ' + date);
+  } catch(e) {
+    toast('❌ فشل استعادة النسخة: ' + e.message);
   }
 }
 
@@ -10321,10 +10337,16 @@ function enterPresentationMode() {
   
   // Card 3: الاتجاه
   var trendIcon = analysis.trend === 'up' ? '📈' : analysis.trend === 'down' ? '📉' : '➡️';
+  var hasGrowthData = analysis.trend !== 'insufficient' && typeof analysis.avgGrowth === 'number';
   html += '<div class="presentation-card">';
   html += '<div class="presentation-card-title">' + trendIcon + ' اتجاه النمو</div>';
-  html += '<div class="presentation-big-number" style="color:' + (analysis.avgGrowth >= 0 ? 'var(--gn)' : 'var(--rd)') + '">' + (analysis.avgGrowth >= 0 ? '+' : '') + analysis.avgGrowth.toFixed(1) + '%</div>';
-  html += '<div style="text-align:center;color:var(--tx3)">توقع الشهر القادم: ' + n3(analysis.forecast) + ' JD</div>';
+  if (hasGrowthData) {
+    html += '<div class="presentation-big-number" style="color:' + (analysis.avgGrowth >= 0 ? 'var(--gn)' : 'var(--rd)') + '">' + (analysis.avgGrowth >= 0 ? '+' : '') + analysis.avgGrowth.toFixed(1) + '%</div>';
+    html += '<div style="text-align:center;color:var(--tx3)">توقع الشهر القادم: ' + n3(analysis.forecast) + ' JD</div>';
+  } else {
+    html += '<div class="presentation-big-number" style="color:var(--tx3)">—</div>';
+    html += '<div style="text-align:center;color:var(--tx3)">بيانات غير كافية (يحتاج شهرين)</div>';
+  }
   html += '</div>';
   
   // Card 4: مؤشر الصحة
