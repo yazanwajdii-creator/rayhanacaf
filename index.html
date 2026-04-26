@@ -5203,12 +5203,13 @@ function importJSON(ev){
         ev.target.value=''; return;
       }
       
-      // merge آمن — يحافظ على حقول V25 الجديدة (paid, groq_key, etc)
+      // استيراد البيانات المالية فقط — لا يمس الموظفين أو الموردين أو الهيكل الحالي
+      var isOldVersion = !data.v || data.v < 25;
       if(data.months){
         Object.keys(data.months).forEach(function(k){
           var incoming = data.months[k];
           if(!incoming) return;
-          // أضف حقل paid للرواتب إذا كان ناقصاً (قادم من نسخة قديمة)
+          // توافق مع الإصدارات القديمة — أضف حقل paid للرواتب إذا غاب
           if(incoming.mSal){
             Object.keys(incoming.mSal).forEach(function(eid){
               if(incoming.mSal[eid] && incoming.mSal[eid].paid === undefined){
@@ -5216,14 +5217,24 @@ function importJSON(ev){
               }
             });
           }
+          // للإصدارات القديمة: احتفظ ببيانات الرواتب الحالية للموظفين الموجودين
+          if(isOldVersion && S.months[k] && S.months[k].mSal){
+            if(!incoming.mSal) incoming.mSal = {};
+            Object.keys(S.months[k].mSal).forEach(function(eid){
+              if(!incoming.mSal[eid]) incoming.mSal[eid] = S.months[k].mSal[eid];
+            });
+          }
           S.months[k] = incoming;
         });
       }
-      if(data.monthlyEmps&&data.monthlyEmps.length) S.monthlyEmps=data.monthlyEmps;
-      if(data.dailyEmps&&data.dailyEmps.length) S.dailyEmps=data.dailyEmps;
+      // الموظفون والموردون والهيكل: لا يُستبدلان من ملف قديم
+      if(!isOldVersion){
+        if(data.monthlyEmps&&data.monthlyEmps.length) S.monthlyEmps=data.monthlyEmps;
+        if(data.dailyEmps&&data.dailyEmps.length) S.dailyEmps=data.dailyEmps;
+        if(data.suppliers&&data.suppliers.length) S.suppliers=data.suppliers;
+        if(data.lockedMonths) S.lockedMonths=data.lockedMonths;
+      }
       if(data.activeKey) S.activeKey=data.activeKey;
-      if(data.lockedMonths) S.lockedMonths=data.lockedMonths;
-      if(data.suppliers&&data.suppliers.length) S.suppliers=data.suppliers;
       
       renderAll(); saveAll();
       
@@ -7028,9 +7039,19 @@ function buildAIContext() {
 }
 
 // استدعاء Gemini API (مجاني)
+async function callNetlifyAI(provider, prompt, model) {
+  var res = await fetch('/.netlify/functions/ai', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({provider, prompt, model})
+  });
+  var data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.result;
+}
+
 async function callGroqAPI(question, context) {
   var key = safeLS.getItem('rh_groq_key') || '';
-  if(!key || !key.startsWith('gsk_')) throw new Error('no groq key');
   var ym = S.activeKey.split('-');
   var monthName = MNA[parseInt(ym[1])-1] || MN[parseInt(ym[1])-1] || 'الشهر';
   var prompt = 'أنت مستشار مالي خبير لمقهى ريحانة في الأردن. أجب بالعربية بشكل مختصر ومفيد مع أرقام دقيقة.\n\n' +
@@ -7047,6 +7068,9 @@ async function callGroqAPI(question, context) {
     '• رواتب مستحقة لم تُدفع: ' + n3(context.salariesAccrued||0) + ' JD\n' +
     '• التزامات غير مسددة: ' + (context.unpaidObl||0) + '\n\n' +
     'السؤال: ' + question;
+  // جرّب Netlify proxy أولاً — إذا فشل استخدم المفتاح المحلي
+  try { return await callNetlifyAI('groq', prompt, 'llama-3.1-8b-instant'); } catch(_) {}
+  if(!key || !key.startsWith('gsk_')) throw new Error('no groq key');
   var res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {'Content-Type':'application/json','Authorization':'Bearer '+key},
@@ -7078,6 +7102,12 @@ async function callClaudeAPI(question, context, apiKey) {
     (context.goal > 0 ? '- الهدف الشهري: ' + n3(context.goal) + ' JD\n' : '') +
     '\nسؤال العميل: ' + question;
   
+  var fullPrompt = systemPrompt + '\n\n' + userPrompt;
+
+  // جرّب Netlify proxy أولاً — إذا فشل استخدم المفتاح المحلي
+  try { return await callNetlifyAI('claude', fullPrompt, 'claude-haiku-4-5-20251001'); } catch(_) {}
+
+  if (!apiKey) throw new Error('no claude key');
   var response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -7087,17 +7117,13 @@ async function callClaudeAPI(question, context, apiKey) {
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 800,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }]
+      messages: [{ role: 'user', content: fullPrompt }]
     })
   });
-  
-  if (!response.ok) {
-    throw new Error('API Error: ' + response.status);
-  }
-  
+
+  if (!response.ok) throw new Error('API Error: ' + response.status);
   var data = await response.json();
   return data.content[0].text;
 }
