@@ -2934,11 +2934,14 @@ body.dark .ss-card{background:var(--surf)}
         <div class="cloud-wizard-card" style="border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.04)">
           <div class="cloud-wizard-title" style="color:var(--bl)">📥 استيراد نسخة احتياطية JSON</div>
           <div style="font-size:12px;color:var(--tx3);margin-bottom:10px">إذا كان لديك ملف JSON محفوظ مسبقاً اضغط هنا لاستعادة بياناتك</div>
-          <button class="btn btn-full" onclick="document.getElementById('impFile').click()" style="background:var(--bl);color:#fff;font-size:13px;padding:11px">
+          <label for="impFile" class="btn btn-full" style="background:var(--bl);color:#fff;font-size:13px;padding:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:10px">
             📂 اختر ملف JSON للاستيراد
-          </button>
-          <input type="file" id="impFile" accept=".json" style="display:none" onchange="importJSON(event)">
+          </label>
+          <input type="file" id="impFile" accept="application/json,.json,*/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" onchange="importJSON(event)">
           <div style="font-size:11px;color:var(--tx4);text-align:center;margin-top:7px">يدعم ملفات V22 وV24 وV25</div>
+          <button onclick="importFromText()" style="width:100%;margin-top:8px;padding:9px;border:1.5px dashed var(--br);background:transparent;border-radius:10px;font-size:12px;color:var(--tx3);cursor:pointer;font-family:inherit">
+            📋 لصق نص JSON يدوياً (بديل إذا لم يعمل الملف)
+          </button>
         </div>
         <div class="cloud-wizard-card">
           <div class="cloud-wizard-title">🚀 إعداد Supabase — مرة واحدة فقط</div>
@@ -3037,7 +3040,7 @@ create policy "allow_all" on rh_store
           <div class="cloud-wizard-title">💾 نسخ احتياطية</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <button class="btn btn-p" onclick="exportJSON()">📤 تصدير JSON</button>
-            <button class="btn btn-ghost" onclick="document.getElementById('impFile').click()">📥 استيراد JSON</button>
+            <label for="impFile" class="btn btn-ghost" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px">📥 استيراد JSON</label>
           </div>
           <div class="alert al-w" style="margin-top:10px;font-size:11.5px">
             ⚠️ الاستيراد يستبدل البيانات الحالية — تأكد من رفع نسخة احتياطية أولاً
@@ -5476,6 +5479,58 @@ function importJSON(ev){
   };
   reader.readAsText(file);
   ev.target.value='';
+}
+
+function importFromText(){
+  var old=document.getElementById('pasteImportModal');
+  if(old) old.remove();
+  var modal=document.createElement('div');
+  modal.id='pasteImportModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0';
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--surf);border-radius:16px 16px 0 0;width:100%;max-width:600px;padding:16px;max-height:80vh;display:flex;flex-direction:column;gap:10px';
+  box.innerHTML='<div style="font-weight:700;font-size:15px;color:var(--tx)">📋 لصق نص JSON</div>'
+    +'<div style="font-size:12px;color:var(--tx3)">افتح ملف JSON في أي محرر نصوص، انسخ المحتوى كاملاً، ثم الصقه هنا</div>'
+    +'<textarea id="pasteImportTA" style="flex:1;min-height:200px;padding:10px;border:1.5px solid var(--br);border-radius:10px;font-size:11px;font-family:monospace;background:var(--bg);color:var(--tx);resize:none;direction:ltr" placeholder=\'{"version":"v25","months":{...}}\'></textarea>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="document.getElementById(\'pasteImportModal\').remove()" style="flex:1;padding:12px;border:1px solid var(--br);background:transparent;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--tx)">إلغاء</button>'
+    +'<button onclick="_doPasteImport()" style="flex:2;padding:12px;background:#1A4A28;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✅ استيراد</button>'
+    +'</div>';
+  modal.appendChild(box);
+  modal.onclick=function(e){if(e.target===modal){modal.remove();}};
+  document.body.appendChild(modal);
+  setTimeout(function(){var ta=document.getElementById('pasteImportTA');if(ta)ta.focus();},200);
+}
+
+function _doPasteImport(){
+  var ta=document.getElementById('pasteImportTA');
+  if(!ta||!ta.value.trim()){toast('⚠️ الحقل فارغ');return;}
+  var fakeEv={target:{files:[new Blob([ta.value],{type:'application/json'})],value:''}};
+  fakeEv.target.files[0].name='paste.json';
+  var modal=document.getElementById('pasteImportModal');
+  // استخدم FileReader مباشرة
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=JSON.parse(e.target.result);
+      if(!data.months&&!data.data){toast('❌ ملف غير صالح');return;}
+      if(data.data&&data.data.months) data=data.data;
+      var monthCount=Object.keys(data.months||{}).length;
+      if(!confirm('⚠️ سيتم استبدال البيانات الحالية.\n\nعدد الأشهر: '+monthCount+'\n\nهل أنت متأكد؟')){return;}
+      if(modal) modal.remove();
+      if(data.months) Object.keys(data.months).forEach(function(k){S.months[k]=data.months[k];});
+      if(data.monthlyEmps&&data.monthlyEmps.length) S.monthlyEmps=data.monthlyEmps;
+      if(data.dailyEmps&&data.dailyEmps.length) S.dailyEmps=data.dailyEmps;
+      if(data.suppliers&&data.suppliers.length) S.suppliers=data.suppliers;
+      if(data.lockedMonths) S.lockedMonths=data.lockedMonths;
+      if(data.activeKey) S.activeKey=data.activeKey;
+      renderAll(); saveAll();
+      if(SUPA) supaSync('push').then(function(){toast('✅ تم الاستيراد وحفظ في السحابة ☁️');}).catch(function(){toast('✅ تم الاستيراد — '+monthCount+' شهر');});
+      else toast('✅ تم الاستيراد — '+monthCount+' شهر');
+      log('استيراد JSON لصق — '+monthCount+' شهر');
+    }catch(err){toast('❌ نص JSON غير صالح: '+err.message);}
+  };
+  reader.readAsText(new Blob([ta.value],{type:'application/json'}));
 }
 
 function exportExcel(){
