@@ -5196,7 +5196,10 @@ function exportJSON(){
   var ym=S.activeKey.split('-');
   var fname='rayhana_v25_'+ym[0]+'_'+ym[1]+'.json';
 
-  // محاولة 1: Web Share API مع ملف (أندرويد WebView)
+  // دائماً: اعرض نافذة النسخ أولاً حتى لا يضيع الملف
+  _showCopyModal(json, fname);
+
+  // حاول Share API في الخلفية (أندرويد) — بدون return حتى تبقى النافذة مفتوحة
   if(navigator.share){
     try{
       var shareFile=new File([json],fname,{type:'application/json'});
@@ -5204,13 +5207,12 @@ function exportJSON(){
       try{ canShare=!navigator.canShare||navigator.canShare({files:[shareFile]}); }catch(e){ canShare=true; }
       if(canShare){
         navigator.share({files:[shareFile],title:'نسخة احتياطية ريحانة كافيه'})
-          .then(function(){toast('💾 تم التصدير');log('تصدير JSON — '+S.activeKey);})
-          .catch(function(err){if(err.name!=='AbortError') _exportFallback(json,fname);});
-        return;
+          .then(function(){ toast('✅ تم الإرسال عبر قائمة المشاركة'); })
+          .catch(function(){});
       }
     }catch(e){}
   }
-  _exportFallback(json,fname);
+  log('تصدير JSON — '+S.activeKey);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -5374,42 +5376,68 @@ function _showCopyModal(json,fname){
   if(old) old.remove();
   var modal=document.createElement('div');
   modal.id='jsonExportModal';
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
 
   var box=document.createElement('div');
-  box.style.cssText='background:var(--surf);border-radius:16px;width:100%;max-width:500px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden';
+  box.style.cssText='background:var(--surf);border-radius:16px 16px 0 0;width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden';
 
+  // Header
   var hdr=document.createElement('div');
-  hdr.style.cssText='padding:14px 16px;border-bottom:1px solid var(--br);display:flex;justify-content:space-between;align-items:center;flex-shrink:0';
-  var ttl=document.createElement('div'); ttl.style.fontWeight='700'; ttl.textContent='💾 '+fname;
-  var xBtn=document.createElement('button');
-  xBtn.style.cssText='background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx);padding:0';
-  xBtn.textContent='✕'; xBtn.onclick=function(){modal.remove();};
-  hdr.appendChild(ttl); hdr.appendChild(xBtn);
+  hdr.style.cssText='padding:14px 16px 10px;border-bottom:1px solid var(--br);flex-shrink:0';
+  hdr.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+    +'<div style="font-weight:700;font-size:15px">💾 نسخة احتياطية — '+fname+'</div>'
+    +'<button onclick="document.getElementById(\'jsonExportModal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx);padding:0;line-height:1">✕</button>'
+    +'</div>'
+    +'<div style="background:rgba(26,92,40,.12);border:1px solid rgba(26,92,40,.25);border-radius:8px;padding:9px 12px;font-size:12px;color:#1A4A28;font-weight:600">'
+    +'📌 اضغط <strong>نسخ</strong> ثم الصقه في ملاحظات أو واتساب — أو شاركه مباشرة'
+    +'</div>';
 
-  var bd=document.createElement('div'); bd.style.cssText='padding:12px;flex:1;overflow:auto';
+  // Textarea
+  var bd=document.createElement('div');
+  bd.style.cssText='padding:12px;flex:1;overflow:auto;min-height:0';
   var ta=document.createElement('textarea');
   ta.readOnly=true;
-  ta.style.cssText='width:100%;height:280px;font-family:monospace;font-size:10px;border:1px solid var(--br);border-radius:8px;padding:8px;background:var(--bg);color:var(--tx);resize:none;box-sizing:border-box;direction:ltr';
-  ta.value=json; bd.appendChild(ta);
+  ta.style.cssText='width:100%;height:200px;font-family:monospace;font-size:10px;border:1px solid var(--br);border-radius:8px;padding:8px;background:var(--bg);color:var(--tx);resize:none;box-sizing:border-box;direction:ltr';
+  ta.value=json;
+  bd.appendChild(ta);
 
-  var ft=document.createElement('div'); ft.style.cssText='padding:12px;border-top:1px solid var(--br);flex-shrink:0';
+  // Footer buttons
+  var ft=document.createElement('div');
+  ft.style.cssText='padding:12px;border-top:1px solid var(--br);flex-shrink:0;display:flex;flex-direction:column;gap:8px';
+
   var cpBtn=document.createElement('button');
-  cpBtn.className='btn btn-p btn-full'; cpBtn.textContent='📋 نسخ النص كاملاً';
+  cpBtn.style.cssText='width:100%;padding:13px;background:#1A4A28;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit';
+  cpBtn.textContent='📋 نسخ النص كاملاً';
   cpBtn.onclick=function(){
     ta.select(); ta.setSelectionRange(0,99999);
     if(navigator.clipboard){
-      navigator.clipboard.writeText(json).then(function(){toast('📋 تم النسخ — احفظه في ملف .json');});
-    } else { document.execCommand('copy'); toast('📋 تم النسخ'); }
+      navigator.clipboard.writeText(json).then(function(){
+        cpBtn.textContent='✅ تم النسخ!';
+        cpBtn.style.background='#059669';
+        setTimeout(function(){cpBtn.textContent='📋 نسخ النص كاملاً';cpBtn.style.background='#1A4A28';},2500);
+      }).catch(function(){ document.execCommand('copy'); cpBtn.textContent='✅ تم النسخ!'; });
+    } else { document.execCommand('copy'); cpBtn.textContent='✅ تم النسخ!'; }
   };
-  ft.appendChild(cpBtn);
 
+  var shareBtn=document.createElement('button');
+  shareBtn.style.cssText='width:100%;padding:11px;background:transparent;color:var(--tx2);border:1.5px solid var(--br);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit';
+  shareBtn.textContent='📤 مشاركة عبر واتساب / تيليغرام';
+  shareBtn.onclick=function(){
+    if(navigator.share){
+      try{
+        var f=new File([json],fname,{type:'application/json'});
+        navigator.share({files:[f],title:'نسخة احتياطية ريحانة كافيه'}).catch(function(){});
+      }catch(e){ navigator.share({text:json,title:fname}).catch(function(){}); }
+    } else { toast('المشاركة غير متوفرة في هذا المتصفح'); }
+  };
+
+  ft.appendChild(cpBtn);
+  ft.appendChild(shareBtn);
   box.appendChild(hdr); box.appendChild(bd); box.appendChild(ft);
   modal.appendChild(box);
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
   document.body.appendChild(modal);
-  setTimeout(function(){ta.focus();ta.select();},200);
-  toast('💾 انسخ النص واحفظه في ملف .json');
-  log('تصدير JSON — '+S.activeKey);
+  setTimeout(function(){ta.focus();ta.select();},300);
 }
 function importJSON(ev){
   var file=ev.target.files[0]; if(!file)return;
