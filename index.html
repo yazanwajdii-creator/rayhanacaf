@@ -3774,6 +3774,11 @@ function cmo(id){$(id).classList.remove("open");document.body.style.overflow="";
 function moOut(e,id){if(e.target===$(id))cmo(id);}
 ["click","touchstart","keydown","scroll"].forEach(e=>document.addEventListener(e,resetInact,{passive:true}));
 
+// حفظ عند الخروج — مسجّل منذ بداية تحميل الصفحة (لا ينتظر تسجيل الدخول)
+window.addEventListener('pagehide', function(){ try{ if(CR) saveAll(); }catch(e){} });
+window.addEventListener('beforeunload', function(){ try{ if(CR) saveAll(); }catch(e){} });
+document.addEventListener('visibilitychange', function(){ try{ if(document.hidden && CR) saveAll(); }catch(e){} });
+
 function resetInact(){
   clearTimeout(iT);clearTimeout(wT);
   const b=$("lkbanner");if(b)b.style.display="none";
@@ -4898,14 +4903,11 @@ var saveCount = 0;
 // بدء نظام الحفظ التلقائي
 function startAutoSave() {
   if (autoSaveInterval) clearInterval(autoSaveInterval);
-  
+
+  // حفظ كل 10 ثوانٍ بدون شرط — ضمان عدم فقدان البيانات
   autoSaveInterval = setInterval(function() {
-    if (CR && pendingSave) {
-      performAutoSave();
-    }
-  }, 30000); // كل 30 ثانية
-  
-  console.log('🔄 Auto-save system started');
+    if (CR) { try { saveAll(); } catch(e) {} }
+  }, 10000);
 }
 
 // تنفيذ الحفظ التلقائي
@@ -10905,7 +10907,7 @@ var _origSaveAll = saveAll;
 saveAll = function(){
   _origSaveAll();
   if(SUPA){
-    // debounce 20s — انتظر حتى يهدأ المستخدم تماماً قبل الرفع
+    // debounce 10s — auto-save كل 10s يضمن localStorage، هذا للسحابة فقط
     if(window._supaDebounce) clearTimeout(window._supaDebounce);
     window._supaDebounce = setTimeout(function(){
       // تأجيل إطار واحد حتى تنتهي الرسوم وتستجيب الواجهة
@@ -10918,7 +10920,7 @@ saveAll = function(){
           });
         }, 0);
       });
-    }, 20000);
+    }, 10000);
   }
 };
 
