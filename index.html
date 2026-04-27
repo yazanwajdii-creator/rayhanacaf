@@ -1839,6 +1839,10 @@ body.dark .ss-card{background:var(--surf)}
       <span class="export-btn-icon">💾</span>
       <span>نسخ احتياطي JSON</span>
     </button>
+    <button class="export-btn" onclick="exportGoogleSheets()">
+      <span class="export-btn-icon">🟢</span>
+      <span>Google Sheets</span>
+    </button>
     <button class="export-btn" onclick="shareReport()">
       <span class="export-btn-icon">📤</span>
       <span>مشاركة التقرير</span>
@@ -2897,6 +2901,9 @@ body.dark .ss-card{background:var(--surf)}
           </button>
           <button class="rpt-export-btn rpt-exp-json" onclick="exportJSON()">
             <span>💾</span><span>احتياطي</span>
+          </button>
+          <button class="rpt-export-btn" onclick="exportGoogleSheets()">
+            <span>🟢</span><span>Sheets</span>
           </button>
           <button class="rpt-export-btn" onclick="window.print()">
             <span>🖨️</span><span>طباعة</span>
@@ -5177,6 +5184,144 @@ function exportJSON(){
     }catch(e){}
   }
   _exportFallback(json,fname);
+}
+
+// ═══════════════════════════════════════════════════════
+// تصدير Google Sheets (CSV متوافق مع العربية)
+// ═══════════════════════════════════════════════════════
+function exportGoogleSheets(){
+  var d = G();
+  var t = totals();
+  var ym = S.activeKey.split('-');
+  var monthName = (typeof MNA !== 'undefined' ? MNA[parseInt(ym[1])-1] : ym[1]) + ' ' + ym[0];
+  var fname = 'rayhana_' + ym[0] + '_' + ym[1] + '.csv';
+  var rows = [];
+
+  function q(v){ // تحويل قيمة لخلية CSV آمنة
+    var s = String(v === null || v === undefined ? '' : v);
+    if(s.indexOf(',') > -1 || s.indexOf('"') > -1 || s.indexOf('\n') > -1){
+      return '"' + s.replace(/"/g,'""') + '"';
+    }
+    return s;
+  }
+  function row(){ return Array.prototype.slice.call(arguments).map(q).join(','); }
+  function blank(){ rows.push(''); }
+  function header(t){ rows.push(row(t)); }
+
+  // ── الغلاف ─────────────────────────────────────────
+  rows.push(row('ريحانة كافيه — تقرير ' + monthName));
+  rows.push(row('تاريخ التصدير', new Date().toLocaleString('ar-JO')));
+  blank();
+
+  // ── ملخص مالي ──────────────────────────────────────
+  header('=== الملخص المالي ===');
+  rows.push(row('البيان','المبلغ (JD)'));
+  rows.push(row('إجمالي الإيرادات', n3(t.rev)));
+  rows.push(row('إجمالي المصروفات', n3(t.totalExp)));
+  rows.push(row('صافي الربح', n3(t.profit)));
+  rows.push(row('هامش الربح %', t.margin.toFixed(2) + '%'));
+  rows.push(row('إيرادات نقد', n3(t.cash)));
+  rows.push(row('إيرادات فيزا', n3(t.visa)));
+  rows.push(row('تكلفة البضاعة (COGS)', n3(t.bycat ? t.bycat.COGS : 0)));
+  rows.push(row('مصاريف التشغيل', n3(t.bycat ? t.bycat.OPS : 0)));
+  rows.push(row('مجموع الرواتب الشهرية', n3(t.mSalG)));
+  rows.push(row('مجموع الأجور اليومية', n3(t.dwTotal)));
+  rows.push(row('الالتزامات المسددة', n3(t.oblPaid)));
+  rows.push(row('الالتزامات غير المسددة', n3(t.oblTotal - t.oblPaid)));
+  blank();
+
+  // ── المبيعات اليومية ───────────────────────────────
+  header('=== المبيعات اليومية ===');
+  rows.push(row('اليوم','نقد','فيزا','دفعات أخرى','الإجمالي','الملاحظات'));
+  d.sales.forEach(function(s){
+    var total = (s.cash||0)+(s.visa||0)+(s.pmts||0);
+    rows.push(row(s.day, n3(s.cash||0), n3(s.visa||0), n3(s.pmts||0), n3(total), s.notes||''));
+  });
+  blank();
+
+  // ── المشتريات ──────────────────────────────────────
+  header('=== المشتريات ===');
+  rows.push(row('التاريخ','المورد','التصنيف','الوصف','المبلغ (JD)'));
+  (d.purchases||[]).forEach(function(p){
+    rows.push(row(p.date||'', p.sName||'', p.cat||'', p.desc||'', n3(p.amt||0)));
+  });
+  if(!(d.purchases||[]).length) rows.push(row('لا توجد مشتريات'));
+  blank();
+
+  // ── الالتزامات ─────────────────────────────────────
+  header('=== الالتزامات الشهرية ===');
+  rows.push(row('البند','المبلغ (JD)','الحالة','تاريخ الاستحقاق'));
+  (d.obligations||[]).forEach(function(o){
+    rows.push(row(o.name||'', n3(o.amt||0), o.paid ? 'مسدد ✓' : 'غير مسدد', o.due||''));
+  });
+  blank();
+
+  // ── الرواتب الشهرية ────────────────────────────────
+  if(S.monthlyEmps && S.monthlyEmps.length){
+    header('=== الرواتب الشهرية ===');
+    rows.push(row('الموظف','الأساسي','البدلات','الخصومات','الصافي','مسدد؟'));
+    S.monthlyEmps.forEach(function(e){
+      var sal = (d.mSal||{})[e.id] || {};
+      var net = (sal.base||0)+(sal.allow||0)-(sal.ded||0);
+      rows.push(row(e.name, n3(sal.base||0), n3(sal.allow||0), n3(sal.ded||0), n3(net), sal.paid ? 'نعم ✓' : 'لا'));
+    });
+    blank();
+  }
+
+  // ── الأجور اليومية ─────────────────────────────────
+  if(S.dailyEmps && S.dailyEmps.length){
+    header('=== الأجور اليومية ===');
+    rows.push(row('الموظف','الأجر اليومي','أيام الحضور','الإجمالي'));
+    S.dailyEmps.forEach(function(e){
+      var w = (d.dWages||{})[e.id] || {rate:0,att:[]};
+      var days = (w.att||[]).length;
+      rows.push(row(e.name, n3(w.rate||0), days, n3((w.rate||0)*days)));
+    });
+    blank();
+  }
+
+  // ── السلف ──────────────────────────────────────────
+  if((d.advances||[]).length){
+    header('=== السلف والمدفوعات ===');
+    rows.push(row('التاريخ','الموظف','المبلغ','الحالة','ملاحظة'));
+    d.advances.forEach(function(a){
+      rows.push(row(a.date||'', a.empName||'', n3(a.amt||0), a.status||'', a.note||''));
+    });
+    blank();
+  }
+
+  // BOM لدعم العربية في Excel/Sheets + تجميع
+  var csv = '﻿' + rows.join('\r\n');
+
+  // مشاركة عبر Android أو تنزيل
+  if(navigator.share){
+    try{
+      var f = new File([csv], fname, {type:'text/csv;charset=utf-8'});
+      if(navigator.canShare && navigator.canShare({files:[f]})){
+        navigator.share({files:[f], title:'تقرير ريحانة كافيه — ' + monthName})
+          .then(function(){ toast('🟢 تم تصدير Google Sheets'); })
+          .catch(function(err){ if(err.name!=='AbortError') _csvFallback(csv,fname); });
+        return;
+      }
+    }catch(e){}
+  }
+  _csvFallback(csv, fname);
+}
+
+function _csvFallback(csv, fname){
+  try{
+    var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+    toast('🟢 تم تصدير CSV لـ Google Sheets');
+  }catch(e){
+    _showCopyModal(csv, fname);
+  }
 }
 
 function _exportFallback(json,fname){
