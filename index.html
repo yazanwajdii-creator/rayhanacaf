@@ -9788,9 +9788,8 @@ if (originalGetEnhancedLocal) {
 window.initV22Features = function() {
   console.log('🚀 V24 PRO Features Initialized');
   
-  // ربط الحفظ الذكي بجميع inputs
+  // ربط الحفظ الذكي بجميع inputs — blur فقط (change يعيد ضبط debounce المزامنة)
   document.querySelectorAll('input[type="number"], input[type="text"]').forEach(function(input) {
-    input.addEventListener('change', function(){saveAll();});
     input.addEventListener('blur', function() {
       // التحقق من القيم السالبة
       if (this.type === 'number' && parseFloat(this.value) < 0) {
@@ -9799,6 +9798,7 @@ window.initV22Features = function() {
         this.value = 0;
         setTimeout(function() { this.classList.remove('input-error'); }.bind(this), 2000);
       }
+      saveAll();
     });
   });
   
@@ -9949,10 +9949,10 @@ window.addEventListener('load', function() {
     try { updateDash(); } catch(e) {}
   }, 1000);
   
-  // تحديث دوري كل 5 ثواني
+  // تحديث دوري كل دقيقتين (كان 5 ثوانٍ — ثقيل جداً)
   setInterval(function() {
     try { updateDash(); } catch(e) {}
-  }, 5000);
+  }, 120000);
 });
 
 console.log('📦 ريحانة V24-3 PRO loaded');
@@ -10789,7 +10789,7 @@ var _origSaveAll = saveAll;
 saveAll = function(){
   _origSaveAll();
   if(SUPA){
-    // debounce 3s — خاصية المزامنة لا تُشغَّل حتى يهدأ المستخدم
+    // debounce 20s — انتظر حتى يهدأ المستخدم تماماً قبل الرفع
     if(window._supaDebounce) clearTimeout(window._supaDebounce);
     window._supaDebounce = setTimeout(function(){
       // تأجيل إطار واحد حتى تنتهي الرسوم وتستجيب الواجهة
@@ -10802,7 +10802,7 @@ saveAll = function(){
           });
         }, 0);
       });
-    }, 3000);
+    }, 20000);
   }
 };
 
