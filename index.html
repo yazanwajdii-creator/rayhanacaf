@@ -3697,11 +3697,7 @@ function doLogin(role) {
     try {
       supaInit();
       supaUpdateUI(!!SUPA);
-      if(SUPA){
-        supaSync('pull').then(function(){
-          toast('☁️ تم تحديث البيانات من السحابة');
-        }).catch(function(e){ console.warn('Supabase pull:', e); });
-      }
+      if(SUPA){ _supaStartupPull(0); }
     } catch(e) {}
     }, 500);
   }, 100);
@@ -10533,6 +10529,51 @@ var SUPA_KEY_KEY = 'rh_supa_key';
 var SUPA_TABLE   = 'rh_store';
 var SUPA_ROW     = 'rayhana_cafe_v25';
 
+/* ── استعادة البيانات عند بدء التشغيل (مع شاشة تحميل وإعادة محاولة) ── */
+function _supaStartupPull(attempt){
+  // شاشة تحميل — تمنع المستخدم من رؤية بيانات فارغة
+  var OL_ID = '_supaStartOL';
+  if(attempt === 0){
+    var old = document.getElementById(OL_ID);
+    if(old) old.remove();
+    var ol = document.createElement('div');
+    ol.id = OL_ID;
+    ol.style.cssText = 'position:fixed;inset:0;background:rgba(237,234,216,.92);z-index:8500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px';
+    ol.innerHTML = '<div style="font-size:40px">☁️</div>'
+      + '<div style="font-weight:700;font-size:16px;color:#1A4A28">جاري استعادة البيانات...</div>'
+      + '<div style="font-size:12px;color:#6B7280">يتصل بـ Supabase</div>';
+    document.body.appendChild(ol);
+  }
+  supaSync('pull').then(function(){
+    var ol = document.getElementById(OL_ID);
+    if(ol) ol.remove();
+    toast('☁️ تم استعادة البيانات من السحابة');
+  }).catch(function(e){
+    if(attempt < 2){
+      // إعادة المحاولة تلقائياً: بعد 3ث ثم 6ث
+      var delay = (attempt + 1) * 3000;
+      var ol = document.getElementById(OL_ID);
+      if(ol){
+        var sub = ol.querySelector('div:last-child');
+        if(sub) sub.textContent = 'إعادة المحاولة خلال ' + (delay/1000) + ' ثوانٍ... (' + (attempt+1) + '/3)';
+      }
+      setTimeout(function(){ _supaStartupPull(attempt + 1); }, delay);
+    } else {
+      // فشل بعد 3 محاولات — أزل الشاشة واعرض خطأ مع زر إعادة
+      var ol = document.getElementById(OL_ID);
+      if(ol){
+        ol.innerHTML = '<div style="font-size:36px">⚠️</div>'
+          + '<div style="font-weight:700;font-size:15px;color:#DC2626">تعذّر استعادة البيانات</div>'
+          + '<div style="font-size:12px;color:#6B7280;text-align:center;padding:0 24px">تحقق من الإنترنت ثم اضغط إعادة المحاولة</div>'
+          + '<div style="display:flex;gap:10px;margin-top:4px">'
+          + '<button onclick="_supaStartupPull(0)" style="background:#1A4A28;color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔄 إعادة المحاولة</button>'
+          + '<button onclick="document.getElementById(\'' + OL_ID + '\').remove()" style="background:transparent;color:#6B7280;border:1px solid #D1D5DB;padding:10px 20px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">تجاهل</button>'
+          + '</div>';
+      }
+    }
+  });
+}
+
 /* ── إنشاء الاتصال ── */
 function supaInit(){
   var url = safeLS.getItem(SUPA_URL_KEY);
@@ -10642,6 +10683,11 @@ async function supaSync(direction){
       throw new Error(res.error.message);
     }
     var sv = res.data.value;
+    // Supabase يعيد value كـ object (jsonb) أو string (text) — نحوّل إذا لزم
+    if(typeof sv === 'string'){
+      try{ sv = JSON.parse(sv); }catch(e){ throw new Error('بيانات السحابة تالفة — تعذّر التحليل'); }
+    }
+    if(!sv || typeof sv !== 'object'){ throw new Error('بيانات السحابة فارغة أو غير صالحة'); }
     // Conflict info — note if cloud data is from a different device (non-blocking)
     var _localDevice = navigator.userAgent.slice(0,60);
     var _localLastPush = safeLS.getItem('rh_last_push_at');
