@@ -10,11 +10,11 @@
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <title>ريحانة V24-3 PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="supabase.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   /* ═══════════════════════════════════════════════════════════════════════════
@@ -68,9 +68,9 @@ html{font-size:13px;scroll-behavior:smooth}
 body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.55;overflow-x:hidden}
 
 /* PIN SCREEN — ألوان هوية ريحانة كافيه */
-#pinScreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#EDEAD8 0%,#E6E2CC 50%,#EBE8D5 100%);display:flex;align-items:center;justify-content:center;padding:20px}
-#pinScreen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 30%,rgba(26,92,40,.06) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(193,127,36,.08) 0%,transparent 60%);pointer-events:none}
-.pin-wrap{width:100%;max-width:360px;text-align:center;position:relative}
+#pinScreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#EDEAD8 0%,#E6E2CC 50%,#EBE8D5 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:30px 20px 40px}
+#pinScreen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 30%,rgba(26,92,40,.06) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(193,127,36,.08) 0%,transparent 60%);pointer-events:none;z-index:-1}
+.pin-wrap{width:100%;max-width:360px;text-align:center;position:relative;margin:auto}
 .pin-logo{display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
 .pin-ver{font-size:10px;color:rgba(26,61,30,.35);letter-spacing:2px;text-transform:uppercase;margin-bottom:22px;font-weight:500}
 /* Login screen password input */
@@ -1758,7 +1758,7 @@ body.dark .ss-card{background:var(--surf)}
 <div id="pinScreen">
   <div class="pin-wrap">
     <div class="pin-logo">
-      <img src="logo.jpg" alt="ريحانة كافيه" style="width:260px;max-width:85vw;height:auto;display:block;margin:0 auto;filter:drop-shadow(0 6px 24px rgba(15,45,24,.22))">
+      <img src="logo.jpg" alt="ريحانة كافيه" style="width:auto;max-width:220px;max-height:160px;object-fit:contain;display:block;margin:0 auto;filter:drop-shadow(0 6px 24px rgba(15,45,24,.22))">
     </div>
     <div class="pin-ver">نظام إدارة المقهى</div>
     <div style="margin-bottom:8px">
@@ -3510,7 +3510,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v25-2';
+      const CACHE_NAME = 'rayhana-v25-3';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -3724,7 +3724,9 @@ function doLogin(role) {
     try {
       supaInit();
       supaUpdateUI(!!SUPA);
-      if(SUPA){ _supaStartupPull(0); }
+      // فقط اسحب إذا كانت المزامنة التلقائية مفعّلة سابقاً
+      var _autoWasOn = _kGet('rh_supa_auto') === '1';
+      if(SUPA && _autoWasOn){ SUPA_AUTO=true; _supaStartupPull(0); }
     } catch(e) {}
     }, 500);
   }, 100);
@@ -5191,11 +5193,13 @@ function exportJSON(){
   var ym=S.activeKey.split('-');
   var fname='rayhana_v25_'+ym[0]+'_'+ym[1]+'.json';
 
-  // Android WebView: استخدم Web Share API (يفتح قائمة المشاركة الأصلية)
+  // محاولة 1: Web Share API مع ملف (أندرويد WebView)
   if(navigator.share){
     try{
       var shareFile=new File([json],fname,{type:'application/json'});
-      if(navigator.canShare && navigator.canShare({files:[shareFile]})){
+      var canShare=false;
+      try{ canShare=!navigator.canShare||navigator.canShare({files:[shareFile]}); }catch(e){ canShare=true; }
+      if(canShare){
         navigator.share({files:[shareFile],title:'نسخة احتياطية ريحانة كافيه'})
           .then(function(){toast('💾 تم التصدير');log('تصدير JSON — '+S.activeKey);})
           .catch(function(err){if(err.name!=='AbortError') _exportFallback(json,fname);});
