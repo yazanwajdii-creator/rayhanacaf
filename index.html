@@ -3286,6 +3286,26 @@ var safeLS = (function() {
   }
 }());
 
+// ── مخزن مفاتيح مزدوج: AndroidStorage + localStorage ──────────────────────
+// يُستخدم لبيانات Supabase والإعدادات الحساسة التي يجب ألا تُفقد عند إغلاق التطبيق
+function _kSet(key, value) {
+  safeLS.setItem(key, value);
+  if(window.AndroidStorage){ try{ window.AndroidStorage.saveKey(key, value); }catch(e){} }
+}
+function _kGet(key) {
+  if(window.AndroidStorage){
+    try{
+      var v = window.AndroidStorage.loadKey(key);
+      if(v !== null && v !== undefined && v !== 'null') return v;
+    }catch(e){}
+  }
+  return safeLS.getItem(key);
+}
+function _kRemove(key) {
+  safeLS.removeItem(key);
+  if(window.AndroidStorage){ try{ window.AndroidStorage.removeKey(key); }catch(e){} }
+}
+
 // ═══════════════════════════════════════════
 // QUICK ENTRY — Single Day Revenue
 // ═══════════════════════════════════════════
@@ -10727,13 +10747,12 @@ function _supaStartupPull(attempt){
 
 /* ── إنشاء الاتصال ── */
 function supaInit(){
-  var url = safeLS.getItem(SUPA_URL_KEY);
-  var key = safeLS.getItem(SUPA_KEY_KEY);
+  var url = _kGet(SUPA_URL_KEY);
+  var key = _kGet(SUPA_KEY_KEY);
   if(!url || !key) return;
   try{
     SUPA = supabase.createClient(url, key);
     supaUpdateUI(true);
-    // رفع تلقائي عند كل حفظ
   } catch(e){
     console.warn('Supabase init error:', e);
     SUPA = null;
@@ -10755,25 +10774,22 @@ function supaConnectAndTest(){
     if(errEl) errEl.textContent='⚠️ أدخل Anon Key صحيح';
     return;
   }
-  // حفظ مبدئي
-  safeLS.setItem(SUPA_URL_KEY,url);
-  safeLS.setItem(SUPA_KEY_KEY,key);
+  _kSet(SUPA_URL_KEY, url);
+  _kSet(SUPA_KEY_KEY, key);
   supaInit();
   if(!SUPA){
     if(errEl) errEl.textContent='❌ فشل إنشاء الاتصال — تحقق من البيانات';
-    safeLS.removeItem(SUPA_URL_KEY);
-    safeLS.removeItem(SUPA_KEY_KEY);
+    _kRemove(SUPA_URL_KEY);
+    _kRemove(SUPA_KEY_KEY);
     return;
   }
-  // اختبار حقيقي بالرفع
   toast('⏳ جاري الاختبار...');
   supaSync('push').then(function(){
     toast('✅ تم الربط بنجاح! بياناتك في السحابة ☁️');
     log('تفعيل Supabase');
     supaUpdateUI(true);
-    // تفعيل مزامنة تلقائية
     SUPA_AUTO=true;
-    safeLS.setItem('rh_supa_auto','1');
+    _kSet('rh_supa_auto','1');
     if(SUPA_TIMER) clearInterval(SUPA_TIMER);
     SUPA_TIMER=setInterval(function(){
       if(SUPA) requestAnimationFrame(function(){ setTimeout(function(){ supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError); }, 0); });
@@ -10781,8 +10797,8 @@ function supaConnectAndTest(){
   }).catch(function(e){
     if(errEl) errEl.textContent='❌ '+e.message+' — تأكد من تنفيذ SQL في الخطوة ٣';
     SUPA=null;
-    safeLS.removeItem(SUPA_URL_KEY);
-    safeLS.removeItem(SUPA_KEY_KEY);
+    _kRemove(SUPA_URL_KEY);
+    _kRemove(SUPA_KEY_KEY);
     supaUpdateUI(false);
   });
 }
@@ -10813,8 +10829,8 @@ async function supaSync(direction){
       .upsert({key: SUPA_ROW, value: payload, updated_at: new Date().toISOString()});
     if(res.error) throw new Error(res.error.message);
     var now = new Date().toLocaleTimeString('ar');
-    safeLS.setItem('rh_supa_last', now);
-    safeLS.setItem('rh_last_push_at', payload.savedAt);
+    _kSet('rh_supa_last', now);
+    _kSet('rh_last_push_at', payload.savedAt);
     supaSetStatus('ok', '✅ محفوظ في السحابة · '+now);
     T('supaLastSync', 'آخر مزامنة: '+now);
     setTimeout(function(){supaSetStatus('ok','✅ متصل بـ Supabase');},3000);
@@ -10841,7 +10857,7 @@ async function supaSync(direction){
     if(!sv || typeof sv !== 'object'){ throw new Error('بيانات السحابة فارغة أو غير صالحة'); }
     // Conflict info — note if cloud data is from a different device (non-blocking)
     var _localDevice = navigator.userAgent.slice(0,60);
-    var _localLastPush = safeLS.getItem('rh_last_push_at');
+    var _localLastPush = _kGet('rh_last_push_at');
     if(sv.device && sv.device !== _localDevice && _localLastPush && sv.savedAt){
       var _localT = new Date(_localLastPush).getTime();
       var _remoteT = new Date(sv.savedAt).getTime();
@@ -10878,7 +10894,7 @@ async function supaSync(direction){
 /* ── مزامنة تلقائية ── */
 function toggleSupaAuto(){
   SUPA_AUTO = !SUPA_AUTO;
-  safeLS.setItem('rh_supa_auto', SUPA_AUTO?'1':'0');
+  _kSet('rh_supa_auto', SUPA_AUTO?'1':'0');
   var btn = document.getElementById('supaAutoBtn');
   if(SUPA_AUTO){
     if(btn) btn.textContent='إيقاف';
@@ -10900,9 +10916,9 @@ function supaDisconnect(){
   SUPA=null;
   SUPA_AUTO=false;
   if(SUPA_TIMER){clearInterval(SUPA_TIMER); SUPA_TIMER=null;}
-  safeLS.removeItem(SUPA_URL_KEY);
-  safeLS.removeItem(SUPA_KEY_KEY);
-  safeLS.removeItem('rh_supa_auto');
+  _kRemove(SUPA_URL_KEY);
+  _kRemove(SUPA_KEY_KEY);
+  _kRemove('rh_supa_auto');
   supaUpdateUI(false);
   toast('⛔ تم قطع الاتصال');
   log('قطع اتصال Supabase');
@@ -10930,7 +10946,7 @@ function supaUpdateUI(connected){
   var whyBox=document.getElementById('cloudWhyBox');
   var statusTitle=document.getElementById('cloudStatusTitle');
   var statusSub=document.getElementById('cloudStatusSub');
-  var last=safeLS.getItem('rh_supa_last');
+  var last=_kGet('rh_supa_last');
 
   if(connected&&SUPA){
     if(dot){dot.style.background='var(--gn)';dot.classList.add('on');}
@@ -10945,7 +10961,7 @@ function supaUpdateUI(connected){
     var cloudTab=document.getElementById('cloudTab');
     if(cloudTab) cloudTab.textContent='☁️✅ السحابة';
     // auto sync
-    var autoOn=safeLS.getItem('rh_supa_auto')==='1';
+    var autoOn=_kGet('rh_supa_auto')==='1';
     var autoBtn=document.getElementById('supaAutoBtn');
     if(autoBtn) autoBtn.textContent=autoOn?'إيقاف':'تشغيل';
     T('supaLastSync',last?'آخر مزامنة: '+last:'لم تتم مزامنة بعد');
