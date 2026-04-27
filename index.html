@@ -10790,10 +10790,8 @@ function supaConnectAndTest(){
     supaUpdateUI(true);
     SUPA_AUTO=true;
     _kSet('rh_supa_auto','1');
-    if(SUPA_TIMER) clearInterval(SUPA_TIMER);
-    SUPA_TIMER=setInterval(function(){
-      if(SUPA) requestAnimationFrame(function(){ setTimeout(function(){ supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError); }, 0); });
-    },5*60*1000);
+    // تحديث بصمة البيانات بعد الرفع الأول
+    _supaLastPushedSig = _supaGetDataSig ? _supaGetDataSig() : null;
   }).catch(function(e){
     if(errEl) errEl.textContent='❌ '+e.message+' — تأكد من تنفيذ SQL في الخطوة ٣';
     SUPA=null;
@@ -11067,32 +11065,41 @@ function supaHandleSyncError(e) {
   }
 }
 
-/* ── Hook: رفع تلقائي بعد كل حفظ ── */
-var _origSaveAll = saveAll;
-saveAll = function(){
-  _origSaveAll();
-  if(SUPA){
-    // debounce 10s — auto-save كل 10s يضمن localStorage، هذا للسحابة فقط
-    if(window._supaDebounce) clearTimeout(window._supaDebounce);
-    window._supaDebounce = setTimeout(function(){
-      // تأجيل إطار واحد حتى تنتهي الرسوم وتستجيب الواجهة
-      requestAnimationFrame(function(){
-        setTimeout(function(){
-          supaSync('push').then(function(){
-            _supaRetryCount = 0;
-          }).catch(function(e){
-            supaHandleSyncError(e);
-          });
-        }, 0);
-      });
-    }, 10000);
-  }
-};
+/* ── Supabase push — interval مستقل عن saveAll ── */
+// المشكلة القديمة: debounce يُعاد ضبطه مع كل auto-save → push لا يُرسَل أبداً
+// الحل: interval منفصل يتحقق من تغيُّر البيانات كل 90 ثانية
+var _supaLastPushedSig = null;
+
+function _supaGetDataSig() {
+  // بصمة البيانات: savedAt من آخر saveAll
+  try {
+    var raw = (window.AndroidStorage ? window.AndroidStorage.load() : null)
+              || safeLS.getItem('rh_v6');
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    return obj.savedAt || raw.length;
+  } catch(e) { return null; }
+}
+
+function _supaPushIfChanged() {
+  if (!SUPA) return;
+  var sig = _supaGetDataSig();
+  if (!sig || sig === _supaLastPushedSig) return; // لا تغيير
+  supaSync('push').then(function(){
+    _supaLastPushedSig = sig;
+    _supaRetryCount = 0;
+  }).catch(supaHandleSyncError);
+}
+
+// رفع كل 90 ثانية إذا تغيّرت البيانات
+setInterval(_supaPushIfChanged, 90000);
+
+// رفع فوري عند إخفاء التطبيق (Home/مهام)
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden && SUPA) setTimeout(_supaPushIfChanged, 800);
+});
 
 /* ── Supabase: تهيئة عند تحميل الصفحة ── */
-// لا override — يُطلق مباشرة من doLogin بعد النجاح
-
-// تهيئة فورية إذا كان الـ client موجود
 if(typeof supabase !== 'undefined'){
   setTimeout(supaInit, 500);
 }
