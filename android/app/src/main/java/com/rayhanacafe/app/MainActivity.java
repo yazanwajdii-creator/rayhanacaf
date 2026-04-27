@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
@@ -15,6 +16,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
+import android.webkit.JavascriptInterface;
 import android.webkit.JsPromptResult;
 import android.webkit.JsResult;
 import android.webkit.PermissionRequest;
@@ -27,12 +29,94 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+
 public class MainActivity extends Activity {
 
     private WebView webView;
     private View splashView;
     private ValueCallback<Uri[]> filePathCallback;
     private static final int FILE_CHOOSER_REQUEST = 1;
+
+    // ── تخزين موثوق مباشر على القرص — لا يُحذف إلا عند مسح بيانات التطبيق ──
+    public class RhStorage {
+        private final Context ctx;
+        private static final String STORE_FILE = "rh_store.json";
+        private static final String KEY_FILE   = "rh_keys.json";
+
+        RhStorage(Context c) { ctx = c; }
+
+        @JavascriptInterface
+        public void save(String data) {
+            writeFile(STORE_FILE, data);
+        }
+
+        @JavascriptInterface
+        public String load() {
+            return readFile(STORE_FILE);
+        }
+
+        @JavascriptInterface
+        public void saveKey(String key, String value) {
+            // حفظ مفتاح/قيمة منفصلة (بيانات Supabase، كلمة المرور، إلخ)
+            try {
+                String existing = readFile(KEY_FILE);
+                org.json.JSONObject obj = existing != null
+                    ? new org.json.JSONObject(existing)
+                    : new org.json.JSONObject();
+                obj.put(key, value);
+                writeFile(KEY_FILE, obj.toString());
+            } catch (Exception e) { /* ignore */ }
+        }
+
+        @JavascriptInterface
+        public String loadKey(String key) {
+            try {
+                String raw = readFile(KEY_FILE);
+                if (raw == null) return null;
+                org.json.JSONObject obj = new org.json.JSONObject(raw);
+                return obj.has(key) ? obj.getString(key) : null;
+            } catch (Exception e) { return null; }
+        }
+
+        @JavascriptInterface
+        public void removeKey(String key) {
+            try {
+                String raw = readFile(KEY_FILE);
+                if (raw == null) return;
+                org.json.JSONObject obj = new org.json.JSONObject(raw);
+                obj.remove(key);
+                writeFile(KEY_FILE, obj.toString());
+            } catch (Exception e) { /* ignore */ }
+        }
+
+        private void writeFile(String name, String content) {
+            try {
+                File f = new File(ctx.getFilesDir(), name);
+                FileWriter fw = new FileWriter(f, false);
+                fw.write(content);
+                fw.flush();
+                fw.close();
+            } catch (Exception e) { /* ignore */ }
+        }
+
+        private String readFile(String name) {
+            try {
+                File f = new File(ctx.getFilesDir(), name);
+                if (!f.exists()) return null;
+                BufferedReader br = new BufferedReader(new FileReader(f));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+                br.close();
+                String result = sb.toString().trim();
+                return result.isEmpty() ? null : result;
+            } catch (Exception e) { return null; }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +139,6 @@ public class MainActivity extends Activity {
         layout.setBackgroundColor(Color.parseColor("#EDEAD8"));
         setContentView(layout);
 
-        // WebView
         webView = new WebView(this);
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         layout.addView(webView, new FrameLayout.LayoutParams(
@@ -63,7 +146,6 @@ public class MainActivity extends Activity {
             FrameLayout.LayoutParams.MATCH_PARENT
         ));
 
-        // Splash overlay shown while WebView parses the HTML
         splashView = buildSplash();
         layout.addView(splashView, new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
@@ -85,6 +167,9 @@ public class MainActivity extends Activity {
 
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+
+        // تسجيل الواجهة — متاحة لـ JavaScript كـ window.AndroidStorage
+        webView.addJavascriptInterface(new RhStorage(this), "AndroidStorage");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -190,6 +275,33 @@ public class MainActivity extends Activity {
         webView.loadUrl("file:///android_asset/public/index.html");
     }
 
+    // ── حفظ عند الضغط على Home أو التبديل بين التطبيقات ──
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (webView != null) {
+            webView.evaluateJavascript(
+                "(function(){ try{ if(typeof saveAll==='function') saveAll(); }catch(e){} })()",
+                null
+            );
+        }
+        CookieManager.getInstance().flush();
+    }
+
+    // ── تنظيف كامل عند إغلاق التطبيق ──
+    @Override
+    protected void onDestroy() {
+        if (webView != null) {
+            webView.stopLoading();
+            webView.loadUrl("about:blank");
+            webView.clearHistory();
+            webView.removeAllViews();
+            webView.destroy();
+            webView = null;
+        }
+        super.onDestroy();
+    }
+
     private View buildSplash() {
         FrameLayout splash = new FrameLayout(this);
         splash.setBackgroundColor(Color.parseColor("#EDEAD8"));
@@ -224,7 +336,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (webView.canGoBack()) {
+        if (webView != null && webView.canGoBack()) {
             webView.goBack();
         } else {
             super.onBackPressed();

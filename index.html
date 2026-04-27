@@ -5081,18 +5081,18 @@ function saveAll(){
       inventory:S.inventory||[],
       savedAt:new Date().toISOString()
     });
+    // 1) Android file storage — الأكثر موثوقية (لا يُحذف عند إغلاق التطبيق)
+    if(window.AndroidStorage){ try{ window.AndroidStorage.save(data); }catch(e){} }
+    // 2) localStorage — احتياطي للمتصفح
     safeLS.setItem(SK, data);
     lastSaveTime = Date.now();
     pendingSave = false;
-
-    // إظهار مؤشر الحفظ
     showSaveIndicator('saved');
     setTimeout(hideSaveIndicator, 1500);
-
   }catch(e){
     var isQuota = e && (e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||e.code===22||e.code===1014);
     if(isQuota){
-      toast('⚠️ الذاكرة المحلية ممتلئة! صدّر نسخة احتياطية الآن ثم امسح البيانات القديمة');
+      toast('⚠️ الذاكرة المحلية ممتلئة! صدّر نسخة احتياطية الآن');
       showSaveIndicator('error');
     }
     console.warn("saveAll error:",e);
@@ -5100,7 +5100,11 @@ function saveAll(){
 }
 function loadStore(){
   try{
-    const r=safeLS.getItem(SK);
+    // 1) Android file storage أولاً — أكثر موثوقية من localStorage
+    var r = null;
+    if(window.AndroidStorage){ try{ r = window.AndroidStorage.load(); }catch(e){} }
+    // 2) fallback: localStorage
+    if(!r) r = safeLS.getItem(SK);
     if(r){
       const sv=JSON.parse(r);
       if(sv.months){
