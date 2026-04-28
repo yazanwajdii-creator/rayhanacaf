@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=0.9,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0F2D18">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -10,11 +10,11 @@
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <title>ريحانة V24-3 PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="supabase.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   /* ═══════════════════════════════════════════════════════════════════════════
@@ -64,14 +64,14 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 button,input,select,textarea,a,.ntab,.tbtn,.btn,.att-d,.qe-who-btn,.obl-toggle,.qe-save,[role="button"]{touch-action:manipulation}
-html{font-size:14px;scroll-behavior:smooth}
+html{font-size:13px;scroll-behavior:smooth}
 body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.55;overflow-x:hidden}
 
 /* PIN SCREEN — ألوان هوية ريحانة كافيه */
-#pinScreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#EDEAD8 0%,#E6E2CC 50%,#EBE8D5 100%);display:flex;align-items:center;justify-content:center;padding:20px}
-#pinScreen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 30%,rgba(26,92,40,.06) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(193,127,36,.08) 0%,transparent 60%);pointer-events:none}
-.pin-wrap{width:100%;max-width:360px;text-align:center;position:relative}
-.pin-logo{display:flex;align-items:center;justify-content:center;margin:0 auto 10px;filter:drop-shadow(0 4px 20px rgba(15,45,24,.18))}
+#pinScreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#EDEAD8 0%,#E6E2CC 50%,#EBE8D5 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:30px 20px 40px}
+#pinScreen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 30%,rgba(26,92,40,.06) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(193,127,36,.08) 0%,transparent 60%);pointer-events:none;z-index:-1}
+.pin-wrap{width:100%;max-width:360px;text-align:center;position:relative;margin:auto}
+.pin-logo{display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
 .pin-ver{font-size:10px;color:rgba(26,61,30,.35);letter-spacing:2px;text-transform:uppercase;margin-bottom:22px;font-weight:500}
 /* Login screen password input */
 #pwdInput{background:rgba(255,255,255,.7)!important;border:1.5px solid rgba(26,92,40,.2)!important;color:#1A3D1E!important;transition:all .2s!important}
@@ -85,7 +85,7 @@ body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--bg
 /* TOP BAR */
 .topbar{height:52px;background:linear-gradient(135deg,#071A0C 0%,#0F2D18 40%,#1A4A28 70%,#0A2014 100%);color:#fff;display:flex;align-items:center;gap:8px;padding:0 12px;position:sticky;top:0;z-index:300;box-shadow:0 1px 0 rgba(255,255,255,.07),0 4px 20px rgba(0,0,0,.45);flex-shrink:0;backdrop-filter:blur(20px)}
 .tb-logo{display:flex;align-items:center;gap:7px;flex-shrink:0}
-.tb-ico{width:30px;height:30px;background:linear-gradient(135deg,rgba(193,127,36,.35),rgba(193,127,36,.12));border:1px solid rgba(193,127,36,.45);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 12px rgba(193,127,36,.2)}
+.tb-ico{width:40px;height:40px;background:linear-gradient(135deg,rgba(193,127,36,.35),rgba(193,127,36,.12));border:1px solid rgba(193,127,36,.45);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 12px rgba(193,127,36,.2)}
 .tb-name{font-size:14px;font-weight:700;white-space:nowrap;background:linear-gradient(90deg,#F5F0E8,#C17F24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:.3px}
 .tb-sep{width:1px;height:20px;background:rgba(255,255,255,.1);flex-shrink:0}
 .tb-mid{flex:1;display:flex;align-items:center;min-width:0}
@@ -94,7 +94,7 @@ body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--bg
 .gsearch input{background:transparent;border:none;color:#fff;font-size:12px;flex:1;outline:none;font-family:'IBM Plex Sans Arabic',sans-serif}
 .gsearch input::placeholder{color:rgba(255,255,255,.3)}
 .tb-right{display:flex;align-items:center;gap:4px;flex-shrink:0}
-.tbtn{width:32px;height:32px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(255,255,255,.85);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.tbtn{width:40px;height:40px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(255,255,255,.85);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s}
 .tbtn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.2)}
 .tbtn:active{transform:scale(.92)}
 .msel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;height:32px;transition:all .18s}
@@ -1758,82 +1758,7 @@ body.dark .ss-card{background:var(--surf)}
 <div id="pinScreen">
   <div class="pin-wrap">
     <div class="pin-logo">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 390" width="210" height="273">
-        <!-- OUTER ARCH -->
-        <path d="M28,390 L28,190 C28,78 92,54 150,54 C208,54 272,78 272,190 L272,390"
-          fill="none" stroke="#C17F24" stroke-width="2.4"/>
-        <!-- INNER ARCH -->
-        <path d="M42,390 L42,195 C42,96 100,72 150,72 C200,72 258,96 258,195 L258,390"
-          fill="none" stroke="#C17F24" stroke-width="1.4"/>
-        <!-- Base connectors (left & right) -->
-        <line x1="28" y1="372" x2="42" y2="372" stroke="#C17F24" stroke-width="1.4"/>
-        <line x1="258" y1="372" x2="272" y2="372" stroke="#C17F24" stroke-width="1.4"/>
-
-        <!-- 4-POINTED SPARKLE STARS -->
-        <!-- Top center — large -->
-        <path d="M150,43 L153.2,52.5 L163,55.5 L153.2,58.5 L150,68 L146.8,58.5 L137,55.5 L146.8,52.5 Z" fill="#C17F24"/>
-        <!-- Upper left — small -->
-        <path d="M70,120 L71.3,124.5 L76,125.8 L71.3,127 L70,131.5 L68.7,127 L64,125.8 L68.7,124.5 Z" fill="#C17F24"/>
-        <!-- Upper right — small -->
-        <path d="M230,120 L231.3,124.5 L236,125.8 L231.3,127 L230,131.5 L228.7,127 L224,125.8 L228.7,124.5 Z" fill="#C17F24"/>
-        <!-- Left middle — medium -->
-        <path d="M13,232 L16.2,240 L24.5,243 L16.2,246 L13,254 L9.8,246 L1.5,243 L9.8,240 Z" fill="#C17F24"/>
-        <!-- Right middle — medium -->
-        <path d="M287,232 L290.2,240 L298.5,243 L290.2,246 L287,254 L283.8,246 L275.5,243 L283.8,240 Z" fill="#C17F24"/>
-        <!-- Lower left — tiny -->
-        <path d="M47,346 L48.1,349.6 L52,350.8 L48.1,352 L47,355.5 L45.9,352 L42,350.8 L45.9,349.6 Z" fill="#C17F24"/>
-        <!-- Lower right — tiny -->
-        <path d="M253,346 L254.1,349.6 L258,350.8 L254.1,352 L253,355.5 L251.9,352 L248,350.8 L251.9,349.6 Z" fill="#C17F24"/>
-
-        <!-- HERB / PLANT — main stem -->
-        <line x1="150" y1="320" x2="150" y2="130" stroke="#1A4A28" stroke-width="2.2" stroke-linecap="round"/>
-
-        <!-- LEAF PAIRS (6 pairs, bottom → top, each side is a curved blade) -->
-        <!-- Pair 1 — largest, lowest -->
-        <path d="M150,310 Q132,300 109,312 Q124,322 150,310Z" fill="#1A4A28"/>
-        <path d="M150,310 Q168,300 191,312 Q176,322 150,310Z" fill="#1A4A28"/>
-        <!-- Pair 2 -->
-        <path d="M150,286 Q131,276 108,286 Q122,296 150,286Z" fill="#1A4A28"/>
-        <path d="M150,286 Q169,276 192,286 Q178,296 150,286Z" fill="#1A4A28"/>
-        <!-- Pair 3 -->
-        <path d="M150,262 Q133,253 113,260 Q126,270 150,262Z" fill="#1A4A28"/>
-        <path d="M150,262 Q167,253 187,260 Q174,270 150,262Z" fill="#1A4A28"/>
-        <!-- Pair 4 -->
-        <path d="M150,238 Q135,229 118,234 Q130,244 150,238Z" fill="#1A4A28"/>
-        <path d="M150,238 Q165,229 182,234 Q170,244 150,238Z" fill="#1A4A28"/>
-        <!-- Pair 5 -->
-        <path d="M150,214 Q138,206 124,209 L132,218 L150,214Z" fill="#1A4A28"/>
-        <path d="M150,214 Q162,206 176,209 L168,218 L150,214Z" fill="#1A4A28"/>
-        <!-- Pair 6 — smallest, near top -->
-        <path d="M150,190 Q141,183 130,185 L137,193 L150,190Z" fill="#1A4A28"/>
-        <path d="M150,190 Q159,183 170,185 L163,193 L150,190Z" fill="#1A4A28"/>
-
-        <!-- BERRIES / BUDS at stem top -->
-        <circle cx="150" cy="133" r="4" fill="#1A4A28"/>
-        <!-- Left cluster -->
-        <line x1="150" y1="143" x2="139" y2="154" stroke="#1A4A28" stroke-width="1.3" stroke-linecap="round"/>
-        <circle cx="137" cy="156" r="3.2" fill="#1A4A28"/>
-        <line x1="150" y1="154" x2="132" y2="165" stroke="#1A4A28" stroke-width="1.3" stroke-linecap="round"/>
-        <circle cx="130" cy="167" r="2.6" fill="#1A4A28"/>
-        <!-- Right cluster -->
-        <line x1="150" y1="143" x2="161" y2="154" stroke="#1A4A28" stroke-width="1.3" stroke-linecap="round"/>
-        <circle cx="163" cy="156" r="3.2" fill="#1A4A28"/>
-        <line x1="150" y1="154" x2="168" y2="165" stroke="#1A4A28" stroke-width="1.3" stroke-linecap="round"/>
-        <circle cx="170" cy="167" r="2.6" fill="#1A4A28"/>
-
-        <!-- TEXT: ريحانة (calligraphic Arabic) -->
-        <text x="154" y="356"
-          text-anchor="middle"
-          font-family="'Amiri','IBM Plex Sans Arabic',serif"
-          font-size="60" font-weight="700"
-          fill="#1A4A28">ريحانة</text>
-        <!-- TEXT: كافيه (small, offset left like real logo) -->
-        <text x="97" y="378"
-          text-anchor="middle"
-          font-family="'Amiri','IBM Plex Sans Arabic',serif"
-          font-size="18"
-          fill="#1A4A28">كافيه</text>
-      </svg>
+      <img src="logo.jpg" alt="ريحانة كافيه" style="width:auto;max-width:220px;max-height:160px;object-fit:contain;display:block;margin:0 auto;filter:drop-shadow(0 6px 24px rgba(15,45,24,.22))">
     </div>
     <div class="pin-ver">نظام إدارة المقهى</div>
     <div style="margin-bottom:8px">
@@ -1850,7 +1775,17 @@ body.dark .ss-card{background:var(--surf)}
       </button>
       <div id="pwd-err" style="color:#B91C1C;font-size:12px;margin-top:10px;min-height:18px;text-align:center;font-weight:600"></div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v25</div>
+    <div style="margin-top:16px;font-size:11px;color:rgba(26,61,30,.4);text-align:center">
+      <span style="cursor:pointer;text-decoration:underline;text-underline-offset:2px" onclick="showResetBox()">نسيت كلمة المرور؟</span>
+    </div>
+    <div id="resetBox" style="display:none;margin-top:12px;background:rgba(255,255,255,.7);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:12px;color:#5A3E1B;margin-bottom:10px">سيتم إعادة كلمة المرور إلى <strong>1234</strong></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="doReset()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#1A4A28;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif">تأكيد الإعادة</button>
+        <button onclick="showResetBox()" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(26,74,40,.3);background:transparent;font-size:13px;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;color:#1A4A28">إلغاء</button>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:10px;color:rgba(26,61,30,.3);letter-spacing:1px">Powered by Rayhana ERP v25</div>
   </div>
 </div>
 
@@ -1880,16 +1815,8 @@ body.dark .ss-card{background:var(--surf)}
   
   <!-- أزرار الإجراءات السريعة -->
   <div class="fab-container">
-    <button class="fab-btn fab-secondary" onclick="showShortcuts()" title="اختصارات لوحة المفاتيح">
-      ⌨️
-      <span class="fab-tooltip">اختصارات (؟)</span>
-    </button>
-    <button class="fab-btn fab-secondary" onclick="togglePresentationMode()" title="وضع العرض">
-      📺
-      <span class="fab-tooltip">وضع العرض</span>
-    </button>
     <button class="fab-btn fab-secondary" onclick="showBackups()" title="النسخ الاحتياطية">
-      📦
+      💾
       <span class="fab-tooltip">النسخ الاحتياطية</span>
     </button>
     <button class="fab-btn fab-primary" onclick="quickAddSale()" title="إضافة سريعة">
@@ -1911,6 +1838,10 @@ body.dark .ss-card{background:var(--surf)}
     <button class="export-btn" onclick="exportJSON()">
       <span class="export-btn-icon">💾</span>
       <span>نسخ احتياطي JSON</span>
+    </button>
+    <button class="export-btn" onclick="exportGoogleSheets()">
+      <span class="export-btn-icon">🟢</span>
+      <span>Google Sheets</span>
     </button>
     <button class="export-btn" onclick="shareReport()">
       <span class="export-btn-icon">📤</span>
@@ -2904,7 +2835,7 @@ body.dark .ss-card{background:var(--surf)}
             <span class="rpt-row-val muted" id="r-msal-accrued">0.000 JD</span>
           </div>
           <div class="rpt-row rpt-row-sub rpt-row-muted">
-            <span class="rpt-row-lbl">👷 أجور يومية <small>(توثيق — خُصمت من الكاش)</small></span>
+            <span class="rpt-row-lbl">👷 أجور يومية <small>(توثيق — خُصمت من الكاش قبل التسليم للمدير)</small></span>
             <span class="rpt-row-val muted" id="r-dwages">0.000 JD</span>
           </div>
         </div>
@@ -2971,6 +2902,9 @@ body.dark .ss-card{background:var(--surf)}
           <button class="rpt-export-btn rpt-exp-json" onclick="exportJSON()">
             <span>💾</span><span>احتياطي</span>
           </button>
+          <button class="rpt-export-btn" onclick="exportGoogleSheets()">
+            <span>🟢</span><span>Sheets</span>
+          </button>
           <button class="rpt-export-btn" onclick="window.print()">
             <span>🖨️</span><span>طباعة</span>
           </button>
@@ -3000,11 +2934,14 @@ body.dark .ss-card{background:var(--surf)}
         <div class="cloud-wizard-card" style="border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.04)">
           <div class="cloud-wizard-title" style="color:var(--bl)">📥 استيراد نسخة احتياطية JSON</div>
           <div style="font-size:12px;color:var(--tx3);margin-bottom:10px">إذا كان لديك ملف JSON محفوظ مسبقاً اضغط هنا لاستعادة بياناتك</div>
-          <button class="btn btn-full" onclick="document.getElementById('impFile').click()" style="background:var(--bl);color:#fff;font-size:13px;padding:11px">
+          <label for="impFile" class="btn btn-full" style="background:var(--bl);color:#fff;font-size:13px;padding:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:10px">
             📂 اختر ملف JSON للاستيراد
-          </button>
-          <input type="file" id="impFile" accept=".json" style="display:none" onchange="importJSON(event)">
+          </label>
+          <input type="file" id="impFile" accept="application/json,.json,*/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" onchange="importJSON(event)">
           <div style="font-size:11px;color:var(--tx4);text-align:center;margin-top:7px">يدعم ملفات V22 وV24 وV25</div>
+          <button onclick="importFromText()" style="width:100%;margin-top:8px;padding:9px;border:1.5px dashed var(--br);background:transparent;border-radius:10px;font-size:12px;color:var(--tx3);cursor:pointer;font-family:inherit">
+            📋 لصق نص JSON يدوياً (بديل إذا لم يعمل الملف)
+          </button>
         </div>
         <div class="cloud-wizard-card">
           <div class="cloud-wizard-title">🚀 إعداد Supabase — مرة واحدة فقط</div>
@@ -3103,7 +3040,7 @@ create policy "allow_all" on rh_store
           <div class="cloud-wizard-title">💾 نسخ احتياطية</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <button class="btn btn-p" onclick="exportJSON()">📤 تصدير JSON</button>
-            <button class="btn btn-ghost" onclick="document.getElementById('impFile').click()">📥 استيراد JSON</button>
+            <label for="impFile" class="btn btn-ghost" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px">📥 استيراد JSON</label>
           </div>
           <div class="alert al-w" style="margin-top:10px;font-size:11.5px">
             ⚠️ الاستيراد يستبدل البيانات الحالية — تأكد من رفع نسخة احتياطية أولاً
@@ -3352,6 +3289,26 @@ var safeLS = (function() {
   }
 }());
 
+// ── مخزن مفاتيح مزدوج: AndroidStorage + localStorage ──────────────────────
+// يُستخدم لبيانات Supabase والإعدادات الحساسة التي يجب ألا تُفقد عند إغلاق التطبيق
+function _kSet(key, value) {
+  safeLS.setItem(key, value);
+  if(window.AndroidStorage){ try{ window.AndroidStorage.saveKey(key, value); }catch(e){} }
+}
+function _kGet(key) {
+  if(window.AndroidStorage){
+    try{
+      var v = window.AndroidStorage.loadKey(key);
+      if(v !== null && v !== undefined && v !== 'null') return v;
+    }catch(e){}
+  }
+  return safeLS.getItem(key);
+}
+function _kRemove(key) {
+  safeLS.removeItem(key);
+  if(window.AndroidStorage){ try{ window.AndroidStorage.removeKey(key); }catch(e){} }
+}
+
 // ═══════════════════════════════════════════
 // QUICK ENTRY — Single Day Revenue
 // ═══════════════════════════════════════════
@@ -3556,7 +3513,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v25-2';
+      const CACHE_NAME = 'rayhana-v25-3';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -3632,27 +3589,96 @@ async function sha256(str){
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
-async function checkPwd() {
+var _pwdFailCount = 0;
+var _pwdLockUntil = 0;
+
+function checkPwd() {
   var input = document.getElementById('pwdInput');
   var err = document.getElementById('pwd-err');
-  if (!input) return;
-  var val = input.value;
-  var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
-  input.value = '';
-  var hash = await sha256(val);
-  if (hash === stored) {
-    doLogin('manager');
-  } else if (btoa(val) === stored) {
-    // migration: re-store as SHA-256
-    safeLS.setItem(PWD_KEY, hash);
-    doLogin('manager');
-  } else {
-    err.textContent = '❌ كلمة المرور غير صحيحة';
-    input.focus();
-    // shake animation
-    input.style.borderColor = 'rgba(239,68,68,.8)';
-    setTimeout(function(){ input.style.borderColor = 'rgba(255,255,255,.15)'; }, 1200);
+  if (!input || !err) return;
+
+  var now = Date.now();
+  if (_pwdLockUntil > now) {
+    err.textContent = '🔒 محظور مؤقتاً — انتظر ' + Math.ceil((_pwdLockUntil - now) / 1000) + ' ثانية';
+    return;
   }
+
+  var val = input.value;
+  if (!val) { err.textContent = '⚠️ أدخل كلمة المرور'; return; }
+  input.value = '';
+
+  var stored = safeLS.getItem(PWD_KEY);
+
+  // No stored password → first launch, only accept default
+  if (!stored) {
+    if (val === DEFAULT_PWD) {
+      _pwdFailCount = 0;
+      safeLS.setItem(PWD_KEY, btoa(DEFAULT_PWD));
+      doLogin('manager');
+      // upgrade to SHA-256 in background if available
+      if (typeof sha256 === 'function') {
+        sha256(val).then(function(h){ safeLS.setItem(PWD_KEY, h); }).catch(function(){});
+      }
+    } else {
+      _loginFail(input, err);
+    }
+    return;
+  }
+
+  // btoa-format stored password
+  if (stored === btoa(val)) {
+    _pwdFailCount = 0;
+    doLogin('manager');
+    if (typeof sha256 === 'function') {
+      sha256(val).then(function(h){ safeLS.setItem(PWD_KEY, h); }).catch(function(){});
+    }
+    return;
+  }
+
+  // SHA-256 check (async)
+  if (typeof sha256 === 'function') {
+    sha256(val).then(function(hash) {
+      if (hash === stored) {
+        _pwdFailCount = 0;
+        doLogin('manager');
+      } else {
+        _loginFail(input, err);
+      }
+    }).catch(function() {
+      _loginFail(input, err);
+    });
+  } else {
+    _loginFail(input, err);
+  }
+}
+
+function _loginFail(input, err) {
+  _pwdFailCount++;
+  if (_pwdFailCount >= 5) {
+    _pwdLockUntil = Date.now() + 5 * 60 * 1000;
+    _pwdFailCount = 0;
+    err.textContent = '🔒 5 محاولات فاشلة — محظور 5 دقائق';
+  } else {
+    err.textContent = '❌ كلمة المرور غير صحيحة (' + _pwdFailCount + '/5)';
+  }
+  input.focus();
+  input.style.borderColor = 'rgba(239,68,68,.8)';
+  setTimeout(function(){ input.style.borderColor = 'rgba(255,255,255,.15)'; }, 1200);
+}
+
+function showResetBox() {
+  var box = document.getElementById('resetBox');
+  if (box) { box.style.display = box.style.display === 'none' ? 'block' : 'none'; }
+}
+
+function doReset() {
+  safeLS.removeItem(PWD_KEY);
+  _pwdFailCount = 0;
+  _pwdLockUntil = 0;
+  var box = document.getElementById('resetBox');
+  if (box) box.style.display = 'none';
+  var err = document.getElementById('pwd-err');
+  if (err) { err.style.color = '#166534'; err.textContent = '✅ تمت إعادة التعيين — كلمة المرور: 1234'; }
 }
 
 function doLogin(role) {
@@ -3696,30 +3722,34 @@ function doLogin(role) {
       try { updateDailyInsights(); } catch(e) { console.log('Insights:', e); }
       try { updateQuickInsights(); } catch(e) { console.log('QuickIns:', e); }
       try { startAutoSave(); } catch(e) { console.log('AutoSave:', e); }
+      try { initV24Features(); } catch(e) { console.log('V24:', e); }
     // Supabase: تهيئة وتحميل بعد الدخول
     try {
       supaInit();
       supaUpdateUI(!!SUPA);
-      if(SUPA){
-        supaSync('pull').then(function(){
-          toast('☁️ تم تحديث البيانات من السحابة');
-        }).catch(function(e){ console.warn('Supabase pull:', e); });
-      }
+      // فقط اسحب إذا كانت المزامنة التلقائية مفعّلة سابقاً
+      var _autoWasOn = _kGet('rh_supa_auto') === '1';
+      if(SUPA && _autoWasOn){ SUPA_AUTO=true; _supaStartupPull(0); }
     } catch(e) {}
     }, 500);
   }, 100);
 }
 
-function changePwd() {
+async function changePwd() {
   var old = document.getElementById('pwdOld') ? document.getElementById('pwdOld').value : '';
   var nw  = document.getElementById('pwdNew') ? document.getElementById('pwdNew').value : '';
   var cf  = document.getElementById('pwdConf') ? document.getElementById('pwdConf').value : '';
   var err = document.getElementById('pwdChgErr');
-  var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
-  if (btoa(old) !== stored) { if(err) err.textContent = 'كلمة المرور الحالية غير صحيحة'; return; }
+  var stored = safeLS.getItem(PWD_KEY);
+  if (!stored) stored = btoa(DEFAULT_PWD);
+  var oldHash = null;
+  try { oldHash = await sha256(old); } catch(e) {}
+  var oldValid = (oldHash && oldHash === stored) || (btoa(old) === stored) || (!safeLS.getItem(PWD_KEY) && old === DEFAULT_PWD);
+  if (!oldValid) { if(err) err.textContent = 'كلمة المرور الحالية غير صحيحة'; return; }
   if (nw.length < 4) { if(err) err.textContent = 'يجب أن تكون 4 أحرف على الأقل'; return; }
   if (nw !== cf) { if(err) err.textContent = 'كلمتا المرور غير متطابقتين'; return; }
-  safeLS.setItem(PWD_KEY, btoa(nw));
+  // حفظ كلمة المرور الجديدة بـ SHA-256
+  safeLS.setItem(PWD_KEY, await sha256(nw));
   if(err) err.textContent = '';
   ['pwdOld','pwdNew','pwdConf'].forEach(id => { var e = document.getElementById(id); if(e) e.value = ''; });
   cmo('moPwd');
@@ -3775,6 +3805,11 @@ function openMo(id){$(id).classList.add("open");document.body.style.overflow="hi
 function cmo(id){$(id).classList.remove("open");document.body.style.overflow="";}
 function moOut(e,id){if(e.target===$(id))cmo(id);}
 ["click","touchstart","keydown","scroll"].forEach(e=>document.addEventListener(e,resetInact,{passive:true}));
+
+// حفظ عند الخروج — مسجّل منذ بداية تحميل الصفحة (لا ينتظر تسجيل الدخول)
+window.addEventListener('pagehide', function(){ try{ if(CR) saveAll(); }catch(e){} });
+window.addEventListener('beforeunload', function(){ try{ if(CR) saveAll(); }catch(e){} });
+document.addEventListener('visibilitychange', function(){ try{ if(document.hidden && CR) saveAll(); }catch(e){} });
 
 function resetInact(){
   clearTimeout(iT);clearTimeout(wT);
@@ -4120,9 +4155,9 @@ function totals(){
   const d=G();let cash=0,visa=0,pmts=0;
   d.sales.forEach(s=>{cash+=s.cash||0;visa+=s.visa||0;pmts+=s.pmts||0;});
   
-  // صافي البيع = نقدي + فيزا (هذا هو الإيراد الحقيقي)
+  // الإيراد الصافي للمدير = ما استلمه فعلاً (الكاش بعد دفع الأجور + فيزا)
   const netSales=cash+visa;
-  // إجمالي الإيراد = صافي البيع + المدفوعات (للتوثيق)
+  // الإيراد الإجمالي = يشمل الأجور اليومية المدفوعة من الكاش (للتوثيق والمعرفة)
   const rev=cash+visa+pmts;
   
   const bycat={COGS:0,OPS:0,ADM:0,MKT:0,OTHER:0,total:0};
@@ -4155,27 +4190,19 @@ function totals(){
   // لذا نستخدمها بدلاً من dwTotal لتجنب الحساب المزدوج
   const dailyWagesPaid = pmts; // المدفوعات الفعلية من الكاش
   
+  // الربح الإجمالي = إيراد المدير الصافي - تكلفة البضاعة
   const grossP=netSales-bycat.COGS;
-  
-  // ═══════════════════════════════════════════════════════════════════════════
-  // V24-2 FIX: خطأ محاسبي حرج - الالتزامات المدفوعة فقط
-  // المشكلة: كان يحسب جميع الالتزامات (المدفوعة وغير المدفوعة) ضمن المصاريف
-  // الإصلاح: أصبح يحسب فقط الالتزامات المدفوعة (oblPaid)
-  // الأثر: القوائم المالية الآن تعكس الواقع — لا خسارة وهمية بسبب التزامات لم تُدفع بعد
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ═══════════════════════════════════════════════════════════════════════════
-  // V24-3 FIX: فقط الرواتب المدفوعة + الالتزامات المدفوعة تدخل في المصاريف
-  // الرواتب غير المدفوعة = مستحقات معلقة لا تؤثر على الربح حتى تُدفع
-  // ═══════════════════════════════════════════════════════════════════════════
+
+  // إجمالي المصروفات الفعلية على المدير: مشتريات + التزامات مدفوعة + رواتب شهرية مدفوعة
   const totalExp=bycat.total+oblPaid+mSalPaid;
-  
-  // صافي الربح = صافي البيع - إجمالي المصروفات الفعلية
+
+  // صافي الربح = إيراد المدير الصافي - مصاريفه الفعلية
   const profit=netSales-totalExp;
   const margin=netSales>0?profit/netSales*100:0;
-  
+
   let advP=0;d.advances.filter(a=>a.status==="مستحقة"||a.status==="مسددة جزئياً").forEach(a=>advP+=a.amt||0);
-  
-  // حقول محسوبة إضافية لتسهيل استهلاك البطاقات
+
+  // النسب المئوية — على أساس إيراد المدير الصافي (netSales)
   const _active=d.sales.filter(s=>(s.cash||0)+(s.visa||0)+(s.pmts||0)>0);
   const avgDaily=_active.length?rev/_active.length:0;
   const daysActive=_active.length;
@@ -4908,14 +4935,11 @@ var saveCount = 0;
 // بدء نظام الحفظ التلقائي
 function startAutoSave() {
   if (autoSaveInterval) clearInterval(autoSaveInterval);
-  
+
+  // حفظ كل 10 ثوانٍ بدون شرط — ضمان عدم فقدان البيانات
   autoSaveInterval = setInterval(function() {
-    if (CR && pendingSave) {
-      performAutoSave();
-    }
-  }, 30000); // كل 30 ثانية
-  
-  console.log('🔄 Auto-save system started');
+    if (CR) { try { saveAll(); } catch(e) {} }
+  }, 10000);
 }
 
 // تنفيذ الحفظ التلقائي
@@ -5089,18 +5113,18 @@ function saveAll(){
       inventory:S.inventory||[],
       savedAt:new Date().toISOString()
     });
+    // 1) Android file storage — الأكثر موثوقية (لا يُحذف عند إغلاق التطبيق)
+    if(window.AndroidStorage){ try{ window.AndroidStorage.save(data); }catch(e){} }
+    // 2) localStorage — احتياطي للمتصفح
     safeLS.setItem(SK, data);
     lastSaveTime = Date.now();
     pendingSave = false;
-
-    // إظهار مؤشر الحفظ
     showSaveIndicator('saved');
     setTimeout(hideSaveIndicator, 1500);
-
   }catch(e){
     var isQuota = e && (e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||e.code===22||e.code===1014);
     if(isQuota){
-      toast('⚠️ الذاكرة المحلية ممتلئة! صدّر نسخة احتياطية الآن ثم امسح البيانات القديمة');
+      toast('⚠️ الذاكرة المحلية ممتلئة! صدّر نسخة احتياطية الآن');
       showSaveIndicator('error');
     }
     console.warn("saveAll error:",e);
@@ -5108,7 +5132,11 @@ function saveAll(){
 }
 function loadStore(){
   try{
-    const r=safeLS.getItem(SK);
+    // 1) Android file storage أولاً — أكثر موثوقية من localStorage
+    var r = null;
+    if(window.AndroidStorage){ try{ r = window.AndroidStorage.load(); }catch(e){} }
+    // 2) fallback: localStorage
+    if(!r) r = safeLS.getItem(SK);
     if(r){
       const sv=JSON.parse(r);
       if(sv.months){
@@ -5164,14 +5192,252 @@ function exportJSON(){
     suppliers:S.suppliers||[],
     exported:new Date().toISOString()
   };
-  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
+  var json=JSON.stringify(data,null,2);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v25_'+ym[0]+'_'+ym[1]+'.json';
-  a.click();
-  toast('💾 تم تصدير النسخة الاحتياطية');
+  var fname='rayhana_v25_'+ym[0]+'_'+ym[1]+'.json';
+
+  // دائماً: اعرض نافذة النسخ أولاً حتى لا يضيع الملف
+  _showCopyModal(json, fname);
+
+  // حاول Share API في الخلفية (أندرويد) — بدون return حتى تبقى النافذة مفتوحة
+  if(navigator.share){
+    try{
+      var shareFile=new File([json],fname,{type:'application/json'});
+      var canShare=false;
+      try{ canShare=!navigator.canShare||navigator.canShare({files:[shareFile]}); }catch(e){ canShare=true; }
+      if(canShare){
+        navigator.share({files:[shareFile],title:'نسخة احتياطية ريحانة كافيه'})
+          .then(function(){ toast('✅ تم الإرسال عبر قائمة المشاركة'); })
+          .catch(function(){});
+      }
+    }catch(e){}
+  }
   log('تصدير JSON — '+S.activeKey);
+}
+
+// ═══════════════════════════════════════════════════════
+// تصدير Google Sheets (CSV متوافق مع العربية)
+// ═══════════════════════════════════════════════════════
+function exportGoogleSheets(){
+  var d = G();
+  var t = totals();
+  var ym = S.activeKey.split('-');
+  var monthName = (typeof MNA !== 'undefined' ? MNA[parseInt(ym[1])-1] : ym[1]) + ' ' + ym[0];
+  var fname = 'rayhana_' + ym[0] + '_' + ym[1] + '.csv';
+  var rows = [];
+
+  function q(v){ // تحويل قيمة لخلية CSV آمنة
+    var s = String(v === null || v === undefined ? '' : v);
+    if(s.indexOf(',') > -1 || s.indexOf('"') > -1 || s.indexOf('\n') > -1){
+      return '"' + s.replace(/"/g,'""') + '"';
+    }
+    return s;
+  }
+  function row(){ return Array.prototype.slice.call(arguments).map(q).join(','); }
+  function blank(){ rows.push(''); }
+  function header(t){ rows.push(row(t)); }
+
+  // ── الغلاف ─────────────────────────────────────────
+  rows.push(row('ريحانة كافيه — تقرير ' + monthName));
+  rows.push(row('تاريخ التصدير', new Date().toLocaleString('ar-JO')));
+  blank();
+
+  // ── ملخص مالي ──────────────────────────────────────
+  header('=== الملخص المالي ===');
+  rows.push(row('البيان','المبلغ (JD)'));
+  rows.push(row('إجمالي الإيرادات', n3(t.rev)));
+  rows.push(row('إجمالي المصروفات', n3(t.totalExp)));
+  rows.push(row('صافي الربح', n3(t.profit)));
+  rows.push(row('هامش الربح %', t.margin.toFixed(2) + '%'));
+  rows.push(row('إيرادات نقد', n3(t.cash)));
+  rows.push(row('إيرادات فيزا', n3(t.visa)));
+  rows.push(row('تكلفة البضاعة (COGS)', n3(t.bycat ? t.bycat.COGS : 0)));
+  rows.push(row('مصاريف التشغيل', n3(t.bycat ? t.bycat.OPS : 0)));
+  rows.push(row('مجموع الرواتب الشهرية', n3(t.mSalG)));
+  rows.push(row('مجموع الأجور اليومية', n3(t.dwTotal)));
+  rows.push(row('الالتزامات المسددة', n3(t.oblPaid)));
+  rows.push(row('الالتزامات غير المسددة', n3(t.oblTotal - t.oblPaid)));
+  blank();
+
+  // ── المبيعات اليومية ───────────────────────────────
+  header('=== المبيعات اليومية ===');
+  rows.push(row('اليوم','نقد','فيزا','دفعات أخرى','الإجمالي','الملاحظات'));
+  d.sales.forEach(function(s){
+    var total = (s.cash||0)+(s.visa||0)+(s.pmts||0);
+    rows.push(row(s.day, n3(s.cash||0), n3(s.visa||0), n3(s.pmts||0), n3(total), s.notes||''));
+  });
+  blank();
+
+  // ── المشتريات ──────────────────────────────────────
+  header('=== المشتريات ===');
+  rows.push(row('التاريخ','المورد','التصنيف','الوصف','المبلغ (JD)'));
+  (d.purchases||[]).forEach(function(p){
+    rows.push(row(p.date||'', p.sName||'', p.cat||'', p.desc||'', n3(p.amt||0)));
+  });
+  if(!(d.purchases||[]).length) rows.push(row('لا توجد مشتريات'));
+  blank();
+
+  // ── الالتزامات ─────────────────────────────────────
+  header('=== الالتزامات الشهرية ===');
+  rows.push(row('البند','المبلغ (JD)','الحالة','تاريخ الاستحقاق'));
+  (d.obligations||[]).forEach(function(o){
+    rows.push(row(o.name||'', n3(o.amt||0), o.paid ? 'مسدد ✓' : 'غير مسدد', o.due||''));
+  });
+  blank();
+
+  // ── الرواتب الشهرية ────────────────────────────────
+  if(S.monthlyEmps && S.monthlyEmps.length){
+    header('=== الرواتب الشهرية ===');
+    rows.push(row('الموظف','الأساسي','البدلات','الخصومات','الصافي','مسدد؟'));
+    S.monthlyEmps.forEach(function(e){
+      var sal = (d.mSal||{})[e.id] || {};
+      var net = (sal.base||0)+(sal.allow||0)-(sal.ded||0);
+      rows.push(row(e.name, n3(sal.base||0), n3(sal.allow||0), n3(sal.ded||0), n3(net), sal.paid ? 'نعم ✓' : 'لا'));
+    });
+    blank();
+  }
+
+  // ── الأجور اليومية ─────────────────────────────────
+  if(S.dailyEmps && S.dailyEmps.length){
+    header('=== الأجور اليومية ===');
+    rows.push(row('الموظف','الأجر اليومي','أيام الحضور','الإجمالي'));
+    S.dailyEmps.forEach(function(e){
+      var w = (d.dWages||{})[e.id] || {rate:0,att:[]};
+      var days = (w.att||[]).length;
+      rows.push(row(e.name, n3(w.rate||0), days, n3((w.rate||0)*days)));
+    });
+    blank();
+  }
+
+  // ── السلف ──────────────────────────────────────────
+  if((d.advances||[]).length){
+    header('=== السلف والمدفوعات ===');
+    rows.push(row('التاريخ','الموظف','المبلغ','الحالة','ملاحظة'));
+    d.advances.forEach(function(a){
+      rows.push(row(a.date||'', a.empName||'', n3(a.amt||0), a.status||'', a.note||''));
+    });
+    blank();
+  }
+
+  // BOM لدعم العربية في Excel/Sheets + تجميع
+  var csv = '﻿' + rows.join('\r\n');
+
+  // مشاركة عبر Android أو تنزيل
+  if(navigator.share){
+    try{
+      var f = new File([csv], fname, {type:'text/csv;charset=utf-8'});
+      if(navigator.canShare && navigator.canShare({files:[f]})){
+        navigator.share({files:[f], title:'تقرير ريحانة كافيه — ' + monthName})
+          .then(function(){ toast('🟢 تم تصدير Google Sheets'); })
+          .catch(function(err){ if(err.name!=='AbortError') _csvFallback(csv,fname); });
+        return;
+      }
+    }catch(e){}
+  }
+  _csvFallback(csv, fname);
+}
+
+function _csvFallback(csv, fname){
+  try{
+    var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+    toast('🟢 تم تصدير CSV لـ Google Sheets');
+  }catch(e){
+    _showCopyModal(csv, fname);
+  }
+}
+
+function _exportFallback(json,fname){
+  // محاولة تنزيل عبر blob URL (متصفح عادي)
+  try{
+    var blob=new Blob([json],{type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url; a.download=fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},5000);
+    toast('💾 تم تصدير النسخة الاحتياطية');
+    log('تصدير JSON — '+S.activeKey);
+  }catch(e){
+    _showCopyModal(json,fname);
+  }
+}
+
+function _showCopyModal(json,fname){
+  var old=document.getElementById('jsonExportModal');
+  if(old) old.remove();
+  var modal=document.createElement('div');
+  modal.id='jsonExportModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--surf);border-radius:16px 16px 0 0;width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden';
+
+  // Header
+  var hdr=document.createElement('div');
+  hdr.style.cssText='padding:14px 16px 10px;border-bottom:1px solid var(--br);flex-shrink:0';
+  hdr.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+    +'<div style="font-weight:700;font-size:15px">💾 نسخة احتياطية — '+fname+'</div>'
+    +'<button onclick="document.getElementById(\'jsonExportModal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx);padding:0;line-height:1">✕</button>'
+    +'</div>'
+    +'<div style="background:rgba(26,92,40,.12);border:1px solid rgba(26,92,40,.25);border-radius:8px;padding:9px 12px;font-size:12px;color:#1A4A28;font-weight:600">'
+    +'📌 اضغط <strong>نسخ</strong> ثم الصقه في ملاحظات أو واتساب — أو شاركه مباشرة'
+    +'</div>';
+
+  // Textarea
+  var bd=document.createElement('div');
+  bd.style.cssText='padding:12px;flex:1;overflow:auto;min-height:0';
+  var ta=document.createElement('textarea');
+  ta.readOnly=true;
+  ta.style.cssText='width:100%;height:200px;font-family:monospace;font-size:10px;border:1px solid var(--br);border-radius:8px;padding:8px;background:var(--bg);color:var(--tx);resize:none;box-sizing:border-box;direction:ltr';
+  ta.value=json;
+  bd.appendChild(ta);
+
+  // Footer buttons
+  var ft=document.createElement('div');
+  ft.style.cssText='padding:12px;border-top:1px solid var(--br);flex-shrink:0;display:flex;flex-direction:column;gap:8px';
+
+  var cpBtn=document.createElement('button');
+  cpBtn.style.cssText='width:100%;padding:13px;background:#1A4A28;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit';
+  cpBtn.textContent='📋 نسخ النص كاملاً';
+  cpBtn.onclick=function(){
+    ta.select(); ta.setSelectionRange(0,99999);
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(json).then(function(){
+        cpBtn.textContent='✅ تم النسخ!';
+        cpBtn.style.background='#059669';
+        setTimeout(function(){cpBtn.textContent='📋 نسخ النص كاملاً';cpBtn.style.background='#1A4A28';},2500);
+      }).catch(function(){ document.execCommand('copy'); cpBtn.textContent='✅ تم النسخ!'; });
+    } else { document.execCommand('copy'); cpBtn.textContent='✅ تم النسخ!'; }
+  };
+
+  var shareBtn=document.createElement('button');
+  shareBtn.style.cssText='width:100%;padding:11px;background:transparent;color:var(--tx2);border:1.5px solid var(--br);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit';
+  shareBtn.textContent='📤 مشاركة عبر واتساب / تيليغرام';
+  shareBtn.onclick=function(){
+    if(navigator.share){
+      try{
+        var f=new File([json],fname,{type:'application/json'});
+        navigator.share({files:[f],title:'نسخة احتياطية ريحانة كافيه'}).catch(function(){});
+      }catch(e){ navigator.share({text:json,title:fname}).catch(function(){}); }
+    } else { toast('المشاركة غير متوفرة في هذا المتصفح'); }
+  };
+
+  ft.appendChild(cpBtn);
+  ft.appendChild(shareBtn);
+  box.appendChild(hdr); box.appendChild(bd); box.appendChild(ft);
+  modal.appendChild(box);
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  document.body.appendChild(modal);
+  setTimeout(function(){ta.focus();ta.select();},300);
 }
 function importJSON(ev){
   var file=ev.target.files[0]; if(!file)return;
@@ -5191,12 +5457,13 @@ function importJSON(ev){
         ev.target.value=''; return;
       }
       
-      // merge آمن — يحافظ على حقول V25 الجديدة (paid, groq_key, etc)
+      // استيراد البيانات المالية فقط — لا يمس الموظفين أو الموردين أو الهيكل الحالي
+      var isOldVersion = !data.version;
       if(data.months){
         Object.keys(data.months).forEach(function(k){
           var incoming = data.months[k];
           if(!incoming) return;
-          // أضف حقل paid للرواتب إذا كان ناقصاً (قادم من نسخة قديمة)
+          // توافق مع الإصدارات القديمة — أضف حقل paid للرواتب إذا غاب
           if(incoming.mSal){
             Object.keys(incoming.mSal).forEach(function(eid){
               if(incoming.mSal[eid] && incoming.mSal[eid].paid === undefined){
@@ -5204,14 +5471,24 @@ function importJSON(ev){
               }
             });
           }
+          // للإصدارات القديمة: احتفظ ببيانات الرواتب الحالية للموظفين الموجودين
+          if(isOldVersion && S.months[k] && S.months[k].mSal){
+            if(!incoming.mSal) incoming.mSal = {};
+            Object.keys(S.months[k].mSal).forEach(function(eid){
+              if(!incoming.mSal[eid]) incoming.mSal[eid] = S.months[k].mSal[eid];
+            });
+          }
           S.months[k] = incoming;
         });
       }
-      if(data.monthlyEmps&&data.monthlyEmps.length) S.monthlyEmps=data.monthlyEmps;
-      if(data.dailyEmps&&data.dailyEmps.length) S.dailyEmps=data.dailyEmps;
+      // الموظفون والموردون والهيكل: لا يُستبدلان من ملف قديم
+      if(!isOldVersion){
+        if(data.monthlyEmps&&data.monthlyEmps.length) S.monthlyEmps=data.monthlyEmps;
+        if(data.dailyEmps&&data.dailyEmps.length) S.dailyEmps=data.dailyEmps;
+        if(data.suppliers&&data.suppliers.length) S.suppliers=data.suppliers;
+        if(data.lockedMonths) S.lockedMonths=data.lockedMonths;
+      }
       if(data.activeKey) S.activeKey=data.activeKey;
-      if(data.lockedMonths) S.lockedMonths=data.lockedMonths;
-      if(data.suppliers&&data.suppliers.length) S.suppliers=data.suppliers;
       
       renderAll(); saveAll();
       
@@ -5230,6 +5507,58 @@ function importJSON(ev){
   };
   reader.readAsText(file);
   ev.target.value='';
+}
+
+function importFromText(){
+  var old=document.getElementById('pasteImportModal');
+  if(old) old.remove();
+  var modal=document.createElement('div');
+  modal.id='pasteImportModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0';
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--surf);border-radius:16px 16px 0 0;width:100%;max-width:600px;padding:16px;max-height:80vh;display:flex;flex-direction:column;gap:10px';
+  box.innerHTML='<div style="font-weight:700;font-size:15px;color:var(--tx)">📋 لصق نص JSON</div>'
+    +'<div style="font-size:12px;color:var(--tx3)">افتح ملف JSON في أي محرر نصوص، انسخ المحتوى كاملاً، ثم الصقه هنا</div>'
+    +'<textarea id="pasteImportTA" style="flex:1;min-height:200px;padding:10px;border:1.5px solid var(--br);border-radius:10px;font-size:11px;font-family:monospace;background:var(--bg);color:var(--tx);resize:none;direction:ltr" placeholder=\'{"version":"v25","months":{...}}\'></textarea>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="document.getElementById(\'pasteImportModal\').remove()" style="flex:1;padding:12px;border:1px solid var(--br);background:transparent;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--tx)">إلغاء</button>'
+    +'<button onclick="_doPasteImport()" style="flex:2;padding:12px;background:#1A4A28;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✅ استيراد</button>'
+    +'</div>';
+  modal.appendChild(box);
+  modal.onclick=function(e){if(e.target===modal){modal.remove();}};
+  document.body.appendChild(modal);
+  setTimeout(function(){var ta=document.getElementById('pasteImportTA');if(ta)ta.focus();},200);
+}
+
+function _doPasteImport(){
+  var ta=document.getElementById('pasteImportTA');
+  if(!ta||!ta.value.trim()){toast('⚠️ الحقل فارغ');return;}
+  var fakeEv={target:{files:[new Blob([ta.value],{type:'application/json'})],value:''}};
+  fakeEv.target.files[0].name='paste.json';
+  var modal=document.getElementById('pasteImportModal');
+  // استخدم FileReader مباشرة
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=JSON.parse(e.target.result);
+      if(!data.months&&!data.data){toast('❌ ملف غير صالح');return;}
+      if(data.data&&data.data.months) data=data.data;
+      var monthCount=Object.keys(data.months||{}).length;
+      if(!confirm('⚠️ سيتم استبدال البيانات الحالية.\n\nعدد الأشهر: '+monthCount+'\n\nهل أنت متأكد؟')){return;}
+      if(modal) modal.remove();
+      if(data.months) Object.keys(data.months).forEach(function(k){S.months[k]=data.months[k];});
+      if(data.monthlyEmps&&data.monthlyEmps.length) S.monthlyEmps=data.monthlyEmps;
+      if(data.dailyEmps&&data.dailyEmps.length) S.dailyEmps=data.dailyEmps;
+      if(data.suppliers&&data.suppliers.length) S.suppliers=data.suppliers;
+      if(data.lockedMonths) S.lockedMonths=data.lockedMonths;
+      if(data.activeKey) S.activeKey=data.activeKey;
+      renderAll(); saveAll();
+      if(SUPA) supaSync('push').then(function(){toast('✅ تم الاستيراد وحفظ في السحابة ☁️');}).catch(function(){toast('✅ تم الاستيراد — '+monthCount+' شهر');});
+      else toast('✅ تم الاستيراد — '+monthCount+' شهر');
+      log('استيراد JSON لصق — '+monthCount+' شهر');
+    }catch(err){toast('❌ نص JSON غير صالح: '+err.message);}
+  };
+  reader.readAsText(new Blob([ta.value],{type:'application/json'}));
 }
 
 function exportExcel(){
@@ -6037,52 +6366,12 @@ function _appendMsg(text,role){
   return div;
 }
 
-function aiQuick(q){
-  var inp=document.getElementById('aiInput');
-  if(inp)inp.value=q;
-  sendAiMsg();
-}
-
-async function sendAiMsg(){
-  if(_aiLoading)return;
-  var inp=document.getElementById('aiInput');if(!inp)return;
-  var q=inp.value.trim();if(!q)return;
-  inp.value='';inp.style.height='auto';
-  _appendMsg(q,'user');
-  _aiHistory.push({role:'user',content:q});
-  _aiLoading=true;
-  var btn=document.getElementById('aiSendBtn');if(btn)btn.disabled=true;
-  var think=_appendMsg('⏳ يحلل بيانات الكافيه...','bot');
-  if(think)think.className='ai-msg bot thinking';
-  try{
-    var sys=buildCafeContext();
-    var msgs=_aiHistory.slice(-12);
-    var res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system:sys,messages:msgs})
-    });
-    var data=await res.json();
-    if(think)think.remove();
-    var reply='';
-    if(data.content&&data.content.length&&data.content[0].text){
-      reply=data.content[0].text;
-    } else {
-      reply='⚠️ خطأ: '+(data.error?data.error.message:JSON.stringify(data));
-    }
-    _appendMsg(reply,'bot');
-    _aiHistory.push({role:'assistant',content:reply});
-  }catch(e){
-    if(think)think.remove();
-    _appendMsg('⚠️ تعذّر الاتصال. تأكد من الإنترنت وأعد المحاولة.','bot');
-  }
-  _aiLoading=false;if(btn)btn.disabled=false;
-}
+function aiQuick(q){ askAI(q); }
 
 function clearAiChat(){
-  _aiHistory=[];
-  var msgs=document.getElementById('aiMsgs');
-  if(msgs)msgs.innerHTML='<div class="ai-msg bot">تم المسح. كيف يمكنني مساعدتك؟ 🌿</div>';
+  aiHistory=[];
+  var msgs=document.getElementById('aiMessages');
+  if(msgs)msgs.innerHTML='<div class="ai-msg assistant ai-welcome">تم المسح. كيف يمكنني مساعدتك؟ 🌿</div>';
 }
 
 // ════════════════════════════════════════════════
@@ -6103,26 +6392,7 @@ renderAll=function(){
   try{updateAiContext();}catch(e){}
 };
 
-var _saOrig=saveAll;
-saveAll=function(){
-  try{
-    if(!S.targets)S.targets={};
-    if(!S.inventory)S.inventory=[];
-    var sv={months:S.months,suppliers:S.suppliers,activeKey:S.activeKey,lockedMonths:S.lockedMonths||[],dailyEmps:S.dailyEmps,monthlyEmps:S.monthlyEmps,targets:S.targets,inventory:S.inventory};
-    safeLS.setItem(SK,JSON.stringify(sv));
-  }catch(e){}
-};
-
-var _lsOrig=loadStore;
-loadStore=function(){
-  _lsOrig();
-  try{
-    var r=safeLS.getItem(SK);
-    if(r){var sv=JSON.parse(r);if(sv.targets)S.targets=sv.targets;if(sv.inventory)S.inventory=sv.inventory;}
-    if(!S.targets)S.targets={};
-    if(!S.inventory)S.inventory=[];
-  }catch(e){}
-};
+// saveAll و loadStore يتضمنان targets و inventory أصلاً — لا حاجة لـ override
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SMART ANALYTICS V14 PRO - البطاقات الذكية الجديدة
@@ -7016,9 +7286,19 @@ function buildAIContext() {
 }
 
 // استدعاء Gemini API (مجاني)
+async function callNetlifyAI(provider, prompt, model) {
+  var res = await fetch('/.netlify/functions/ai', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({provider, prompt, model})
+  });
+  var data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.result;
+}
+
 async function callGroqAPI(question, context) {
   var key = safeLS.getItem('rh_groq_key') || '';
-  if(!key || !key.startsWith('gsk_')) throw new Error('no groq key');
   var ym = S.activeKey.split('-');
   var monthName = MNA[parseInt(ym[1])-1] || MN[parseInt(ym[1])-1] || 'الشهر';
   var prompt = 'أنت مستشار مالي خبير لمقهى ريحانة في الأردن. أجب بالعربية بشكل مختصر ومفيد مع أرقام دقيقة.\n\n' +
@@ -7035,6 +7315,9 @@ async function callGroqAPI(question, context) {
     '• رواتب مستحقة لم تُدفع: ' + n3(context.salariesAccrued||0) + ' JD\n' +
     '• التزامات غير مسددة: ' + (context.unpaidObl||0) + '\n\n' +
     'السؤال: ' + question;
+  // جرّب Netlify proxy أولاً — إذا فشل استخدم المفتاح المحلي
+  try { return await callNetlifyAI('groq', prompt, 'llama-3.1-8b-instant'); } catch(_) {}
+  if(!key || !key.startsWith('gsk_')) throw new Error('no groq key');
   var res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {'Content-Type':'application/json','Authorization':'Bearer '+key},
@@ -7066,6 +7349,12 @@ async function callClaudeAPI(question, context, apiKey) {
     (context.goal > 0 ? '- الهدف الشهري: ' + n3(context.goal) + ' JD\n' : '') +
     '\nسؤال العميل: ' + question;
   
+  var fullPrompt = systemPrompt + '\n\n' + userPrompt;
+
+  // جرّب Netlify proxy أولاً — إذا فشل استخدم المفتاح المحلي
+  try { return await callNetlifyAI('claude', fullPrompt, 'claude-haiku-4-5-20251001'); } catch(_) {}
+
+  if (!apiKey) throw new Error('no claude key');
   var response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -7075,17 +7364,13 @@ async function callClaudeAPI(question, context, apiKey) {
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 800,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }]
+      messages: [{ role: 'user', content: fullPrompt }]
     })
   });
-  
-  if (!response.ok) {
-    throw new Error('API Error: ' + response.status);
-  }
-  
+
+  if (!response.ok) throw new Error('API Error: ' + response.status);
   var data = await response.json();
   return data.content[0].text;
 }
@@ -9807,8 +10092,8 @@ function getV22AIResponse(question, ctx) {
     return response;
   }
   
-  // fallback
-  return getEnhancedLocalAIResponse(question, ctx);
+  // fallback — use original (pre-override) to avoid infinite recursion
+  return window._originalGetEnhanced ? window._originalGetEnhanced(question, ctx) : '❓ لم أفهم سؤالك. جرب: "ما الربح؟" أو "ما الوضع المالي؟"';
 }
 
 // ربط V22 AI بالنظام
@@ -9827,9 +10112,8 @@ if (originalGetEnhancedLocal) {
 window.initV22Features = function() {
   console.log('🚀 V24 PRO Features Initialized');
   
-  // ربط الحفظ الذكي بجميع inputs
+  // ربط الحفظ الذكي بجميع inputs — blur فقط (change يعيد ضبط debounce المزامنة)
   document.querySelectorAll('input[type="number"], input[type="text"]').forEach(function(input) {
-    input.addEventListener('change', function(){saveAll();});
     input.addEventListener('blur', function() {
       // التحقق من القيم السالبة
       if (this.type === 'number' && parseFloat(this.value) < 0) {
@@ -9838,6 +10122,7 @@ window.initV22Features = function() {
         this.value = 0;
         setTimeout(function() { this.classList.remove('input-error'); }.bind(this), 2000);
       }
+      saveAll();
     });
   });
   
@@ -9988,10 +10273,10 @@ window.addEventListener('load', function() {
     try { updateDash(); } catch(e) {}
   }, 1000);
   
-  // تحديث دوري كل 5 ثواني
+  // تحديث دوري كل دقيقتين (كان 5 ثوانٍ — ثقيل جداً)
   setInterval(function() {
     try { updateDash(); } catch(e) {}
-  }, 5000);
+  }, 120000);
 });
 
 console.log('📦 ريحانة V24-3 PRO loaded');
@@ -10058,6 +10343,22 @@ function listBackups() {
     return backups;
   } catch(e) {
     return [];
+  }
+}
+
+function restoreBackup(date) {
+  var backups = listBackups();
+  var backup = backups.find(function(b) { return b.date === date; });
+  if (!backup || !backup.data) { toast('❌ لم يتم العثور على النسخة'); return; }
+  if (!confirm('⚠️ سيتم استبدال البيانات الحالية ببيانات ' + date + '. متأكد؟')) return;
+  try {
+    safeLS.setItem(SK, backup.data);
+    loadStore();
+    renderAll();
+    cmo('moBackup');
+    toast('✅ تمت الاستعادة من نسخة ' + date);
+  } catch(e) {
+    toast('❌ فشل استعادة النسخة: ' + e.message);
   }
 }
 
@@ -10360,10 +10661,16 @@ function enterPresentationMode() {
   
   // Card 3: الاتجاه
   var trendIcon = analysis.trend === 'up' ? '📈' : analysis.trend === 'down' ? '📉' : '➡️';
+  var hasGrowthData = analysis.trend !== 'insufficient' && typeof analysis.avgGrowth === 'number';
   html += '<div class="presentation-card">';
   html += '<div class="presentation-card-title">' + trendIcon + ' اتجاه النمو</div>';
-  html += '<div class="presentation-big-number" style="color:' + (analysis.avgGrowth >= 0 ? 'var(--gn)' : 'var(--rd)') + '">' + (analysis.avgGrowth >= 0 ? '+' : '') + analysis.avgGrowth.toFixed(1) + '%</div>';
-  html += '<div style="text-align:center;color:var(--tx3)">توقع الشهر القادم: ' + n3(analysis.forecast) + ' JD</div>';
+  if (hasGrowthData) {
+    html += '<div class="presentation-big-number" style="color:' + (analysis.avgGrowth >= 0 ? 'var(--gn)' : 'var(--rd)') + '">' + (analysis.avgGrowth >= 0 ? '+' : '') + analysis.avgGrowth.toFixed(1) + '%</div>';
+    html += '<div style="text-align:center;color:var(--tx3)">توقع الشهر القادم: ' + n3(analysis.forecast) + ' JD</div>';
+  } else {
+    html += '<div class="presentation-big-number" style="color:var(--tx3)">—</div>';
+    html += '<div style="text-align:center;color:var(--tx3)">بيانات غير كافية (يحتاج شهرين)</div>';
+  }
   html += '</div>';
   
   // Card 4: مؤشر الصحة
@@ -10411,18 +10718,18 @@ function exitPresentationMode() {
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* V24-3 PRO: تهيئة الميزات الجديدة                                            */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+var _v24Interval = null;
 function initV24Features() {
   debugLog('🚀 V24-3 Features Initializing...');
-  
-  // تحديث التحليلات
+
   setTimeout(function() {
     renderTrendAnalysis();
     renderMonthComparison();
     renderEmployeeReport();
   }, 500);
-  
-  // تحديث دوري كل دقيقة
-  setInterval(function() {
+
+  if (_v24Interval) clearInterval(_v24Interval);
+  _v24Interval = setInterval(function() {
     renderTrendAnalysis();
     renderMonthComparison();
   }, 60000);
@@ -10480,15 +10787,59 @@ var SUPA_KEY_KEY = 'rh_supa_key';
 var SUPA_TABLE   = 'rh_store';
 var SUPA_ROW     = 'rayhana_cafe_v25';
 
+/* ── استعادة البيانات عند بدء التشغيل (مع شاشة تحميل وإعادة محاولة) ── */
+function _supaStartupPull(attempt){
+  // شاشة تحميل — تمنع المستخدم من رؤية بيانات فارغة
+  var OL_ID = '_supaStartOL';
+  if(attempt === 0){
+    var old = document.getElementById(OL_ID);
+    if(old) old.remove();
+    var ol = document.createElement('div');
+    ol.id = OL_ID;
+    ol.style.cssText = 'position:fixed;inset:0;background:rgba(237,234,216,.92);z-index:8500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px';
+    ol.innerHTML = '<div style="font-size:40px">☁️</div>'
+      + '<div style="font-weight:700;font-size:16px;color:#1A4A28">جاري استعادة البيانات...</div>'
+      + '<div style="font-size:12px;color:#6B7280">يتصل بـ Supabase</div>';
+    document.body.appendChild(ol);
+  }
+  supaSync('pull').then(function(){
+    var ol = document.getElementById(OL_ID);
+    if(ol) ol.remove();
+    toast('☁️ تم استعادة البيانات من السحابة');
+  }).catch(function(e){
+    if(attempt < 2){
+      // إعادة المحاولة تلقائياً: بعد 3ث ثم 6ث
+      var delay = (attempt + 1) * 3000;
+      var ol = document.getElementById(OL_ID);
+      if(ol){
+        var sub = ol.querySelector('div:last-child');
+        if(sub) sub.textContent = 'إعادة المحاولة خلال ' + (delay/1000) + ' ثوانٍ... (' + (attempt+1) + '/3)';
+      }
+      setTimeout(function(){ _supaStartupPull(attempt + 1); }, delay);
+    } else {
+      // فشل بعد 3 محاولات — أزل الشاشة واعرض خطأ مع زر إعادة
+      var ol = document.getElementById(OL_ID);
+      if(ol){
+        ol.innerHTML = '<div style="font-size:36px">⚠️</div>'
+          + '<div style="font-weight:700;font-size:15px;color:#DC2626">تعذّر استعادة البيانات</div>'
+          + '<div style="font-size:12px;color:#6B7280;text-align:center;padding:0 24px">تحقق من الإنترنت ثم اضغط إعادة المحاولة</div>'
+          + '<div style="display:flex;gap:10px;margin-top:4px">'
+          + '<button onclick="_supaStartupPull(0)" style="background:#1A4A28;color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔄 إعادة المحاولة</button>'
+          + '<button onclick="document.getElementById(\'' + OL_ID + '\').remove()" style="background:transparent;color:#6B7280;border:1px solid #D1D5DB;padding:10px 20px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit">تجاهل</button>'
+          + '</div>';
+      }
+    }
+  });
+}
+
 /* ── إنشاء الاتصال ── */
 function supaInit(){
-  var url = safeLS.getItem(SUPA_URL_KEY);
-  var key = safeLS.getItem(SUPA_KEY_KEY);
+  var url = _kGet(SUPA_URL_KEY);
+  var key = _kGet(SUPA_KEY_KEY);
   if(!url || !key) return;
   try{
     SUPA = supabase.createClient(url, key);
     supaUpdateUI(true);
-    // رفع تلقائي عند كل حفظ
   } catch(e){
     console.warn('Supabase init error:', e);
     SUPA = null;
@@ -10510,34 +10861,29 @@ function supaConnectAndTest(){
     if(errEl) errEl.textContent='⚠️ أدخل Anon Key صحيح';
     return;
   }
-  // حفظ مبدئي
-  safeLS.setItem(SUPA_URL_KEY,url);
-  safeLS.setItem(SUPA_KEY_KEY,key);
+  _kSet(SUPA_URL_KEY, url);
+  _kSet(SUPA_KEY_KEY, key);
   supaInit();
   if(!SUPA){
     if(errEl) errEl.textContent='❌ فشل إنشاء الاتصال — تحقق من البيانات';
-    safeLS.removeItem(SUPA_URL_KEY);
-    safeLS.removeItem(SUPA_KEY_KEY);
+    _kRemove(SUPA_URL_KEY);
+    _kRemove(SUPA_KEY_KEY);
     return;
   }
-  // اختبار حقيقي بالرفع
   toast('⏳ جاري الاختبار...');
   supaSync('push').then(function(){
     toast('✅ تم الربط بنجاح! بياناتك في السحابة ☁️');
     log('تفعيل Supabase');
     supaUpdateUI(true);
-    // تفعيل مزامنة تلقائية
     SUPA_AUTO=true;
-    safeLS.setItem('rh_supa_auto','1');
-    if(SUPA_TIMER) clearInterval(SUPA_TIMER);
-    SUPA_TIMER=setInterval(function(){
-      if(SUPA) requestAnimationFrame(function(){ setTimeout(function(){ supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError); }, 0); });
-    },5*60*1000);
+    _kSet('rh_supa_auto','1');
+    // تحديث بصمة البيانات بعد الرفع الأول
+    _supaLastPushedSig = _supaGetDataSig ? _supaGetDataSig() : null;
   }).catch(function(e){
     if(errEl) errEl.textContent='❌ '+e.message+' — تأكد من تنفيذ SQL في الخطوة ٣';
     SUPA=null;
-    safeLS.removeItem(SUPA_URL_KEY);
-    safeLS.removeItem(SUPA_KEY_KEY);
+    _kRemove(SUPA_URL_KEY);
+    _kRemove(SUPA_KEY_KEY);
     supaUpdateUI(false);
   });
 }
@@ -10568,8 +10914,8 @@ async function supaSync(direction){
       .upsert({key: SUPA_ROW, value: payload, updated_at: new Date().toISOString()});
     if(res.error) throw new Error(res.error.message);
     var now = new Date().toLocaleTimeString('ar');
-    safeLS.setItem('rh_supa_last', now);
-    safeLS.setItem('rh_last_push_at', payload.savedAt);
+    _kSet('rh_supa_last', now);
+    _kSet('rh_last_push_at', payload.savedAt);
     supaSetStatus('ok', '✅ محفوظ في السحابة · '+now);
     T('supaLastSync', 'آخر مزامنة: '+now);
     setTimeout(function(){supaSetStatus('ok','✅ متصل بـ Supabase');},3000);
@@ -10589,9 +10935,14 @@ async function supaSync(direction){
       throw new Error(res.error.message);
     }
     var sv = res.data.value;
+    // Supabase يعيد value كـ object (jsonb) أو string (text) — نحوّل إذا لزم
+    if(typeof sv === 'string'){
+      try{ sv = JSON.parse(sv); }catch(e){ throw new Error('بيانات السحابة تالفة — تعذّر التحليل'); }
+    }
+    if(!sv || typeof sv !== 'object'){ throw new Error('بيانات السحابة فارغة أو غير صالحة'); }
     // Conflict info — note if cloud data is from a different device (non-blocking)
     var _localDevice = navigator.userAgent.slice(0,60);
-    var _localLastPush = safeLS.getItem('rh_last_push_at');
+    var _localLastPush = _kGet('rh_last_push_at');
     if(sv.device && sv.device !== _localDevice && _localLastPush && sv.savedAt){
       var _localT = new Date(_localLastPush).getTime();
       var _remoteT = new Date(sv.savedAt).getTime();
@@ -10628,7 +10979,7 @@ async function supaSync(direction){
 /* ── مزامنة تلقائية ── */
 function toggleSupaAuto(){
   SUPA_AUTO = !SUPA_AUTO;
-  safeLS.setItem('rh_supa_auto', SUPA_AUTO?'1':'0');
+  _kSet('rh_supa_auto', SUPA_AUTO?'1':'0');
   var btn = document.getElementById('supaAutoBtn');
   if(SUPA_AUTO){
     if(btn) btn.textContent='إيقاف';
@@ -10650,9 +11001,9 @@ function supaDisconnect(){
   SUPA=null;
   SUPA_AUTO=false;
   if(SUPA_TIMER){clearInterval(SUPA_TIMER); SUPA_TIMER=null;}
-  safeLS.removeItem(SUPA_URL_KEY);
-  safeLS.removeItem(SUPA_KEY_KEY);
-  safeLS.removeItem('rh_supa_auto');
+  _kRemove(SUPA_URL_KEY);
+  _kRemove(SUPA_KEY_KEY);
+  _kRemove('rh_supa_auto');
   supaUpdateUI(false);
   toast('⛔ تم قطع الاتصال');
   log('قطع اتصال Supabase');
@@ -10680,7 +11031,7 @@ function supaUpdateUI(connected){
   var whyBox=document.getElementById('cloudWhyBox');
   var statusTitle=document.getElementById('cloudStatusTitle');
   var statusSub=document.getElementById('cloudStatusSub');
-  var last=safeLS.getItem('rh_supa_last');
+  var last=_kGet('rh_supa_last');
 
   if(connected&&SUPA){
     if(dot){dot.style.background='var(--gn)';dot.classList.add('on');}
@@ -10695,7 +11046,7 @@ function supaUpdateUI(connected){
     var cloudTab=document.getElementById('cloudTab');
     if(cloudTab) cloudTab.textContent='☁️✅ السحابة';
     // auto sync
-    var autoOn=safeLS.getItem('rh_supa_auto')==='1';
+    var autoOn=_kGet('rh_supa_auto')==='1';
     var autoBtn=document.getElementById('supaAutoBtn');
     if(autoBtn) autoBtn.textContent=autoOn?'إيقاف':'تشغيل';
     T('supaLastSync',last?'آخر مزامنة: '+last:'لم تتم مزامنة بعد');
@@ -10801,32 +11152,41 @@ function supaHandleSyncError(e) {
   }
 }
 
-/* ── Hook: رفع تلقائي بعد كل حفظ ── */
-var _origSaveAll = saveAll;
-saveAll = function(){
-  _origSaveAll();
-  if(SUPA){
-    // debounce 3s — خاصية المزامنة لا تُشغَّل حتى يهدأ المستخدم
-    if(window._supaDebounce) clearTimeout(window._supaDebounce);
-    window._supaDebounce = setTimeout(function(){
-      // تأجيل إطار واحد حتى تنتهي الرسوم وتستجيب الواجهة
-      requestAnimationFrame(function(){
-        setTimeout(function(){
-          supaSync('push').then(function(){
-            _supaRetryCount = 0;
-          }).catch(function(e){
-            supaHandleSyncError(e);
-          });
-        }, 0);
-      });
-    }, 3000);
-  }
-};
+/* ── Supabase push — interval مستقل عن saveAll ── */
+// المشكلة القديمة: debounce يُعاد ضبطه مع كل auto-save → push لا يُرسَل أبداً
+// الحل: interval منفصل يتحقق من تغيُّر البيانات كل 90 ثانية
+var _supaLastPushedSig = null;
+
+function _supaGetDataSig() {
+  // بصمة البيانات: savedAt من آخر saveAll
+  try {
+    var raw = (window.AndroidStorage ? window.AndroidStorage.load() : null)
+              || safeLS.getItem('rh_v6');
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    return obj.savedAt || raw.length;
+  } catch(e) { return null; }
+}
+
+function _supaPushIfChanged() {
+  if (!SUPA) return;
+  var sig = _supaGetDataSig();
+  if (!sig || sig === _supaLastPushedSig) return; // لا تغيير
+  supaSync('push').then(function(){
+    _supaLastPushedSig = sig;
+    _supaRetryCount = 0;
+  }).catch(supaHandleSyncError);
+}
+
+// رفع كل 90 ثانية إذا تغيّرت البيانات
+setInterval(_supaPushIfChanged, 90000);
+
+// رفع فوري عند إخفاء التطبيق (Home/مهام)
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden && SUPA) setTimeout(_supaPushIfChanged, 800);
+});
 
 /* ── Supabase: تهيئة عند تحميل الصفحة ── */
-// لا override — يُطلق مباشرة من doLogin بعد النجاح
-
-// تهيئة فورية إذا كان الـ client موجود
 if(typeof supabase !== 'undefined'){
   setTimeout(supaInit, 500);
 }
