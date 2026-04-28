@@ -34,8 +34,8 @@ Configuration on demand is an incubating feature.
 > Task :app:mergeDebugAssets
 > Task :app:desugarDebugFileDependencies
 > Task :app:processDebugJavaRes NO-SOURCE
-> Task :app:compressDebugAssets
 > Task :app:processDebugManifestForPackage
+> Task :app:compressDebugAssets
 > Task :app:mergeDebugJavaResource
 > Task :app:mergeDebugStartupProfile
 > Task :app:checkDebugDuplicateClasses
@@ -285,5 +285,5 @@ Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Com
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
 
 
-BUILD FAILED in 35s
+BUILD FAILED in 38s
 26 actionable tasks: 26 executed
