@@ -3274,8 +3274,8 @@ create policy "allow_all" on rh_store
 </div></div>
 
 <script>
-var _mem = {};
-var safeLS = (function() {
+const _mem = {};
+const safeLS = (function() {
   try {
     localStorage.setItem('__ping__', '1');
     localStorage.removeItem('__ping__');
@@ -3314,8 +3314,8 @@ function _kRemove(key) {
 // ═══════════════════════════════════════════
 // QUICK ENTRY — Single Day Revenue
 // ═══════════════════════════════════════════
-var QE_DAY = 1;
-var QE_WHO = '';
+let QE_DAY = 1;
+let QE_WHO = '';
 
 function qeInit() {
   // Set to today's date if in active month, else last day
@@ -3583,16 +3583,16 @@ setTimeout(registerServiceWorker, 3000);
 // ═══════════════════════════════════════════
 // PASSWORD LOGIN
 // ═══════════════════════════════════════════
-var DEFAULT_PWD = '1234';
-var PWD_KEY = 'rh_mgr_pwd';
+const DEFAULT_PWD = '1234';
+const PWD_KEY = 'rh_mgr_pwd';
 
 async function sha256(str){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str+'__rh_v25__'));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
-var _pwdFailCount = 0;
-var _pwdLockUntil = 0;
+let _pwdFailCount = 0;
+let _pwdLockUntil = 0;
 
 function checkPwd() {
   var input = document.getElementById('pwdInput');
@@ -3767,7 +3767,7 @@ let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
 
 /* STATE */
-var _nd=new Date(),_ck=_nd.getFullYear()+'-'+String(_nd.getMonth()+1).padStart(2,'0');
+const _nd=new Date(),_ck=_nd.getFullYear()+'-'+String(_nd.getMonth()+1).padStart(2,'0');
 let S={activeKey:_ck,months:{},lockedMonths:[],
   suppliers:[
     {id:'s1',name:'المؤسسة العسكرية',cat:'مواد غذائية ومواد خام',note:''},
@@ -4071,7 +4071,7 @@ function updSaleWho(day,selEl){
   selEl.className="who-sel"+(v==="يزن"?" who-yz":v==="عبدالرحمن"?" who-ab":"");
   updSale(day,"receivedBy",v);
 }
-var _updSaleTimer = null;
+let _updSaleTimer = null;
 function updSale(day,field,val){
   if(isLocked()){toast("الشهر مغلق");return;}
   var d=G();
@@ -4961,10 +4961,10 @@ function buildSelects(){buildPurchSupp();buildAdvEmpSel();}
 /* SMART AUTO-SAVE SYSTEM V14 PRO                                              */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-var autoSaveInterval = null;
-var pendingSave = false;
-var lastSaveTime = 0;
-var saveCount = 0;
+let autoSaveInterval = null;
+let pendingSave = false;
+let lastSaveTime = 0;
+let saveCount = 0;
 
 // بدء نظام الحفظ التلقائي
 function startAutoSave() {
@@ -5471,7 +5471,25 @@ function _showCopyModal(json,fname){
     } else { toast('المشاركة غير متوفرة في هذا المتصفح'); }
   };
 
+  // زر تحميل مباشر — يعمل على المتصفح والموقع
+  var dlBtn=document.createElement('button');
+  dlBtn.style.cssText='width:100%;padding:11px;background:transparent;color:#0070F2;border:1.5px solid #0070F2;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit';
+  dlBtn.textContent='⬇️ تحميل الملف مباشرة';
+  dlBtn.onclick=function(){
+    try{
+      var blob=new Blob([json],{type:'application/json'});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url; a.download=fname; a.style.display='none';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },1000);
+      dlBtn.textContent='✅ جاري التحميل...';
+      setTimeout(function(){ dlBtn.textContent='⬇️ تحميل الملف مباشرة'; },2000);
+    }catch(e){ toast('⚠️ تعذّر التحميل — استخدم نسخ النص'); }
+  };
+
   ft.appendChild(cpBtn);
+  ft.appendChild(dlBtn);
   ft.appendChild(shareBtn);
   box.appendChild(hdr); box.appendChild(bd); box.appendChild(ft);
   modal.appendChild(box);
@@ -6034,7 +6052,7 @@ function renderWeeklyHeat() {
 // ════════════════════════════════════════════════════════════════
 // HOOK: extend updateDash to call new functions
 // ════════════════════════════════════════════════════════════════
-var _udOrig2 = updateDash;
+const _udOrig2 = updateDash;
 updateDash = function() {
   _udOrig2();
   try { renderAlerts(); } catch(e) { console.error('renderAlerts error:', e); }
@@ -6076,7 +6094,7 @@ function renderTarget(){
 // ════════════════════════════════════════════════
 // INVENTORY
 // ════════════════════════════════════════════════
-var INV_ICO={'\u0642\u0647\u0648\u0629':'\u2615','\u062d\u0644\u064a\u0628':'\uD83E\uDD5B','\u0645\u0648\u0627\u062f':'\uD83E\uDDF4','\u062a\u0639\u0628\u0626\u0629':'\uD83D\uDCE6','\u0623\u062e\u0631\u0649':'\uD83D\uDCCB'};
+const INV_ICO={'\u0642\u0647\u0648\u0629':'\u2615','\u062d\u0644\u064a\u0628':'\uD83E\uDD5B','\u0645\u0648\u0627\u062f':'\uD83E\uDDF4','\u062a\u0639\u0628\u0626\u0629':'\uD83D\uDCE6','\u0623\u062e\u0631\u0649':'\uD83D\uDCCB'};
 function openInvEdit(idx){
   if(!S.inventory)S.inventory=[];
   var item=S.inventory[idx];
@@ -6161,7 +6179,7 @@ function invDel(idx){
 // ════════════════════════════════════════════════
 // ANNUAL VIEW
 // ════════════════════════════════════════════════
-var MNA=['\u064a\u0646\u0627\u064a\u0631','\u0641\u0628\u0631\u0627\u064a\u0631','\u0645\u0627\u0631\u0633','\u0623\u0628\u0631\u064a\u0644','\u0645\u0627\u064a\u0648','\u064a\u0648\u0646\u064a\u0648','\u064a\u0648\u0644\u064a\u0648','\u0623\u063a\u0633\u0637\u0633','\u0633\u0628\u062a\u0645\u0628\u0631','\u0623\u0643\u062a\u0648\u0628\u0631','\u0646\u0648\u0641\u0645\u0628\u0631','\u062f\u064a\u0633\u0645\u0628\u0631'];
+const MNA=['\u064a\u0646\u0627\u064a\u0631','\u0641\u0628\u0631\u0627\u064a\u0631','\u0645\u0627\u0631\u0633','\u0623\u0628\u0631\u064a\u0644','\u0645\u0627\u064a\u0648','\u064a\u0648\u0646\u064a\u0648','\u064a\u0648\u0644\u064a\u0648','\u0623\u063a\u0633\u0637\u0633','\u0633\u0628\u062a\u0645\u0628\u0631','\u0623\u0643\u062a\u0648\u0628\u0631','\u0646\u0648\u0641\u0645\u0628\u0631','\u062f\u064a\u0633\u0645\u0628\u0631'];
 function initAnnualYear(){
   var sel=document.getElementById('annualYear');if(!sel)return;
   sel.innerHTML='';
@@ -6271,7 +6289,7 @@ function renderCompare(){
 // ════════════════════════════════════════════════
 // AI ASSISTANT — Full Claude API Chat
 // ════════════════════════════════════════════════
-var _aiHistory=[],_aiLoading=false;
+const _aiHistory=[]; let _aiLoading=false;
 
 function buildCafeContext(){
   var t=totals(),d=G();
@@ -6417,7 +6435,7 @@ function clearAiChat(){
 // ════════════════════════════════════════════════
 // HOOK INTO pg(), renderAll(), saveAll(), loadStore()
 // ════════════════════════════════════════════════
-var _pgOrig=pg;
+const _pgOrig=pg;
 pg=function(id,btn){
   _pgOrig(id,btn);
   if(id==='inv'){try{renderInvList();}catch(e){}}
@@ -6425,7 +6443,7 @@ pg=function(id,btn){
   if(id==='ai'){try{updateAiContext();}catch(e){}}
 };
 
-var _raOrig=renderAll;
+const _raOrig=renderAll;
 renderAll=function(){
   _raOrig();
   try{renderTarget();}catch(e){}
@@ -6587,8 +6605,8 @@ function updateWeeklyCardNew() {
 // AI SMART ASSISTANT V14 PRO - يعمل محلياً بدون API
 // ═══════════════════════════════════════════════════════════════════════════
 
-var aiHistory = [];
-var aiLoading = false;
+let aiHistory = [];
+let aiLoading = false;
 
 function updateQuickInsights() {
   var container = document.getElementById('aiQuickInsights');
@@ -8085,7 +8103,7 @@ function generateQuickDecision(ctx, d, question) {
 // SMART NOTIFICATIONS SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════
 
-var notifications = [];
+let notifications = [];
 
 function toggleNotifications() {
   var nc = document.getElementById('notifCenter');
@@ -8411,7 +8429,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // V15 ULTIMATE - LIVE STATS
 // ═══════════════════════════════════════════════════════════════════════════
 
-var liveClockInterval = null;
+let liveClockInterval = null;
 
 function startLiveClock() {
   updateLiveTime();
@@ -9407,8 +9425,8 @@ window.initV15Features = function() {
 // 1. CALCULATION ENGINE - مصدر واحد للحقيقة
 // ═══════════════════════════════════════════════════════════════════════════
 
-var _calcCache = null;
-var _calcCacheTime = 0;
+let _calcCache = null;
+let _calcCacheTime = 0;
 
 function getCalc() {
   // Cache لمدة ثانية واحدة
@@ -10137,7 +10155,7 @@ function getV22AIResponse(question, ctx) {
 }
 
 // ربط V22 AI بالنظام
-var originalGetEnhancedLocal = typeof getEnhancedLocalAIResponse === 'function' ? getEnhancedLocalAIResponse : null;
+const originalGetEnhancedLocal = typeof getEnhancedLocalAIResponse === 'function' ? getEnhancedLocalAIResponse : null;
 if (originalGetEnhancedLocal) {
   window._originalGetEnhanced = originalGetEnhancedLocal;
   getEnhancedLocalAIResponse = function(question, ctx) {
@@ -10324,8 +10342,8 @@ console.log('📦 ريحانة V24-3 PRO loaded');
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* V24-3 PRO: نظام التصحيح المتقدم (يُعطّل في الإنتاج)                         */
 /* ═══════════════════════════════════════════════════════════════════════════ */
-var DEBUG_MODE = false; // تغيير إلى false في الإنتاج
-var originalConsole = {
+const DEBUG_MODE = false;
+const originalConsole = {
   log: console.log,
   warn: console.warn,
   error: console.error
