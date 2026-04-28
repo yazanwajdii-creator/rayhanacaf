@@ -1,0 +1,63 @@
+:root{
+  /* ═══════════════════════════════════════════════════════════════════════════
+     ريحانة V24 PRO - Premium Modern Theme
+     ألوان عصرية مريحة للعين مع تدرجات احترافية
+  ═══════════════════════════════════════════════════════════════════════════ */
+  
+  /* الألوان الأساسية */
+  --esp:#1E1410;--drk:#0F172A;--cof:#3D2914;--cap:#78716C;
+
+  /* اللون الرئيسي - ذهبي دافئ */
+  --primary:#D97706;--primary-dark:#B45309;--primary-light:#FEF3C7;--primary-bg:rgba(217,119,6,.08);
+
+  /* لون التمييز الأزرق — كان مفقوداً، سبب عطل بصري عام */
+  --sap:#0070F2;--sap-d:#0060DF;--sap-l:rgba(0,112,242,.08);--sap-m:rgba(0,112,242,.15);
+  
+  /* الخلفيات - محايدة مريحة */
+  --bg:#F8FAFC;--surf:#FFFFFF;--surf2:#F1F5F9;--surf3:#E2E8F0;
+  --br:#E2E8F0;--br2:#CBD5E1;
+  
+  /* النصوص - تدرجات واضحة */
+  --tx:#1E293B;--tx2:#475569;--tx3:#64748B;--tx4:#94A3B8;
+  
+  /* ألوان الحالة - متوازنة ومريحة */
+  --gn:#059669;--gnd:#047857;--gnl:#D1FAE5;--gnb:#A7F3D0;
+  --rd:#DC2626;--rdd:#B91C1C;--rdl:#FEE2E2;--rdb:#FECACA;
+  --yw:#D97706;--ywd:#B45309;--ywl:#FEF3C7;--ywb:#FDE68A;
+  --bl:#0284C7;--bld:#0369A1;--bll:#E0F2FE;--blb:#BAE6FD;
+  --pur:#7C3AED;--purl:#EDE9FE;
+  
+  /* الذهبي الفاخر */
+  --gold:#D97706;--gdb:#B45309;--gdl:#FEF3C7;--gdp:#FFFBEB;
+  
+  /* الظلال المحسّنة */
+  --sh0:0 1px 3px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.03);
+  --sh1:0 2px 8px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.04);
+  --sh2:0 8px 24px rgba(0,0,0,.09),0 3px 8px rgba(0,0,0,.05);
+  --sh3:0 16px 40px rgba(0,0,0,.12),0 6px 16px rgba(0,0,0,.06);
+  --sh-glow:0 0 24px rgba(217,119,6,.2);
+  --sh-blue:0 4px 16px rgba(0,112,242,.2);
+  
+  /* الحدود المستديرة */
+  --r:8px;--rm:12px;--rl:16px;--rxl:24px;
+  
+  /* الانتقالات */
+  --trans:all .2s cubic-bezier(.4,0,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+button,input,select,textarea,a,.ntab,.tbtn,.btn,.att-d,.qe-who-btn,.obl-toggle,.qe-save,[role="button"]{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button:active,.btn:active,.ntab:active,.tbtn:active,.fab-btn:active{opacity:.75;transform:scale(.97)}
+html{font-size:13px;scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.55;overflow-x:hidden}
+
+/* PIN SCREEN — ألوان هوية ريحانة كافيه */
+#pinScreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#EDEAD8 0%,#E6E2CC 50%,#EBE8D5 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:30px 20px 40px}
+#pinScreen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 30%,rgba(26,92,40,.06) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(193,127,36,.08) 0%,transparent 60%);pointer-events:none;z-index:-1}
+.pin-wrap{width:100%;max-width:360px;text-align:center;position:relative;margin:auto}
+.pin-logo{display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.pin-ver{font-size:10px;color:rgba(26,61,30,.35);letter-spacing:2px;text-transform:uppercase;margin-bottom:22px;font-weight:500}
+/* Login screen password input */
+#pwdInput{background:rgba(255,255,255,.7)!important;border:1.5px solid rgba(26,92,40,.2)!important;color:#1A3D1E!important;transition:all .2s!important}
+#pwdInput:focus{border-color:rgba(26,92,40,.5)!important;box-shadow:0 0 0 3px rgba(26,92,40,.1)!important;background:rgba(255,255,255,.9)!important}
+@keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
