@@ -62,9 +62,10 @@
   /* الانتقالات */
   --trans:all .2s cubic-bezier(.4,0,.2,1);
 }
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-button,input,select,textarea,a,.ntab,.tbtn,.btn,.att-d,.qe-who-btn,.obl-toggle,.qe-save,[role="button"]{touch-action:manipulation}
-html{font-size:13px;scroll-behavior:smooth}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+button,input,select,textarea,a,.ntab,.tbtn,.btn,.att-d,.qe-who-btn,.obl-toggle,.qe-save,[role="button"]{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button:active,.btn:active,.ntab:active,.tbtn:active,.fab-btn:active{opacity:.75;transform:scale(.97)}
+html{font-size:13px;scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.55;overflow-x:hidden}
 
 /* PIN SCREEN — ألوان هوية ريحانة كافيه */
@@ -114,15 +115,15 @@ body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--bg
 .nav-tabs{background:var(--surf);border-bottom:1px solid var(--br);overflow-x:auto;scrollbar-width:none;flex-shrink:0;box-shadow:0 1px 0 var(--br)}
 .nav-tabs::-webkit-scrollbar{display:none}
 .nav-inner{display:flex;min-width:max-content;padding:6px 10px;gap:3px}
-.ntab{background:transparent;border:none;padding:0 13px;height:34px;color:var(--tx3);font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;font-family:'IBM Plex Sans Arabic',sans-serif;border-radius:8px;transition:all .18s;border-bottom:none;margin:0}
+.ntab{background:transparent;border:none;padding:0 13px;height:44px;color:var(--tx3);font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;font-family:'IBM Plex Sans Arabic',sans-serif;border-radius:8px;transition:background .1s,color .1s;border-bottom:none;margin:0}
 .ntab:hover{color:var(--tx);background:var(--surf2)}
 .ntab.on{color:var(--sap);font-weight:700;background:var(--sap-l);box-shadow:0 0 0 1px var(--sap-m)}
 
 /* MAIN */
 .main{flex:1;overflow-y:auto;padding:14px;max-width:1100px;margin:0 auto;width:100%}
 .pg{display:none}
-.pg.on{display:block;animation:fadeIn .15s ease}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.pg.on{display:block;animation:pgIn .12s ease-out}
+@keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
 /* CARDS */
@@ -170,7 +171,7 @@ tfoot td{background:linear-gradient(135deg,#1A0E0A,#0F172A)!important;color:#fff
 @media(max-width:380px){.frow{grid-template-columns:1fr}}
 
 /* BUTTONS */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 16px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s cubic-bezier(.4,0,.2,1);white-space:nowrap;font-family:'IBM Plex Sans Arabic',sans-serif;letter-spacing:.1px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 16px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .1s,transform .1s;white-space:nowrap;font-family:'IBM Plex Sans Arabic',sans-serif;letter-spacing:.1px}
 .btn:active{transform:scale(.95)}
 .btn-p{background:var(--sap);color:#fff}.btn-p:hover{background:var(--sap-d)}
 .btn-g{background:linear-gradient(135deg,var(--gnd),var(--gn));color:#fff;box-shadow:0 2px 8px rgba(5,150,105,.3)}
@@ -395,7 +396,7 @@ tfoot td{background:linear-gradient(135deg,#1A0E0A,#0F172A)!important;color:#fff
 .sec-lbl::after{content:'';flex:1;height:1px;background:var(--br)}
 
 /* FAB */
-.fab{position:fixed;bottom:20px;left:16px;width:42px;height:42px;background:var(--sap);color:#fff;border:none;border-radius:50%;font-size:17px;cursor:pointer;box-shadow:0 3px 12px rgba(0,112,242,.4);z-index:400;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.fab{position:fixed;bottom:20px;right:16px;width:42px;height:42px;background:var(--sap);color:#fff;border:none;border-radius:50%;font-size:17px;cursor:pointer;box-shadow:0 3px 12px rgba(0,112,242,.4);z-index:400;display:flex;align-items:center;justify-content:center;transition:transform .1s}
 .fab:hover{background:var(--sap-d)}.fab:active{transform:scale(.9)}
 
 /* LOG */
@@ -845,8 +846,8 @@ body.presentation-mode .kpi-tile{transform:scale(1.05)}
 /* ═══════════════════════════════════════════════════════════════ */
 /* V24-2 FIX: FAB BUTTONS - إصلاح تداخل الأزرار                    */
 /* ═══════════════════════════════════════════════════════════════ */
-.fab-container{position:fixed;bottom:90px;left:12px;display:flex;flex-direction:column;gap:12px;z-index:400}
-.fab-btn{width:44px;height:44px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.fab-container{position:fixed;bottom:72px;left:12px;display:flex;flex-direction:column;gap:10px;z-index:401}
+.fab-btn{width:44px;height:44px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:transform .1s,opacity .1s;box-shadow:0 2px 8px rgba(0,0,0,.2);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .fab-btn:hover{transform:scale(1.1)}
 .fab-btn:active{transform:scale(0.95)}
 .fab-primary{background:linear-gradient(135deg,var(--gold),var(--gdb));color:#fff}
@@ -1124,7 +1125,7 @@ body.presentation-mode:hover .presentation-exit{opacity:1}
 .af-amount.negative{color:var(--rdd)}
 
 /* EXPORT OPTIONS */
-.export-panel{display:none;position:fixed;bottom:80px;left:16px;background:var(--surf);border:1px solid var(--br);border-radius:16px;padding:12px;box-shadow:var(--sh3);z-index:500}
+.export-panel{display:none;position:fixed;bottom:72px;right:16px;background:var(--surf);border:1px solid var(--br);border-radius:16px;padding:12px;box-shadow:var(--sh3);z-index:500}
 .export-panel.show{display:block;animation:exportslide .3s ease-out}
 @keyframes exportslide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .export-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;border-radius:8px;font-size:12px;font-weight:600;color:var(--tx);cursor:pointer;transition:background .15s;font-family:'IBM Plex Sans Arabic',sans-serif}
@@ -3704,6 +3705,7 @@ function doLogin(role) {
     try { applyRoles(); } catch(e) {}
     try { resetInact(); } catch(e) {}
     try { updLkChips(); } catch(e) {}
+    try { _restoreLastPage(); } catch(e) {}
     
     // V15 ULTIMATE - تحديث كل الميزات الجديدة
     setTimeout(function() {
@@ -3956,17 +3958,37 @@ function switchMonth(k){S.activeKey=k;getMonth(k);renderRevTable();initSalTables
 function pg(id,btn){
   document.querySelectorAll(".pg").forEach(p=>p.classList.remove("on"));
   document.querySelectorAll(".ntab").forEach(t=>t.classList.remove("on"));
-  $(id).classList.add("on");
+  var el=$(id); if(!el) return;
+  el.classList.add("on");
   if(btn) btn.classList.add("on");
-  // lazy render حسب الصفحة — بدلاً من renderAll() الثقيلة في كل مرة
+  // حفظ الصفحة الأخيرة
+  try{ _kSet('rh_last_page', id); }catch(e){}
+  // lazy render حسب الصفحة
   if(id==="audit") renderLog();
   else if(id==="rpt") {updateDash();setTimeout(function(){try{updateRpt();}catch(e){}},60);}
   else if(id==="sal") {setTimeout(function(){try{initSalTables();}catch(e){}},60);}
   else if(id==="adv") {renderAdv();renderAdvLedger();}
   else if(id==="oblig") renderObligList();
   else if(id==="purch") renderPurch();
+  else if(id==="supp") {renderSuppList();renderSuppRpt();}
   else if(id==="dash"||id==="mgr") updateDash();
+  else if(id==="inv") try{renderInvList();}catch(e){}
+  else if(id==="annual") try{initAnnualYear();renderAnnual();}catch(e){}
+  else if(id==="ai") try{updateAiContext();}catch(e){}
   else renderAll();
+}
+
+// استعادة الصفحة الأخيرة بعد تسجيل الدخول
+function _restoreLastPage(){
+  try{
+    var last = _kGet('rh_last_page');
+    if(!last) return;
+    var el = $(last);
+    if(!el) return;
+    // إيجاد زر التبويب المقابل
+    var btn = document.querySelector('.ntab[onclick*="\''+last+'\'"]');
+    pg(last, btn);
+  }catch(e){}
 }
 
 /* SEARCH */
@@ -5102,6 +5124,9 @@ window.addEventListener('beforeunload', function() {
 /* STORAGE */
 function saveAll(){
   try{
+    // حفظ الصفحة الحالية مع البيانات
+    var _curPg = null;
+    try{ var _onEl=document.querySelector('.pg.on'); if(_onEl) _curPg=_onEl.id; }catch(e){}
     var data = JSON.stringify({
       activeKey:S.activeKey,
       months:S.months,
@@ -5111,6 +5136,7 @@ function saveAll(){
       monthlyEmps:S.monthlyEmps,
       targets:S.targets||{},
       inventory:S.inventory||[],
+      lastPage:_curPg||'dash',
       savedAt:new Date().toISOString()
     });
     // 1) Android file storage — الأكثر موثوقية (لا يُحذف عند إغلاق التطبيق)
@@ -5149,6 +5175,8 @@ function loadStore(){
       if(sv.monthlyEmps&&sv.monthlyEmps.length)S.monthlyEmps=sv.monthlyEmps;
       if(sv.targets&&Object.keys(sv.targets).length)S.targets=sv.targets;
       if(sv.inventory&&sv.inventory.length)S.inventory=sv.inventory;
+      // حفظ آخر صفحة لاستعادتها بعد تسجيل الدخول
+      if(sv.lastPage) try{ _kSet('rh_last_page', sv.lastPage); }catch(e){}
     }
     if(!S.months[S.activeKey])getMonth(S.activeKey);
     if(!S.months[_ck])getMonth(_ck);

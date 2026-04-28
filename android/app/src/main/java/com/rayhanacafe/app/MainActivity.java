@@ -278,14 +278,24 @@ public class MainActivity extends Activity {
     // ── حفظ عند الضغط على Home أو التبديل بين التطبيقات ──
     @Override
     protected void onPause() {
-        super.onPause();
+        // استدعاء الحفظ قبل super.onPause() لضمان تشغيل JS قبل تجميد الصفحة
         if (webView != null) {
             webView.evaluateJavascript(
                 "(function(){ try{ if(typeof saveAll==='function') saveAll(); }catch(e){} })()",
                 null
             );
+            webView.onPause(); // إيقاف الرسوم فقط — لا يوقف JS
         }
         CookieManager.getInstance().flush();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (webView != null) {
+            webView.onResume();
+        }
     }
 
     // ── تنظيف كامل عند إغلاق التطبيق ──
