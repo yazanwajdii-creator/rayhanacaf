@@ -25,8 +25,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Accept SDK licenses
-        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+      - name: Install Android SDK platform 35 and build-tools 35
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-35" \
+            "build-tools;35.0.0" || true
 
       - name: Sync latest index.html into Android assets
         run: |
@@ -36,9 +40,6 @@ jobs:
       - name: Create local.properties
         run: |
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls "$ANDROID_HOME/platforms/" || true
-          ls "$ANDROID_HOME/build-tools/" || true
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -46,7 +47,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('android/**/*.gradle*') }}
+          key: gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: gradle-
 
       - name: Build debug APK
@@ -69,7 +70,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rayhana-cafe-debug
+          name: rayhana-cafe-debug-v2
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 30
 
@@ -80,7 +81,7 @@ jobs:
           files: android/app/build/outputs/apk/debug/*.apk
           name: ريحانة كافيه ${{ github.ref_name }}
           body: |
-            ## تطبيق ريحانة كافيه للأندرويد
+            ## تطبيق ريحانة كافيه للأندرويد — v2.0.0
 
             ### التثبيت:
             1. حمّل ملف `app-debug.apk`
@@ -88,4 +89,4 @@ jobs:
             3. اسمح بتثبيت التطبيقات من مصادر غير معروفة إذا طُلب منك
 
             ### المتطلبات:
-            - Android 7.0 (API 24) أو أحدث
+            - Android 8.0 (API 26) أو أحدث
