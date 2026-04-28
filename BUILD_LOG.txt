@@ -33,8 +33,8 @@ use a newer Android Gradle Plugin that has been tested with compileSdk = 34
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
 > Task :app:createDebugCompatibleScreenManifests
-> Task :app:mergeDebugResources
 > Task :app:extractDeepLinksDebug
+> Task :app:mergeDebugResources
 
 > Task :app:processDebugMainManifest
 package="com.rayhanacafe.app" found in source AndroidManifest.xml: /home/runner/work/rayhanacaf/rayhanacaf/android/app/src/main/AndroidManifest.xml.
@@ -51,27 +51,27 @@ This migration can be done automatically using the AGP Upgrade Assistant, please
 > Task :app:compressDebugAssets
 > Task :app:checkDebugDuplicateClasses
 > Task :app:desugarDebugFileDependencies
-> Task :app:processDebugManifestForPackage
-> Task :app:mergeDebugJavaResource
 > Task :app:mergeExtDexDebug
-> Task :app:mergeDebugJniLibFolders
 > Task :app:mergeLibDexDebug
+> Task :app:mergeDebugJniLibFolders
+> Task :app:mergeDebugJavaResource
 > Task :app:mergeDebugNativeLibs NO-SOURCE
 > Task :app:stripDebugDebugSymbols NO-SOURCE
-> Task :app:processDebugResources
 > Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
 
 > Task :app:compileDebugJavaWithJavac
 Note: /home/runner/work/rayhanacaf/rayhanacaf/android/app/src/main/java/com/rayhanacafe/app/MainActivity.java uses or overrides a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
 
 > Task :app:dexBuilderDebug
-> Task :app:writeDebugAppMetadata
-> Task :app:writeDebugSigningConfigVersions
 > Task :app:mergeProjectDexDebug
 > Task :app:packageDebug
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 12s
+BUILD SUCCESSFUL in 16s
 29 actionable tasks: 29 executed
