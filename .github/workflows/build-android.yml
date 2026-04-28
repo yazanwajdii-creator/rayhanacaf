@@ -29,7 +29,9 @@ jobs:
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Sync latest index.html into Android assets
-        run: cp index.html android/app/src/main/assets/public/index.html
+        run: |
+          cp index.html android/app/src/main/assets/public/index.html
+          diff index.html android/app/src/main/assets/public/index.html && echo "✅ Files are identical"
 
       - name: Create local.properties
         run: |
