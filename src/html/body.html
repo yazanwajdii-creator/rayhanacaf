@@ -1234,6 +1234,15 @@ create policy "allow_all" on rh_store
             </div>
           </div>
 
+          <!-- Step 3.5: Disable API Allowlist -->
+          <div class="cloud-step">
+            <div class="cloud-step-num" style="background:var(--yw);color:#000">!</div>
+            <div class="cloud-step-body">
+              <div class="cloud-step-title">السماح بالاتصال من أي مصدر</div>
+              <div class="cloud-step-desc"><strong>مهم:</strong> في Supabase Dashboard ← <strong>Settings</strong> ← <strong>API</strong> ← قسم <strong>API Settings</strong> ← ابحث عن <strong>API Allowlist</strong> وتأكد أنه <strong>معطّل</strong> أو أضف <code style="background:var(--surf3);padding:1px 5px;border-radius:4px">*</code> ليسمح بجميع المصادر. بدون هذه الخطوة ستظهر رسالة <em>"Host not in allowlist"</em></div>
+            </div>
+          </div>
+
           <!-- Step 4: Connect -->
           <div class="cloud-step">
             <div class="cloud-step-num">٤</div>
@@ -1245,7 +1254,7 @@ create policy "allow_all" on rh_store
               </div>
               <div class="fg">
                 <label>Anon Public Key</label>
-                <input type="password" class="fi" id="supaAnonKey" placeholder="eyJhbGciOiJIUzI1NiIs..." style="direction:ltr;font-family:monospace;font-size:11px">
+                <input type="password" class="fi" id="supaAnonKey" placeholder="eyJhbGciOiJIUzI1NiIs... أو sb_publishable_..." style="direction:ltr;font-family:monospace;font-size:11px">
               </div>
               <button class="btn btn-g btn-full" onclick="supaConnectAndTest()" style="font-size:14px;padding:12px">🔗 ربط وتفعيل المزامنة</button>
               <div id="supaConnectErr" style="color:var(--rd);font-size:12px;margin-top:8px;min-height:16px;text-align:center"></div>

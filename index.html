@@ -2985,6 +2985,15 @@ create policy "allow_all" on rh_store
             </div>
           </div>
 
+          <!-- Step 3.5: Disable API Allowlist -->
+          <div class="cloud-step">
+            <div class="cloud-step-num" style="background:var(--yw);color:#000">!</div>
+            <div class="cloud-step-body">
+              <div class="cloud-step-title">السماح بالاتصال من أي مصدر</div>
+              <div class="cloud-step-desc"><strong>مهم:</strong> في Supabase Dashboard ← <strong>Settings</strong> ← <strong>API</strong> ← قسم <strong>API Settings</strong> ← ابحث عن <strong>API Allowlist</strong> وتأكد أنه <strong>معطّل</strong> أو أضف <code style="background:var(--surf3);padding:1px 5px;border-radius:4px">*</code> ليسمح بجميع المصادر. بدون هذه الخطوة ستظهر رسالة <em>"Host not in allowlist"</em></div>
+            </div>
+          </div>
+
           <!-- Step 4: Connect -->
           <div class="cloud-step">
             <div class="cloud-step-num">٤</div>
@@ -2996,7 +3005,7 @@ create policy "allow_all" on rh_store
               </div>
               <div class="fg">
                 <label>Anon Public Key</label>
-                <input type="password" class="fi" id="supaAnonKey" placeholder="eyJhbGciOiJIUzI1NiIs..." style="direction:ltr;font-family:monospace;font-size:11px">
+                <input type="password" class="fi" id="supaAnonKey" placeholder="eyJhbGciOiJIUzI1NiIs... أو sb_publishable_..." style="direction:ltr;font-family:monospace;font-size:11px">
               </div>
               <button class="btn btn-g btn-full" onclick="supaConnectAndTest()" style="font-size:14px;padding:12px">🔗 ربط وتفعيل المزامنة</button>
               <div id="supaConnectErr" style="color:var(--rd);font-size:12px;margin-top:8px;min-height:16px;text-align:center"></div>
@@ -7351,10 +7360,18 @@ function supaConnectAndTest(){
     supaUpdateUI(true);
     SUPA_AUTO=true;
     _kSet('rh_supa_auto','1');
-    // تحديث بصمة البيانات بعد الرفع الأول
     _supaLastPushedSig = _supaGetDataSig ? _supaGetDataSig() : null;
   }).catch(function(e){
-    if(errEl) errEl.textContent='❌ '+e.message+' — تأكد من تنفيذ SQL في الخطوة ٣';
+    var msg = e && e.message ? e.message : String(e);
+    var hint = '— تأكد من تنفيذ SQL في الخطوة ٣';
+    if(/allowlist|not in allowlist/i.test(msg)){
+      hint = '— اذهب لـ Settings ← API في Supabase وعطّل "API Allowlist" (الخطوة ٣٫٥)';
+    } else if(/relation.*does not exist|table.*not found/i.test(msg)){
+      hint = '— لم يتم إنشاء الجدول بعد، شغّل SQL في الخطوة ٣';
+    } else if(/invalid.*key|unauthorized|403/i.test(msg)){
+      hint = '— تحقق من صحة anon public key';
+    }
+    if(errEl) errEl.textContent = '❌ ' + msg + ' ' + hint;
     SUPA=null;
     _kRemove(SUPA_URL_KEY);
     _kRemove(SUPA_KEY_KEY);

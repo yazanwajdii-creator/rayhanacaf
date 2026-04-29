@@ -96,10 +96,18 @@ function supaConnectAndTest(){
     supaUpdateUI(true);
     SUPA_AUTO=true;
     _kSet('rh_supa_auto','1');
-    // تحديث بصمة البيانات بعد الرفع الأول
     _supaLastPushedSig = _supaGetDataSig ? _supaGetDataSig() : null;
   }).catch(function(e){
-    if(errEl) errEl.textContent='❌ '+e.message+' — تأكد من تنفيذ SQL في الخطوة ٣';
+    var msg = e && e.message ? e.message : String(e);
+    var hint = '— تأكد من تنفيذ SQL في الخطوة ٣';
+    if(/allowlist|not in allowlist/i.test(msg)){
+      hint = '— اذهب لـ Settings ← API في Supabase وعطّل "API Allowlist" (الخطوة ٣٫٥)';
+    } else if(/relation.*does not exist|table.*not found/i.test(msg)){
+      hint = '— لم يتم إنشاء الجدول بعد، شغّل SQL في الخطوة ٣';
+    } else if(/invalid.*key|unauthorized|403/i.test(msg)){
+      hint = '— تحقق من صحة anon public key';
+    }
+    if(errEl) errEl.textContent = '❌ ' + msg + ' ' + hint;
     SUPA=null;
     _kRemove(SUPA_URL_KEY);
     _kRemove(SUPA_KEY_KEY);
