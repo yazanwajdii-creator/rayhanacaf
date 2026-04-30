@@ -76,6 +76,52 @@ function totals(){
   const oblPaidRatio=netSales>0?oblPaid/netSales*100:0;
   const expRatio=netSales>0?totalExp/netSales*100:0;
   
+  // ══ حسابات المديرين التفصيلية ══
+  // ما استلمه كل مدير (نقدي)
+  let yzR=0,abdR=0;
+  d.sales.forEach(s=>{
+    const c=s.cash||0;
+    if(s.receivedBy==="يزن")yzR+=c;
+    else if(s.receivedBy==="عبدالرحمن")abdR+=c;
+  });
+
+  // مشتريات كل مدير
+  let yzP=0,abdP=0;
+  d.purchases.forEach(p=>{
+    if(p.buyer==="يزن")yzP+=p.amt;
+    else if(p.buyer==="عبدالرحمن")abdP+=p.amt;
+  });
+
+  // التزامات مدفوعة بحسب من دفع
+  let yzO=0,abdO=0;
+  d.obligations.filter(o=>o.paid).forEach(o=>{
+    if(o.paidBy==="يزن")yzO+=o.amt||0;
+    else if(o.paidBy==="عبدالرحمن")abdO+=o.amt||0;
+  });
+
+  // رواتب بحسب مصدر الدفع
+  let yzS=0,abdS=0,visaSal=0;
+  S.monthlyEmps.forEach(e=>{
+    const s=d.mSal[e.id]||{};
+    if(!s.paid)return;
+    const gross=(s.base||0)+(s.allow||0);
+    const adv=pendAdv(e.id);
+    const net=Math.max(0,gross-(s.ded||0)-adv);
+    if(s.paidBy==="يزن")yzS+=net;
+    else if(s.paidBy==="عبدالرحمن")abdS+=net;
+    else if(s.paidBy==="فيزا")visaSal+=net;
+  });
+
+  // رصيد الفيزا = مبيعات الفيزا − الرواتب المدفوعة من الفيزا
+  const visaBalance=visa-visaSal;
+
+  // صافي كل مدير
+  const yznNet=yzR-yzP-yzO-yzS;
+  const abdNet=abdR-abdP-abdO-abdS;
+
+  // الربح النهائي الموحّد
+  const finalProfit=yznNet+abdNet+visaBalance;
+
   return{
     cash,visa,pmts,netSales,rev,bycat,
     oblTotal,oblPaid,
@@ -83,7 +129,10 @@ function totals(){
     grossP,totalExp,profit,margin,advP,
     avgDaily,daysActive,
     cogsRatio,salaryRatio,oblPaidRatio,expRatio,
-    obls:d.obligations
+    obls:d.obligations,
+    // Manager breakdown
+    yzR,abdR,yzP,abdP,yzO,abdO,yzS,abdS,
+    yznNet,abdNet,visaSal,visaBalance,finalProfit
   };
 }
 

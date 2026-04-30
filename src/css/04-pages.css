@@ -136,8 +136,8 @@
 
 /* EXPENSE CATEGORY FILTER */
 .cat-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:11px}
-.ect{padding:5px 12px;border-radius:100px;border:1.5px solid var(--br);font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;font-family:'IBM Plex Sans Arabic',sans-serif;color:var(--tx3);background:var(--surf)}
-.ect:hover,.ect.on{border-color:var(--sap);color:var(--sap);background:var(--sap-l)}
+.ect,.ebt{padding:5px 12px;border-radius:100px;border:1.5px solid var(--br);font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;font-family:'IBM Plex Sans Arabic',sans-serif;color:var(--tx3);background:var(--surf);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.ect:hover,.ect.on,.ebt:hover,.ebt.on{border-color:var(--sap);color:var(--sap);background:var(--sap-l)}
 
 /* ADV LEDGER */
 .adv-emp-hd{padding:9px 13px;background:var(--surf2);border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between;border-radius:12px 12px 0 0}

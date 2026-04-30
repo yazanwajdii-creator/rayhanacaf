@@ -1,10 +1,48 @@
 /* SALARIES */
 function initSalTables(){
   const d=G(),mb=$("mSalBody");
-  if(mb){mb.innerHTML="";S.monthlyEmps.forEach(e=>{const sal=d.mSal[e.id]||{base:0,allow:0,ded:0,paid:false};const isPaid=sal.paid||false;const tr=document.createElement("tr");tr.innerHTML=`<td style="font-weight:700">${e.name}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_b" value="${sal.base||""}" placeholder="0" onchange="calcSal()"></td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_a" value="${sal.allow||""}" placeholder="0" onchange="calcSal()"></td><td class="td-y num" id="ms_${e.id}_g">${n3((sal.base||0)+(sal.allow||0))}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_d" value="${sal.ded||""}" placeholder="0" onchange="calcSal()"></td><td class="td-r num" id="ms_${e.id}_av">${n3(pendAdv(e.id))}</td><td class="td-g num" id="ms_${e.id}_n">${n3((sal.base||0)+(sal.allow||0)-(sal.ded||0)-pendAdv(e.id))}</td><td style="text-align:center"><button class="obl-toggle ${isPaid?'ps':''}" id="salpay_${e.id}" onclick="toggleSalPaid('${e.id}')" style="width:44px;height:36px;font-size:18px" title="${isPaid?'مدفوع — اضغط للإلغاء':'غير مدفوع — اضغط للتأكيد'}">${isPaid?'✅':'⏳'}</button></td>`;mb.appendChild(tr);});}
+  if(mb){
+    mb.innerHTML="";
+    S.monthlyEmps.forEach(e=>{
+      const sal=d.mSal[e.id]||{base:0,allow:0,ded:0,paid:false};
+      const isPaid=sal.paid||false;
+      const paidBy=sal.paidBy||"";
+      const tr=document.createElement("tr");
+      tr.innerHTML=
+        `<td style="font-weight:700">${e.name}</td>`+
+        `<td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_b" value="${sal.base||""}" placeholder="0" onchange="calcSal()"></td>`+
+        `<td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_a" value="${sal.allow||""}" placeholder="0" onchange="calcSal()"></td>`+
+        `<td class="td-y num" id="ms_${e.id}_g">${n3((sal.base||0)+(sal.allow||0))}</td>`+
+        `<td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_d" value="${sal.ded||""}" placeholder="0" onchange="calcSal()"></td>`+
+        `<td class="td-r num" id="ms_${e.id}_av">${n3(pendAdv(e.id))}</td>`+
+        `<td class="td-g num" id="ms_${e.id}_n">${n3(Math.max(0,(sal.base||0)+(sal.allow||0)-(sal.ded||0)-pendAdv(e.id)))}</td>`+
+        `<td style="text-align:center">
+          <button class="obl-toggle ${isPaid?'ps':''}" id="salpay_${e.id}" onclick="toggleSalPaid('${e.id}')" style="width:44px;height:36px;font-size:18px" title="${isPaid?'مدفوع — اضغط للإلغاء':'غير مدفوع — اضغط للتأكيد'}">${isPaid?'✅':'⏳'}</button>
+        </td>`+
+        `<td>
+          <select id="salpay_src_${e.id}" onchange="saveSalSrc('${e.id}',this.value)"
+            style="font-size:11px;padding:4px 6px;border-radius:8px;border:1.5px solid var(--br);background:var(--surf2);color:var(--tx);font-family:inherit;${isPaid?'':'opacity:.4;pointer-events:none'}">
+            <option value="">— مصدر —</option>
+            <option value="يزن" ${paidBy==='يزن'?'selected':''}>👤 يزن</option>
+            <option value="عبدالرحمن" ${paidBy==='عبدالرحمن'?'selected':''}>👤 عبدالرحمن</option>
+            <option value="فيزا" ${paidBy==='فيزا'?'selected':''}>💳 فيزا</option>
+          </select>
+        </td>`;
+      mb.appendChild(tr);
+    });
+  }
   buildAttGrid();calcSal();
 }
+
 const pendAdv=empId=>G().advances.filter(a=>a.empId===empId&&(a.status==="مستحقة"||a.status==="مسددة جزئياً")).reduce((s,a)=>s+(a.amt||0),0);
+
+function saveSalSrc(empId,val){
+  const d=G();
+  if(!d.mSal[empId])d.mSal[empId]={};
+  d.mSal[empId].paidBy=val;
+  updateDash();updateRpt();saveAll();
+}
+
 function buildAttGrid(){
   const c=$("attGrid");if(!c)return;
   const d=G(),days=daysIn(S.activeKey);c.innerHTML="";
@@ -15,6 +53,7 @@ function buildAttGrid(){
     c.appendChild(div);
   });
 }
+
 function toggleAtt(empId,day){
   if(isLocked()){toast("🔒 الشهر مغلق");return;}
   const d=G();if(!d.dWages[empId])d.dWages[empId]={rate:0,att:[]};
@@ -23,23 +62,21 @@ function toggleAtt(empId,day){
   const el=document.getElementById(`attd_${empId}_${day}`);if(el)el.className=`att-d ${att.includes(day)?"here":""}`;
   calcSal();saveAll();
 }
+
 function calcSal(){
   const d=G();let msB=0,msA=0,msG=0,msD=0,msAv=0,msN=0;
   S.monthlyEmps.forEach(e=>{
     const base=pf(`ms_${e.id}_b`),allow=pf(`ms_${e.id}_a`),ded=pf(`ms_${e.id}_d`),pa=pendAdv(e.id);
     const gross=base+allow,net=gross-ded-pa;
     T(`ms_${e.id}_g`,n3(gross));T(`ms_${e.id}_av`,n3(pa));T(`ms_${e.id}_n`,n3(Math.max(0,net)));
-    // V24-3: الحفاظ على بيانات الدفع بما فيها علامة paid
     if(!d.mSal[e.id])d.mSal[e.id]={};
     d.mSal[e.id].base=base;d.mSal[e.id].allow=allow;d.mSal[e.id].ded=ded;
-    // paid لا تُلمس هنا — تُغيَّر فقط بضغط الزر
     msB+=base;msA+=allow;msG+=gross;msD+=ded;msAv+=pa;msN+=Math.max(0,net);
   });
   T("ms-b",n3(msB));T("ms-a",n3(msA));T("ms-g",n3(msG));T("ms-d",n3(msD));T("ms-av",n3(msAv));T("ms-n",n3(msN));
   let dwT=0;
   S.dailyEmps.forEach(e=>{
     const rate=pf(`att_r_${e.id}`);
-    // V24: الحفاظ على بيانات الدفع
     if(!d.dWages[e.id])d.dWages[e.id]={rate:0,att:[]};
     d.dWages[e.id].rate=rate;
     const att=d.dWages[e.id].att||[],tot=rate*att.length;dwT+=tot;
@@ -48,7 +85,6 @@ function calcSal(){
   T("dwtotal",n3(dwT)+" JD");saveAll();
 }
 
-/* TOGGLE SALARY PAID — V24-3 FIX */
 function toggleSalPaid(empId){
   if(isLocked()){toast("🔒 الشهر مغلق");return;}
   var d=G();
@@ -61,7 +97,14 @@ function toggleSalPaid(empId){
     btn.className="obl-toggle"+(isPaid?" ps":"");
     btn.title=isPaid?"مدفوع — اضغط للإلغاء":"غير مدفوع — اضغط للتأكيد";
   }
-  // تحديث عداد المدفوع في footer
+  // تفعيل/تعطيل حقل المصدر
+  var srcSel=document.getElementById("salpay_src_"+empId);
+  if(srcSel){
+    srcSel.style.opacity=isPaid?'1':'0.4';
+    srcSel.style.pointerEvents=isPaid?'':'none';
+    if(!isPaid){ srcSel.value=''; d.mSal[empId].paidBy=''; }
+  }
+  if(!isPaid) delete d.mSal[empId].paidBy;
   var paidCount=S.monthlyEmps.filter(function(e){return(G().mSal[e.id]||{}).paid;}).length;
   T("ms-paid-count",paidCount+"/"+S.monthlyEmps.length+" مدفوع");
   var empName=S.monthlyEmps.find(function(e){return e.id===empId;});
@@ -69,4 +112,3 @@ function toggleSalPaid(empId){
   log((isPaid?"تسجيل دفع راتب ":"إلغاء دفع راتب ")+(empName?empName.name:empId));
   updateDash();updateRpt();saveAll();
 }
-

@@ -14,42 +14,53 @@
    - صافي المدير = cash - مشتريات فقط (اليوميات خُصمت مسبقاً!)
 ═══════════════════════════════════════════════════════════════════════════ */
 function updateMgrTotals(){
+  var t=totals();
   var d=G();
-  var yz={r:0,p:0},ab={r:0,p:0},un={r:0,p:0};
-  
-  // حساب النقدي الصافي المستلم لكل مدير (بعد خصم اليوميات من الموظفة)
-  d.sales.forEach(function(s){
-    var cash=(s.cash||0); // هذا هو النقد الصافي بعد خصم اليوميات
-    if(!cash && !(s.receivedBy)) return;
-    if(s.receivedBy==="يزن")yz.r+=cash;
-    else if(s.receivedBy==="عبدالرحمن")ab.r+=cash;
-    else un.r+=cash;
-  });
-  
-  // حساب المشتريات لكل مدير
-  d.purchases.forEach(function(p){
-    if(p.buyer==="يزن")yz.p+=p.amt;
-    else if(p.buyer==="عبدالرحمن")ab.p+=p.amt;
-    else un.p+=p.amt;
-  });
-  
-  T("mgr-yz-r",n3(yz.r)+" JD");T("mgr-yz-p",n3(yz.p)+" JD");
-  T("mgr-ab-r",n3(ab.r)+" JD");T("mgr-ab-p",n3(ab.p)+" JD");
-  T("mgr-un-r",n3(un.r)+" JD");T("mgr-un-p",n3(un.p)+" JD");
-  // صافي كل مدير = نقد مستلم − مشتريات أجراها
-  var yN=yz.r-yz.p, aN=ab.r-ab.p;
-  var yn=document.getElementById("mgr-yz-n"), an=document.getElementById("mgr-ab-n");
-  if(yn){yn.textContent=n3(yN)+" JD";yn.style.color=yN>=0?"var(--gn)":"var(--rd)";}
-  if(an){an.textContent=n3(aN)+" JD";an.style.color=aN>=0?"var(--gn)":"var(--rd)";}
 
-  var tR=yz.r+ab.r||1,tP=yz.p+ab.p||1;
+  // ══ يزن ══
+  T("mgr-yz-r",n3(t.yzR));
+  T("mgr-yz-p",n3(t.yzP));
+  T("mgr-yz-o",n3(t.yzO));
+  T("mgr-yz-s",n3(t.yzS));
+  var yn=document.getElementById("mgr-yz-n");
+  if(yn){yn.textContent=n3(t.yznNet)+" JD";yn.style.color=t.yznNet>=0?"var(--gn)":"var(--rd)";}
+
+  // ══ عبدالرحمن ══
+  T("mgr-ab-r",n3(t.abdR));
+  T("mgr-ab-p",n3(t.abdP));
+  T("mgr-ab-o",n3(t.abdO));
+  T("mgr-ab-s",n3(t.abdS));
+  var an=document.getElementById("mgr-ab-n");
+  if(an){an.textContent=n3(t.abdNet)+" JD";an.style.color=t.abdNet>=0?"var(--gn)":"var(--rd)";}
+
+  // ══ رصيد الفيزا ══
+  T("mgr-visa-sales",n3(t.visa));
+  T("mgr-visa-sal",n3(t.visaSal));
+  var vb=document.getElementById("mgr-visa-balance");
+  if(vb){vb.textContent=n3(t.visaBalance)+" JD";vb.style.color=t.visaBalance>=0?"var(--gn)":"var(--rd)";}
+
+  // ══ الربح النهائي الموحّد ══
+  var fp=document.getElementById("final-profit-val");
+  if(fp){fp.textContent=n3(t.finalProfit)+" JD";fp.style.color=t.finalProfit>=0?"var(--gn)":"var(--rd)";}
+  var fpCard=document.getElementById("final-profit-card");
+  if(fpCard)fpCard.style.borderColor=t.finalProfit>=0?"var(--gn)":"var(--rd)";
+
+  // أشرطة التوزيع
+  var tR=t.yzR+t.abdR||1,tP=t.yzP+t.abdP||1;
   var b1=document.getElementById("b-yz-r"),b2=document.getElementById("b-ab-r");
   var b3=document.getElementById("b-yz-p"),b4=document.getElementById("b-ab-p");
-  if(b1)b1.style.width=(yz.r/tR*100).toFixed(0)+"%";
-  if(b2)b2.style.width=(ab.r/tR*100).toFixed(0)+"%";
-  if(b3)b3.style.width=(yz.p/tP*100).toFixed(0)+"%";
-  if(b4)b4.style.width=(ab.p/tP*100).toFixed(0)+"%";
-  var s=[];if(yz.r>0)s.push("يزن: "+n3(yz.r));if(ab.r>0)s.push("عبدالرحمن: "+n3(ab.r));
+  if(b1)b1.style.width=(t.yzR/tR*100).toFixed(0)+"%";
+  if(b2)b2.style.width=(t.abdR/tR*100).toFixed(0)+"%";
+  if(b3)b3.style.width=(t.yzP/tP*100).toFixed(0)+"%";
+  if(b4)b4.style.width=(t.abdP/tP*100).toFixed(0)+"%";
+
+  // غير موزّع
+  var unR=0,unP=0;
+  d.sales.forEach(function(s){if(!s.receivedBy)unR+=s.cash||0;});
+  d.purchases.forEach(function(p){if(!p.buyer)unP+=p.amt;});
+  T("mgr-un-r",n3(unR)+" JD");T("mgr-un-p",n3(unP)+" JD");
+
+  var s=[];if(t.yzR>0)s.push("يزن: "+n3(t.yzR));if(t.abdR>0)s.push("عبدالرحمن: "+n3(t.abdR));
   T("t-who-sum",s.join(" | ")||"—");
 }
 function updateDash(){
