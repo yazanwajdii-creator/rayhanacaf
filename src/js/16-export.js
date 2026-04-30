@@ -277,74 +277,81 @@ function _showCopyModal(json,fname){
   document.body.appendChild(modal);
   setTimeout(function(){ta.focus();ta.select();},300);
 }
+function openImportFile(){
+  var inp=document.getElementById('impFile');
+  if(!inp)return;
+  inp.value=''; // reset so same file can be re-imported
+  inp.click();
+}
+
+function _applyImportData(data){
+  var isOldVersion = !data.version;
+  if(data.months){
+    Object.keys(data.months).forEach(function(k){
+      var incoming = data.months[k];
+      if(!incoming) return;
+      if(incoming.mSal){
+        Object.keys(incoming.mSal).forEach(function(eid){
+          if(incoming.mSal[eid] && incoming.mSal[eid].paid === undefined){
+            incoming.mSal[eid].paid = false;
+          }
+        });
+      }
+      if(isOldVersion && S.months[k] && S.months[k].mSal){
+        if(!incoming.mSal) incoming.mSal = {};
+        Object.keys(S.months[k].mSal).forEach(function(eid){
+          if(!incoming.mSal[eid]) incoming.mSal[eid] = S.months[k].mSal[eid];
+        });
+      }
+      S.months[k] = incoming;
+    });
+  }
+  if(!isOldVersion){
+    if(data.monthlyEmps&&data.monthlyEmps.length) S.monthlyEmps=data.monthlyEmps;
+    if(data.dailyEmps&&data.dailyEmps.length) S.dailyEmps=data.dailyEmps;
+    if(data.suppliers&&data.suppliers.length) S.suppliers=data.suppliers;
+    if(data.lockedMonths) S.lockedMonths=data.lockedMonths;
+  }
+  if(data.activeKey) S.activeKey=data.activeKey;
+  renderAll(); saveAll();
+  var monthCount=Object.keys(data.months||{}).length;
+  if(SUPA){
+    supaSync('push').then(function(){toast('✅ تم الاستيراد وحفظه في السحابة ☁️');}).catch(function(){toast('✅ تم الاستيراد محلياً ('+monthCount+' شهر)');});
+  } else {
+    toast('✅ تم الاستيراد — '+monthCount+' شهر');
+  }
+  log('استيراد JSON — '+monthCount+' شهر');
+}
+
 function importJSON(ev){
-  var file=ev.target.files[0]; if(!file)return;
+  var file=ev.target.files[0];
+  ev.target.value=''; // reset immediately so the same file can be selected again
+  if(!file){ toast('⚠️ لم يُختر أي ملف'); return; }
+  if(file.size===0){ toast('❌ الملف فارغ'); return; }
   var reader=new FileReader();
+  reader.onerror=function(){ toast('❌ تعذّر قراءة الملف — حاول لصق النص يدوياً'); };
   reader.onload=function(e){
-    try{
-      var data=JSON.parse(e.target.result);
-      // تحقق من صحة الملف
-      if(!data.months && !data.data){toast('❌ ملف غير صالح — لا توجد بيانات شهرية');ev.target.value='';return;}
-      
-      // دعم صيغة V22 القديمة
-      if(data.data && data.data.months) data = data.data;
-      
-      var monthCount = Object.keys(data.months||{}).length;
-      
-      if(!confirm('⚠️ سيتم استبدال بيانات النظام الحالية ببيانات الملف.\n\nعدد الأشهر في الملف: '+monthCount+'\n\nهل أنت متأكد؟')){
-        ev.target.value=''; return;
-      }
-      
-      // استيراد البيانات المالية فقط — لا يمس الموظفين أو الموردين أو الهيكل الحالي
-      var isOldVersion = !data.version;
-      if(data.months){
-        Object.keys(data.months).forEach(function(k){
-          var incoming = data.months[k];
-          if(!incoming) return;
-          // توافق مع الإصدارات القديمة — أضف حقل paid للرواتب إذا غاب
-          if(incoming.mSal){
-            Object.keys(incoming.mSal).forEach(function(eid){
-              if(incoming.mSal[eid] && incoming.mSal[eid].paid === undefined){
-                incoming.mSal[eid].paid = false;
-              }
-            });
-          }
-          // للإصدارات القديمة: احتفظ ببيانات الرواتب الحالية للموظفين الموجودين
-          if(isOldVersion && S.months[k] && S.months[k].mSal){
-            if(!incoming.mSal) incoming.mSal = {};
-            Object.keys(S.months[k].mSal).forEach(function(eid){
-              if(!incoming.mSal[eid]) incoming.mSal[eid] = S.months[k].mSal[eid];
-            });
-          }
-          S.months[k] = incoming;
-        });
-      }
-      // الموظفون والموردون والهيكل: لا يُستبدلان من ملف قديم
-      if(!isOldVersion){
-        if(data.monthlyEmps&&data.monthlyEmps.length) S.monthlyEmps=data.monthlyEmps;
-        if(data.dailyEmps&&data.dailyEmps.length) S.dailyEmps=data.dailyEmps;
-        if(data.suppliers&&data.suppliers.length) S.suppliers=data.suppliers;
-        if(data.lockedMonths) S.lockedMonths=data.lockedMonths;
-      }
-      if(data.activeKey) S.activeKey=data.activeKey;
-      
-      renderAll(); saveAll();
-      
-      // رفع تلقائي لـ Supabase بعد الاستيراد
-      if(SUPA){
-        supaSync('push').then(function(){
-          toast('✅ تم الاستيراد وحفظه في السحابة ☁️');
-        }).catch(function(){
-          toast('✅ تم الاستيراد محلياً (Supabase لاحقاً)');
-        });
-      } else {
-        toast('✅ تم الاستيراد — '+monthCount+' شهر');
-      }
-      log('استيراد JSON — '+monthCount+' شهر');
-    }catch(err){ toast('❌ ملف تالف: '+err.message); }
+    var raw=(e.target.result||'').trim();
+    if(!raw){ toast('❌ الملف فارغ أو غير مقروء'); return; }
+    // أزل BOM إذا وجد
+    if(raw.charCodeAt(0)===0xFEFF) raw=raw.slice(1);
+    var data;
+    try{ data=JSON.parse(raw); }
+    catch(err){ toast('❌ ملف JSON تالف: '+err.message); return; }
+    // دعم صيغة V22 القديمة
+    if(data.data && data.data.months) data=data.data;
+    if(!data.months){
+      toast('❌ الملف لا يحتوي على بيانات شهرية — تأكد أنه ملف تصدير ريحانة كافيه');
+      return;
+    }
+    var monthCount=Object.keys(data.months).length;
+    if(!confirm('⚠️ سيتم استبدال البيانات الحالية ببيانات الملف.\n\nعدد الأشهر: '+monthCount+'\n\nهل أنت متأكد؟')){
+      return;
+    }
+    try{ _applyImportData(data); }
+    catch(err2){ toast('❌ خطأ أثناء الاستيراد: '+err2.message); }
   };
-  reader.readAsText(file);
-  ev.target.value='';
+  reader.readAsText(file,'utf-8');
 }
 
 function importFromText(){
@@ -371,32 +378,19 @@ function importFromText(){
 function _doPasteImport(){
   var ta=document.getElementById('pasteImportTA');
   if(!ta||!ta.value.trim()){toast('⚠️ الحقل فارغ');return;}
-  var fakeEv={target:{files:[new Blob([ta.value],{type:'application/json'})],value:''}};
-  fakeEv.target.files[0].name='paste.json';
+  var raw=ta.value.trim();
+  if(raw.charCodeAt(0)===0xFEFF) raw=raw.slice(1);
+  var data;
+  try{ data=JSON.parse(raw); }
+  catch(err){ toast('❌ نص JSON غير صالح: '+err.message); return; }
+  if(data.data&&data.data.months) data=data.data;
+  if(!data.months){ toast('❌ لا توجد بيانات شهرية في النص'); return; }
+  var monthCount=Object.keys(data.months).length;
+  if(!confirm('⚠️ سيتم استبدال البيانات الحالية.\n\nعدد الأشهر: '+monthCount+'\n\nهل أنت متأكد؟')) return;
   var modal=document.getElementById('pasteImportModal');
-  // استخدم FileReader مباشرة
-  var reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      var data=JSON.parse(e.target.result);
-      if(!data.months&&!data.data){toast('❌ ملف غير صالح');return;}
-      if(data.data&&data.data.months) data=data.data;
-      var monthCount=Object.keys(data.months||{}).length;
-      if(!confirm('⚠️ سيتم استبدال البيانات الحالية.\n\nعدد الأشهر: '+monthCount+'\n\nهل أنت متأكد؟')){return;}
-      if(modal) modal.remove();
-      if(data.months) Object.keys(data.months).forEach(function(k){S.months[k]=data.months[k];});
-      if(data.monthlyEmps&&data.monthlyEmps.length) S.monthlyEmps=data.monthlyEmps;
-      if(data.dailyEmps&&data.dailyEmps.length) S.dailyEmps=data.dailyEmps;
-      if(data.suppliers&&data.suppliers.length) S.suppliers=data.suppliers;
-      if(data.lockedMonths) S.lockedMonths=data.lockedMonths;
-      if(data.activeKey) S.activeKey=data.activeKey;
-      renderAll(); saveAll();
-      if(SUPA) supaSync('push').then(function(){toast('✅ تم الاستيراد وحفظ في السحابة ☁️');}).catch(function(){toast('✅ تم الاستيراد — '+monthCount+' شهر');});
-      else toast('✅ تم الاستيراد — '+monthCount+' شهر');
-      log('استيراد JSON لصق — '+monthCount+' شهر');
-    }catch(err){toast('❌ نص JSON غير صالح: '+err.message);}
-  };
-  reader.readAsText(new Blob([ta.value],{type:'application/json'}));
+  if(modal) modal.remove();
+  try{ _applyImportData(data); }
+  catch(err2){ toast('❌ خطأ أثناء الاستيراد: '+err2.message); }
 }
 
 function exportExcel(){

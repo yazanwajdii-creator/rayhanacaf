@@ -1180,10 +1180,10 @@
         <div class="cloud-wizard-card" style="border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.04)">
           <div class="cloud-wizard-title" style="color:var(--bl)">📥 استيراد نسخة احتياطية JSON</div>
           <div style="font-size:12px;color:var(--tx3);margin-bottom:10px">إذا كان لديك ملف JSON محفوظ مسبقاً اضغط هنا لاستعادة بياناتك</div>
-          <label for="impFile" class="btn btn-full" style="background:var(--bl);color:#fff;font-size:13px;padding:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:10px">
+          <button class="btn btn-full" onclick="openImportFile()" style="background:var(--bl);color:#fff;font-size:13px;padding:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:10px">
             📂 اختر ملف JSON للاستيراد
-          </label>
-          <input type="file" id="impFile" accept="application/json,.json,*/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" onchange="importJSON(event)">
+          </button>
+          <input type="file" id="impFile" accept="application/json,.json" style="position:fixed;left:-9999px;top:-9999px;width:0;height:0;opacity:0" onchange="importJSON(event)">
           <div style="font-size:11px;color:var(--tx4);text-align:center;margin-top:7px">يدعم ملفات V22 وV24 وV25</div>
           <button onclick="importFromText()" style="width:100%;margin-top:8px;padding:9px;border:1.5px dashed var(--br);background:transparent;border-radius:10px;font-size:12px;color:var(--tx3);cursor:pointer;font-family:inherit">
             📋 لصق نص JSON يدوياً (بديل إذا لم يعمل الملف)
@@ -1295,7 +1295,7 @@ create policy "allow_all" on rh_store
           <div class="cloud-wizard-title">💾 نسخ احتياطية</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <button class="btn btn-p" onclick="exportJSON()">📤 تصدير JSON</button>
-            <label for="impFile" class="btn btn-ghost" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px">📥 استيراد JSON</label>
+            <button class="btn btn-ghost" onclick="openImportFile()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px">📥 استيراد JSON</button>
           </div>
           <div class="alert al-w" style="margin-top:10px;font-size:11.5px">
             ⚠️ الاستيراد يستبدل البيانات الحالية — تأكد من رفع نسخة احتياطية أولاً
