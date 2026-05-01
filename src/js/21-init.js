@@ -3,6 +3,7 @@
 
 // تحديث عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
+  try { _updateGsheetBtnLabel(); } catch(e) {}
   setTimeout(function() {
     try { updateHealthCardNew(); } catch(e) {}
     try { updateBreakevenCardNew(); } catch(e) {}

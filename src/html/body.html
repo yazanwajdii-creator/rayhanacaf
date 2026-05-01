@@ -85,13 +85,13 @@
       <span class="export-btn-icon">💾</span>
       <span>نسخ احتياطي JSON</span>
     </button>
-    <button class="export-btn" onclick="exportGoogleSheets()">
+    <button class="export-btn" id="gsheetExportBtn" onclick="exportGoogleSheets()">
       <span class="export-btn-icon">🟢</span>
-      <span>Google Sheets</span>
+      <span id="gsheetBtnLabel">Google Sheets</span>
     </button>
     <button class="export-btn" onclick="openGSheetSetup()">
       <span class="export-btn-icon">⚙️</span>
-      <span>إعداد Google Sheets</span>
+      <span>إعداد الربط</span>
     </button>
     <button class="export-btn" onclick="shareReport()">
       <span class="export-btn-icon">📤</span>
@@ -1559,34 +1559,71 @@ create policy "allow_all" on rh_store
 <!-- مودال إعداد Google Sheets -->
 <div class="mo-ov" id="moGSheet" onclick="moOut(event,'moGSheet')">
 <div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moGSheet')">×</button>
-  <div class="mo-title">🟢 إعداد Google Sheets</div>
-  <div class="alert al-i" style="font-size:12px;line-height:1.7">
-    <div><b>خطوات الإعداد:</b></div>
-    <div>١. افتح Google Sheets وأنشئ جدول جديد</div>
-    <div>٢. من القائمة: <b>Extensions → Apps Script</b></div>
-    <div>٣. الصق الكود التالي واحفظه:</div>
-    <pre style="background:var(--surf2);border-radius:6px;padding:8px;font-size:10px;overflow-x:auto;margin:6px 0;direction:ltr;text-align:left">function doPost(e){
+  <div class="mo-title">🟢 ربط Google Sheets</div>
+
+  <!-- الجدول المحدد -->
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--gnl);border:1px solid var(--gnb);border-radius:10px;margin-bottom:12px">
+    <span style="font-size:20px">📊</span>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--gnd)">جدول البيانات المرتبط</div>
+      <div style="font-size:11px;color:var(--tx3);font-family:'IBM Plex Mono'">ريحانة كافيه</div>
+    </div>
+    <span style="margin-right:auto;background:var(--gnd);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600">جاهز ✓</span>
+  </div>
+
+  <!-- خطوة 1 -->
+  <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+    <div style="min-width:24px;height:24px;border-radius:50%;background:var(--sap);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">1</div>
+    <div style="flex:1">
+      <div style="font-size:12.5px;font-weight:700;margin-bottom:4px">افتح محرر السكريبت</div>
+      <a href="https://script.google.com/create" target="_blank" onclick="toast('⏳ جاري فتح Google...')"
+        style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#4285F4;color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;font-family:inherit">
+        🔗 فتح script.google.com
+      </a>
+    </div>
+  </div>
+
+  <!-- خطوة 2 -->
+  <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+    <div style="min-width:24px;height:24px;border-radius:50%;background:var(--sap);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">2</div>
+    <div style="flex:1">
+      <div style="font-size:12.5px;font-weight:700;margin-bottom:4px">احذف كل شيء والصق هذا الكود</div>
+      <div style="position:relative">
+        <pre id="gsScriptCode" style="background:var(--surf2);border:1px solid var(--br);border-radius:8px;padding:10px;font-size:10.5px;overflow-x:auto;margin:0;direction:ltr;text-align:left;line-height:1.6;white-space:pre-wrap">function doPost(e){
   var d=JSON.parse(e.postData.contents);
-  var ss=SpreadsheetApp.getActiveSpreadsheet();
-  var sh=ss.getSheetByName(d.month)||ss.insertSheet(d.month);
+  var ss=SpreadsheetApp.openById(
+    '12OVl-fiDvRNzDaktGo8SPY4N_cR67OJDqMbSdJJhnUw');
+  var sh=ss.getSheetByName(d.month)
+        ||ss.insertSheet(d.month);
   sh.clearContents();
   if(d.rows&&d.rows.length)
-    sh.getRange(1,1,d.rows.length,d.rows[0].length).setValues(d.rows);
+    sh.getRange(1,1,d.rows.length,
+      d.rows[0].length).setValues(d.rows);
   return ContentService
     .createTextOutput(JSON.stringify({status:'ok'}))
     .setMimeType(ContentService.MimeType.JSON);
 }</pre>
-    <div>٤. اضغط <b>Deploy → New deployment → Web App</b></div>
-    <div>٥. Who has access: <b>Anyone</b> → Deploy → انسخ الرابط</div>
+        <button onclick="copyGsCode()" style="position:absolute;top:6px;left:6px;padding:4px 10px;font-size:11px;border:1px solid var(--br);border-radius:6px;background:var(--surf);cursor:pointer;font-family:inherit" id="copyGsBtn">📋 نسخ</button>
+      </div>
+    </div>
   </div>
-  <div class="fg"><label>رابط Web App (Apps Script)</label>
-    <input type="url" class="fi" id="gsheetUrlInput" placeholder="https://script.google.com/macros/s/...">
+
+  <!-- خطوة 3 -->
+  <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">
+    <div style="min-width:24px;height:24px;border-radius:50%;background:var(--sap);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">3</div>
+    <div style="flex:1">
+      <div style="font-size:12.5px;font-weight:700;margin-bottom:2px">Deploy → New deployment → Web App</div>
+      <div style="font-size:11px;color:var(--tx3)">Execute as: <b>Me</b> | Who has access: <b>Anyone</b> → Deploy → انسخ الرابط والصقه أدناه</div>
+    </div>
   </div>
-  <div id="gsheetTestResult" style="font-size:12px;min-height:16px;margin-bottom:8px"></div>
+
+  <div class="fg" style="margin-bottom:6px"><label>رابط Web App</label>
+    <input type="url" class="fi" id="gsheetUrlInput" placeholder="https://script.google.com/macros/s/AKfy...">
+  </div>
+  <div id="gsheetTestResult" style="font-size:12px;min-height:16px;margin-bottom:8px;padding:0 2px"></div>
   <div class="btn-row">
-    <button class="btn btn-p" style="flex:1" onclick="saveGSheetUrl()">💾 حفظ الرابط</button>
-    <button class="btn btn-ghost" style="flex:1" onclick="testGSheetUrl()">🔗 اختبار</button>
-    <button class="btn btn-ghost" style="flex:1" onclick="cmo('moGSheet')">إغلاق</button>
+    <button class="btn btn-p" style="flex:1" onclick="saveGSheetUrl()">💾 حفظ وتفعيل</button>
+    <button class="btn btn-ghost" onclick="testGSheetUrl()">🔗 اختبار</button>
   </div>
 </div></div>
 

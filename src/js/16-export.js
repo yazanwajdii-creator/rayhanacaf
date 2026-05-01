@@ -98,12 +98,41 @@ function exportGoogleSheets(){
     .catch(function(err){toast('❌ خطأ: '+err.message+' — تحقق من الرابط والاتصال');});
 }
 
+var _SHEET_ID='12OVl-fiDvRNzDaktGo8SPY4N_cR67OJDqMbSdJJhnUw';
+
+function _updateGsheetBtnLabel(){
+  var lbl=document.getElementById('gsheetBtnLabel');
+  if(!lbl) return;
+  var url=localStorage.getItem('gsheetUrl')||'';
+  lbl.textContent=url?'🟢 مزامنة الجدول':'Google Sheets';
+}
+
 function openGSheetSetup(){
   var inp=document.getElementById('gsheetUrlInput');
   if(inp) inp.value=localStorage.getItem('gsheetUrl')||'';
   var res=document.getElementById('gsheetTestResult');
   if(res) res.textContent='';
   openMo('moGSheet');
+}
+
+function copyGsCode(){
+  var pre=document.getElementById('gsScriptCode');
+  var btn=document.getElementById('copyGsBtn');
+  if(!pre) return;
+  var txt=pre.textContent||pre.innerText;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(txt).then(function(){
+      if(btn){btn.textContent='✅ تم النسخ';setTimeout(function(){btn.textContent='📋 نسخ';},2000);}
+    }).catch(function(){_fallbackCopy(txt,btn);});
+  } else { _fallbackCopy(txt,btn); }
+}
+
+function _fallbackCopy(txt,btn){
+  var ta=document.createElement('textarea');
+  ta.value=txt;ta.style.cssText='position:fixed;opacity:0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');if(btn){btn.textContent='✅ تم';setTimeout(function(){btn.textContent='📋 نسخ';},2000);}}catch(e){}
+  document.body.removeChild(ta);
 }
 
 function saveGSheetUrl(){
@@ -113,7 +142,8 @@ function saveGSheetUrl(){
   if(!val){toast('⚠️ أدخل الرابط');return;}
   if(!val.startsWith('https://script.google.com/')){toast('⚠️ الرابط يجب أن يبدأ بـ https://script.google.com/');return;}
   localStorage.setItem('gsheetUrl',val);
-  toast('✅ تم حفظ رابط Google Sheets');
+  _updateGsheetBtnLabel();
+  toast('✅ تم الربط بـ Google Sheets ✅');
   cmo('moGSheet');
 }
 
