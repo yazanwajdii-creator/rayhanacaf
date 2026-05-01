@@ -32,6 +32,9 @@ import android.widget.TextView;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.os.Environment;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintManager;
 import android.provider.MediaStore;
 import android.util.Base64;
 
@@ -117,6 +120,36 @@ public class MainActivity extends Activity {
                 byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
                 return writeToDownloads(filename, mimeType, bytes);
             } catch (Exception e) { return false; }
+        }
+
+        // طباعة HTML كـ PDF حقيقي عبر PrintManager المدمج في Android
+        @JavascriptInterface
+        public void printHTML(final String html, final String jobName) {
+            MainActivity.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    final WebView pw = new WebView(MainActivity.this);
+                    pw.getSettings().setJavaScriptEnabled(false);
+                    pw.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
+                    pw.setWebViewClient(new WebViewClient() {
+                        @Override
+                        public void onPageFinished(WebView view, String url) {
+                            PrintManager pm = (PrintManager)
+                                MainActivity.this.getSystemService(android.content.Context.PRINT_SERVICE);
+                            if (pm == null) return;
+                            PrintDocumentAdapter adapter =
+                                view.createPrintDocumentAdapter(jobName);
+                            PrintAttributes attrs = new PrintAttributes.Builder()
+                                .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                                .setResolution(new PrintAttributes.Resolution(
+                                    "pdf", "pdf", 300, 300))
+                                .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+                                .build();
+                            pm.print(jobName, adapter, attrs);
+                        }
+                    });
+                }
+            });
         }
 
         private boolean writeToDownloads(String filename, String mimeType, byte[] bytes) {

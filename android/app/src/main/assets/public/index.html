@@ -7183,32 +7183,17 @@ function exportPDF(){
     +'<h2>المشتريات</h2><table><thead><tr><th>التاريخ</th><th>المورد</th><th>المبلغ</th><th>البيان</th></tr></thead><tbody>'+purchRows+'</tbody></table>'
     +'</body></html>';
 
-  var fname='rayhana_report_'+y+'_'+m+'.html';
-  // Android: حفظ HTML في Downloads ثم يفتحه المستخدم بـ Chrome للطباعة كـ PDF
-  if(window.AndroidStorage&&window.AndroidStorage.saveToDownloads){
-    var ok=window.AndroidStorage.saveToDownloads(fname,html,'text/html');
-    if(ok){
-      toast('📄 تم حفظ التقرير في Downloads — افتحه من مدير الملفات لطباعته');
-      log('تصدير PDF HTML — '+mn+' '+y);
-      return;
-    }
-  }
-  // Share API — يمكن فتحه في Chrome والطباعة
-  if(navigator.share){
-    try{
-      var sf=new File([html],fname,{type:'text/html'});
-      if(!navigator.canShare||navigator.canShare({files:[sf]})){
-        navigator.share({files:[sf],title:'تقرير ريحانة كافيه — '+mn+' '+y})
-          .then(function(){toast('✅ تمت المشاركة');})
-          .catch(function(){});
-        log('تصدير PDF — '+mn+' '+y);
-        return;
-      }
-    }catch(e){}
+  var jobName='ريحانة كافيه — تقرير '+mn+' '+y;
+  // Android: PrintManager يولّد PDF حقيقي عبر نافذة الطباعة المدمجة
+  if(window.AndroidStorage&&window.AndroidStorage.printHTML){
+    window.AndroidStorage.printHTML(html, jobName);
+    toast('⏳ جاري فتح نافذة الطباعة — اختر "حفظ كـ PDF"');
+    log('تصدير PDF — '+mn+' '+y);
+    return;
   }
   // Fallback: فتح في نافذة جديدة
   var w=window.open('','_blank');
-  if(w){w.document.write(html);w.document.close();setTimeout(function(){w.print();},300);}
+  if(w){w.document.write(html);w.document.close();setTimeout(function(){w.print();},400);}
   else{toast('❌ تعذّر تصدير PDF');}
   log('تصدير PDF — '+mn+' '+y);
 }
