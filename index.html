@@ -2873,9 +2873,12 @@ body.dark .ss-card{background:var(--surf)}
             <span class="rpt-row-lbl">⏳ رواتب مستحقة <small>(لا تُطرح — لم تُدفع بعد)</small></span>
             <span class="rpt-row-val muted" id="r-msal-accrued">0.000 JD</span>
           </div>
-          <div class="rpt-row rpt-row-sub rpt-row-muted">
-            <span class="rpt-row-lbl">👷 أجور يومية <small>(توثيق — خُصمت من الكاش قبل التسليم للمدير)</small></span>
-            <span class="rpt-row-val muted" id="r-dwages">0.000 JD</span>
+          <div id="r-dwages-section" style="display:none">
+            <div class="rpt-row rpt-row-sub" style="background:rgba(245,158,11,.06);border-top:1px solid var(--br)">
+              <span class="rpt-row-lbl" style="font-weight:700">👷 أجور يومية <small>(خُصمت من الكاش قبل التسليم)</small></span>
+              <span class="rpt-row-val" style="color:var(--yw);font-weight:700" id="r-dwages">0.000 JD</span>
+            </div>
+            <div id="r-dwages-rows"></div>
           </div>
         </div>
 
@@ -6340,10 +6343,28 @@ function updateRpt(){
   T('r-sal-total', n3(t.mSalPaid)+' JD');
   T('r-msal', n3(t.mSalPaid)+' JD');
   T('r-msal-accrued', n3(t.mSalAccrued)+' JD');
-  T('r-dwages', n3(t.dwTotal)+' JD');
   // Hide accrued row if zero
   var accRow=document.getElementById('r-accrued-row');
   if(accRow) accRow.style.display=t.mSalAccrued>0?'flex':'none';
+  // Daily wages — show per-employee breakdown
+  var dwSec=document.getElementById('r-dwages-section');
+  var dwRows=document.getElementById('r-dwages-rows');
+  if(t.dwTotal>0){
+    T('r-dwages',n3(t.dwTotal)+' JD');
+    if(dwSec) dwSec.style.display='';
+    if(dwRows){
+      var _dwd=G();
+      dwRows.innerHTML=S.dailyEmps.filter(function(e){var w=_dwd.dWages[e.id]||{};return(w.att||[]).length>0;}).map(function(e){
+        var w=_dwd.dWages[e.id]||{};var days=(w.att||[]).length;var tot=(w.rate||0)*days;
+        return '<div class="rpt-row rpt-row-sub" style="padding-right:40px">'
+          +'<span class="rpt-row-lbl">👤 '+e.name+'<small> '+days+' يوم × '+n3(w.rate||0)+' JD</small></span>'
+          +'<span class="rpt-row-val" style="color:var(--yw)">'+n3(tot)+' JD</span>'
+          +'</div>';
+      }).join('');
+    }
+  } else {
+    if(dwSec) dwSec.style.display='none';
+  }
 
   // Other expenses
   var otherSec=document.getElementById('r-other-section');
@@ -6747,33 +6768,36 @@ function _buildSheetRows(){
     [],
     ['=== الملخص المالي ===',''],
     ['البيان','المبلغ (JD)'],
-    ['إجمالي الإيرادات',t.rev],
-    ['نقد',t.cash],['فيزا',t.visa],
-    ['إجمالي المصروفات',t.totalExp],
-    ['صافي الربح',t.profit],
+    ['إجمالي الإيرادات',t.rev],['نقد',t.cash],['فيزا',t.visa],
+    ['إجمالي المصروفات',t.totalExp],['صافي الربح',t.profit],
     ['هامش الربح %',t.margin.toFixed(2)+'%'],
-    ['الالتزامات المسددة',t.oblPaid],
-    ['رواتب مدفوعة',t.mSalPaid],
-    ['أجور يومية',t.dwTotal],
+    ['الالتزامات المسددة',t.oblPaid],['رواتب مدفوعة',t.mSalPaid],['أجور يومية',t.dwTotal],
     [],
-    ['=== المبيعات اليومية ===','','','','',''],
-    ['اليوم','نقد','فيزا','دفعات أخرى','الإجمالي','ملاحظات'],
+    ['=== ملخص المديرين ===','','','','',''],
+    ['المدير','إيراد نقدي استلمه','مشتريات دفعها','التزامات دفعها','رواتب دفعها','الصافي'],
+    ['يزن',t.yzR,t.yzP,t.yzO,t.yzS,t.yznNet],
+    ['عبدالرحمن',t.abdR,t.abdP,t.abdO,t.abdS,t.abdNet],
+    ['فيزا (رصيد)',t.visa,'','',t.visaSal,t.visaBalance],
+    ['الربح النهائي الموحّد','','','','',t.finalProfit],
+    [],
+    ['=== المبيعات اليومية ===','','','','','',''],
+    ['اليوم','نقد','فيزا','دفعات أخرى','الإجمالي','ملاحظات','استلمه'],
   ];
   d.sales.forEach(function(s){
-    rows.push([s.day,s.cash||0,s.visa||0,s.pmts||0,(s.cash||0)+(s.visa||0)+(s.pmts||0),s.notes||'']);
+    rows.push([s.day,s.cash||0,s.visa||0,s.pmts||0,(s.cash||0)+(s.visa||0)+(s.pmts||0),s.notes||'',s.receivedBy||'']);
   });
   rows.push([]);
-  rows.push(['=== المشتريات ===','','','','']);
-  rows.push(['التاريخ','المورد','التصنيف','الوصف','المبلغ (JD)']);
-  (d.purchases||[]).forEach(function(p){rows.push([p.date||'',p.sName||'',p.cat||'',p.desc||'',p.amt||0]);});
+  rows.push(['=== المشتريات ===','','','','','']);
+  rows.push(['التاريخ','المورد','التصنيف','الوصف','المبلغ (JD)','قام بالشراء']);
+  (d.purchases||[]).forEach(function(p){rows.push([p.date||'',p.sName||'',p.cat||'',p.desc||'',p.amt||0,p.buyer||'']);});
   rows.push([]);
   rows.push(['=== الالتزامات ===','','','']);
   rows.push(['البند','المبلغ (JD)','الحالة','تاريخ الاستحقاق']);
   (d.obligations||[]).forEach(function(o){rows.push([o.name||'',o.amt||0,o.paid?'مسدد ✓':'غير مسدد',o.due||'']);});
   if(S.monthlyEmps&&S.monthlyEmps.length){
-    rows.push([]);rows.push(['=== الرواتب الشهرية ===','','','','','']);
-    rows.push(['الموظف','الأساسي','البدلات','الخصومات','الصافي','مسدد؟']);
-    S.monthlyEmps.forEach(function(e){var s=(d.mSal||{})[e.id]||{};rows.push([e.name,s.base||0,s.allow||0,s.ded||0,(s.base||0)+(s.allow||0)-(s.ded||0),s.paid?'نعم':'لا']);});
+    rows.push([]);rows.push(['=== الرواتب الشهرية ===','','','','','','']);
+    rows.push(['الموظف','الأساسي','البدلات','الخصومات','الصافي','مسدد؟','مصدر الدفع']);
+    S.monthlyEmps.forEach(function(e){var s=(d.mSal||{})[e.id]||{};rows.push([e.name,s.base||0,s.allow||0,s.ded||0,(s.base||0)+(s.allow||0)-(s.ded||0),s.paid?'نعم':'لا',s.paidBy||'']);});
   }
   return rows;
 }
@@ -7103,15 +7127,15 @@ function exportExcel(){
   if(!window.XLSX){toast("❌ مكتبة Excel غير محملة");return;}
   const t=totals(),d=G();const[y,m]=S.activeKey.split("-");const mn=MN[parseInt(m)-1];
   const wb=XLSX.utils.book_new();
-  const rv=[["ريحانة كافيه — الإيرادات"],[],["اليوم","نقدي","فيزا","مدفوعات","صافي البيع","إجمالي الإيراد","ملاحظات"]];
+  const rv=[["ريحانة كافيه — الإيرادات"],[],["اليوم","نقدي","فيزا","مدفوعات","صافي البيع","إجمالي الإيراد","ملاحظات","استلمه"]];
   let tC=0,tV=0,tP=0;
-  d.sales.forEach(s=>{if((s.cash||0)+(s.visa||0)+(s.pmts||0)>0){const c=s.cash||0,v=s.visa||0,p=s.pmts||0;rv.push([`${s.day}/${m}`,c,v,p,c+v,c+v+p,s.notes||""]);tC+=c;tV+=v;tP+=p;}});
-  rv.push(["المجموع",tC,tV,tP,tC+tV,tC+tV+tP,""]);
-  const wsR=XLSX.utils.aoa_to_sheet(rv);wsR["!cols"]=[{wch:10},{wch:12},{wch:12},{wch:14},{wch:18},{wch:18},{wch:26}];XLSX.utils.book_append_sheet(wb,wsR,"الإيرادات");
-  const pr=[["ريحانة كافيه — المشتريات"],[],["التاريخ","المورد","الفئة","البيان","المبلغ","الفاتورة"]];
-  d.purchases.forEach(p=>pr.push([p.date,p.sName,catLbl(p.cat||"COGS"),p.desc||"",p.amt,p.inv||""]));
-  pr.push(["الإجمالي","","","",d.purchases.reduce((s,p)=>s+p.amt,0),""]);
-  const wsPr=XLSX.utils.aoa_to_sheet(pr);wsPr["!cols"]=[{wch:14},{wch:22},{wch:14},{wch:26},{wch:12},{wch:14}];XLSX.utils.book_append_sheet(wb,wsPr,"المشتريات");
+  d.sales.forEach(s=>{if((s.cash||0)+(s.visa||0)+(s.pmts||0)>0){const c=s.cash||0,v=s.visa||0,p=s.pmts||0;rv.push([`${s.day}/${m}`,c,v,p,c+v,c+v+p,s.notes||"",s.receivedBy||""]);tC+=c;tV+=v;tP+=p;}});
+  rv.push(["المجموع",tC,tV,tP,tC+tV,tC+tV+tP,"",""]);
+  const wsR=XLSX.utils.aoa_to_sheet(rv);wsR["!cols"]=[{wch:10},{wch:12},{wch:12},{wch:14},{wch:18},{wch:18},{wch:26},{wch:14}];XLSX.utils.book_append_sheet(wb,wsR,"الإيرادات");
+  const pr=[["ريحانة كافيه — المشتريات"],[],["التاريخ","المورد","الفئة","البيان","المبلغ","الفاتورة","قام بالشراء"]];
+  d.purchases.forEach(p=>pr.push([p.date,p.sName,catLbl(p.cat||"COGS"),p.desc||"",p.amt,p.inv||"",p.buyer||""]));
+  pr.push(["الإجمالي","","","",d.purchases.reduce((s,p)=>s+p.amt,0),"",""]);
+  const wsPr=XLSX.utils.aoa_to_sheet(pr);wsPr["!cols"]=[{wch:14},{wch:22},{wch:14},{wch:26},{wch:12},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,wsPr,"المشتريات");
   const ob=[["ريحانة كافيه — الالتزامات"],[],["الالتزام","المبلغ","الحالة","الاستحقاق"]];
   d.obligations.forEach(o=>ob.push([o.name,o.amt||0,o.paid?"مدفوع":"غير مدفوع",o.due||""]));
   ob.push(["الإجمالي",d.obligations.reduce((s,o)=>s+(o.amt||0),0),"",""]);
@@ -7131,6 +7155,19 @@ function exportExcel(){
     ["إجمالي التكاليف",t.totalExp],[],["صافي الدخل",t.profit],["هامش الربح",t.margin.toFixed(2)+"%"]
   ];
   const wsIs=XLSX.utils.aoa_to_sheet(is);wsIs["!cols"]=[{wch:36},{wch:16}];XLSX.utils.book_append_sheet(wb,wsIs,"قائمة الدخل");
+  // ورقة ملخص المديرين
+  const mg=[
+    ["ريحانة كافيه — ملخص المديرين"],[`${mn} ${y}`],[],
+    ["المدير","إيراد نقدي استلمه","مشتريات دفعها","التزامات دفعها","رواتب دفعها","الصافي"],
+    ["يزن",t.yzR,t.yzP,t.yzO,t.yzS,t.yznNet],
+    ["عبدالرحمن",t.abdR,t.abdP,t.abdO,t.abdS,t.abdNet],
+    [],
+    ["فيزا","مبيعات فيزا","رواتب من فيزا","","","رصيد الفيزا"],
+    ["",t.visa,t.visaSal,"","",t.visaBalance],
+    [],
+    ["الربح النهائي الموحّد","","","","",t.finalProfit],
+  ];
+  const wsMg=XLSX.utils.aoa_to_sheet(mg);wsMg["!cols"]=[{wch:20},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18}];XLSX.utils.book_append_sheet(wb,wsMg,"ملخص المديرين");
   var fname=`ريحانة_${mn}_${y}.xlsx`;
   if(window.AndroidStorage&&window.AndroidStorage.saveBase64ToDownloads){
     var b64=XLSX.write(wb,{type:'base64',bookType:'xlsx'});
@@ -7160,11 +7197,27 @@ function exportPDF(){
     ['هامش الربح',t.margin.toFixed(2)+'%'],
   ];
   var salesRows=d.sales.filter(function(s){return(s.cash||0)+(s.visa||0)>0;}).map(function(s){
-    return '<tr><td>'+s.day+'/'+m+'</td><td>'+n3(s.cash||0)+'</td><td>'+n3(s.visa||0)+'</td><td>'+n3((s.cash||0)+(s.visa||0))+'</td><td>'+(s.notes||'')+'</td></tr>';
+    var who=s.receivedBy||'—';
+    var whoCls=who==='يزن'?'color:#0070F2;font-weight:700':who==='عبدالرحمن'?'color:#D97706;font-weight:700':'color:#aaa';
+    return '<tr><td>'+s.day+'/'+m+'</td><td>'+n3(s.cash||0)+'</td><td>'+n3(s.visa||0)+'</td><td>'+n3((s.cash||0)+(s.visa||0))+'</td><td>'+(s.notes||'—')+'</td><td style="'+whoCls+'">'+who+'</td></tr>';
   }).join('');
   var purchRows=(d.purchases||[]).map(function(p){
-    return '<tr><td>'+(p.date||'')+'</td><td>'+(p.sName||'')+'</td><td>'+n3(p.amt||0)+'</td><td>'+(p.desc||'')+'</td></tr>';
+    var who=p.buyer||'—';
+    var whoCls=who==='يزن'?'color:#0070F2;font-weight:700':who==='عبدالرحمن'?'color:#D97706;font-weight:700':'color:#aaa';
+    return '<tr><td>'+(p.date||'')+'</td><td>'+(p.sName||'')+'</td><td>'+n3(p.amt||0)+'</td><td>'+(p.desc||'—')+'</td><td style="'+whoCls+'">'+who+'</td></tr>';
   }).join('');
+  // ملخص المديرين
+  var t2=totals();
+  var mgrRows=''
+    +'<tr style="background:#f0f7ff"><td style="font-weight:700;color:#0070F2">👤 يزن</td>'
+    +'<td>'+n3(t2.yzR)+'</td><td>'+n3(t2.yzP)+'</td><td>'+n3(t2.yzO)+'</td><td>'+n3(t2.yzS)+'</td>'
+    +'<td style="font-weight:800;color:'+(t2.yznNet>=0?'#059669':'#DC2626')+'">'+n3(t2.yznNet)+'</td></tr>'
+    +'<tr style="background:#fffbf0"><td style="font-weight:700;color:#D97706">👤 عبدالرحمن</td>'
+    +'<td>'+n3(t2.abdR)+'</td><td>'+n3(t2.abdP)+'</td><td>'+n3(t2.abdO)+'</td><td>'+n3(t2.abdS)+'</td>'
+    +'<td style="font-weight:800;color:'+(t2.abdNet>=0?'#059669':'#DC2626')+'">'+n3(t2.abdNet)+'</td></tr>'
+    +'<tr style="background:#f5f5f5"><td style="font-weight:700;color:#7C3AED">💳 فيزا</td>'
+    +'<td>'+n3(t2.visa)+'</td><td>—</td><td>—</td><td>'+n3(t2.visaSal)+'</td>'
+    +'<td style="font-weight:800;color:'+(t2.visaBalance>=0?'#059669':'#DC2626')+'">'+n3(t2.visaBalance)+'</td></tr>';
   var html='<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"><title>ريحانة كافيه — '+mn+' '+y+'</title>'
     +'<style>*{box-sizing:border-box}body{font-family:"IBM Plex Sans Arabic",Arial,sans-serif;direction:rtl;padding:24px;font-size:13px;color:#1a1a1a;line-height:1.6}'
     +'h1{font-size:20px;margin:0 0 4px;color:#1a1a1a}h2{font-size:14px;margin:20px 0 8px;color:#555;border-bottom:1px solid #ddd;padding-bottom:4px}'
@@ -7179,8 +7232,13 @@ function exportPDF(){
     +'<h2>الملخص المالي</h2><table><thead><tr><th>البيان</th><th>المبلغ (JD)</th></tr></thead><tbody>'
     +rows.slice(1).map(function(r,i){return'<tr'+(r[0]==='صافي الربح'?' class="profit"':'')+'><td>'+r[0]+'</td><td style="font-family:monospace;text-align:left">'+r[1]+'</td></tr>';}).join('')
     +'</tbody></table>'
-    +'<h2>المبيعات اليومية</h2><table><thead><tr><th>اليوم</th><th>نقد</th><th>فيزا</th><th>الإجمالي</th><th>ملاحظات</th></tr></thead><tbody>'+salesRows+'</tbody></table>'
-    +'<h2>المشتريات</h2><table><thead><tr><th>التاريخ</th><th>المورد</th><th>المبلغ</th><th>البيان</th></tr></thead><tbody>'+purchRows+'</tbody></table>'
+    +'<h2>ملخص المديرين</h2>'
+    +'<table><thead><tr><th>المدير</th><th>إيراد نقدي استلمه</th><th>مشتريات دفعها</th><th>التزامات دفعها</th><th>رواتب دفعها</th><th>الصافي</th></tr></thead><tbody>'+mgrRows+'</tbody></table>'
+    +'<table style="margin-top:6px"><thead><tr><th colspan="2">الربح النهائي الموحّد</th></tr></thead><tbody>'
+    +'<tr class="profit"><td>يزن + عبدالرحمن + فيزا</td><td style="font-family:monospace;text-align:left">'+n3(t2.finalProfit)+' JD</td></tr>'
+    +'</tbody></table>'
+    +'<h2>المبيعات اليومية</h2><table><thead><tr><th>اليوم</th><th>نقد</th><th>فيزا</th><th>الإجمالي</th><th>ملاحظات</th><th>استلمه</th></tr></thead><tbody>'+salesRows+'</tbody></table>'
+    +'<h2>المشتريات</h2><table><thead><tr><th>التاريخ</th><th>المورد</th><th>المبلغ</th><th>البيان</th><th>قام بالشراء</th></tr></thead><tbody>'+purchRows+'</tbody></table>'
     +'</body></html>';
 
   var jobName='ريحانة كافيه — تقرير '+mn+' '+y;

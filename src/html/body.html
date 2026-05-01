@@ -1122,9 +1122,12 @@
             <span class="rpt-row-lbl">⏳ رواتب مستحقة <small>(لا تُطرح — لم تُدفع بعد)</small></span>
             <span class="rpt-row-val muted" id="r-msal-accrued">0.000 JD</span>
           </div>
-          <div class="rpt-row rpt-row-sub rpt-row-muted">
-            <span class="rpt-row-lbl">👷 أجور يومية <small>(توثيق — خُصمت من الكاش قبل التسليم للمدير)</small></span>
-            <span class="rpt-row-val muted" id="r-dwages">0.000 JD</span>
+          <div id="r-dwages-section" style="display:none">
+            <div class="rpt-row rpt-row-sub" style="background:rgba(245,158,11,.06);border-top:1px solid var(--br)">
+              <span class="rpt-row-lbl" style="font-weight:700">👷 أجور يومية <small>(خُصمت من الكاش قبل التسليم)</small></span>
+              <span class="rpt-row-val" style="color:var(--yw);font-weight:700" id="r-dwages">0.000 JD</span>
+            </div>
+            <div id="r-dwages-rows"></div>
           </div>
         </div>
 

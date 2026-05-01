@@ -85,10 +85,28 @@ function updateRpt(){
   T('r-sal-total', n3(t.mSalPaid)+' JD');
   T('r-msal', n3(t.mSalPaid)+' JD');
   T('r-msal-accrued', n3(t.mSalAccrued)+' JD');
-  T('r-dwages', n3(t.dwTotal)+' JD');
   // Hide accrued row if zero
   var accRow=document.getElementById('r-accrued-row');
   if(accRow) accRow.style.display=t.mSalAccrued>0?'flex':'none';
+  // Daily wages — show per-employee breakdown
+  var dwSec=document.getElementById('r-dwages-section');
+  var dwRows=document.getElementById('r-dwages-rows');
+  if(t.dwTotal>0){
+    T('r-dwages',n3(t.dwTotal)+' JD');
+    if(dwSec) dwSec.style.display='';
+    if(dwRows){
+      var _dwd=G();
+      dwRows.innerHTML=S.dailyEmps.filter(function(e){var w=_dwd.dWages[e.id]||{};return(w.att||[]).length>0;}).map(function(e){
+        var w=_dwd.dWages[e.id]||{};var days=(w.att||[]).length;var tot=(w.rate||0)*days;
+        return '<div class="rpt-row rpt-row-sub" style="padding-right:40px">'
+          +'<span class="rpt-row-lbl">👤 '+e.name+'<small> '+days+' يوم × '+n3(w.rate||0)+' JD</small></span>'
+          +'<span class="rpt-row-val" style="color:var(--yw)">'+n3(tot)+' JD</span>'
+          +'</div>';
+      }).join('');
+    }
+  } else {
+    if(dwSec) dwSec.style.display='none';
+  }
 
   // Other expenses
   var otherSec=document.getElementById('r-other-section');
