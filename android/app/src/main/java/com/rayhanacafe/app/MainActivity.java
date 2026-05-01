@@ -29,10 +29,18 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Base64;
+
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.OutputStream;
 
 public class MainActivity extends Activity {
 
@@ -91,6 +99,53 @@ public class MainActivity extends Activity {
                 obj.remove(key);
                 writeFile(KEY_FILE, obj.toString());
             } catch (Exception e) { /* ignore */ }
+        }
+
+        // حفظ ملف نصي في مجلد Downloads
+        @JavascriptInterface
+        public boolean saveToDownloads(String filename, String content, String mimeType) {
+            try {
+                byte[] bytes = content.getBytes("UTF-8");
+                return writeToDownloads(filename, mimeType, bytes);
+            } catch (Exception e) { return false; }
+        }
+
+        // حفظ ملف ثنائي (Base64) في مجلد Downloads — لـ Excel وغيره
+        @JavascriptInterface
+        public boolean saveBase64ToDownloads(String filename, String base64, String mimeType) {
+            try {
+                byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
+                return writeToDownloads(filename, mimeType, bytes);
+            } catch (Exception e) { return false; }
+        }
+
+        private boolean writeToDownloads(String filename, String mimeType, byte[] bytes) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ContentValues cv = new ContentValues();
+                    cv.put(MediaStore.Downloads.DISPLAY_NAME, filename);
+                    cv.put(MediaStore.Downloads.MIME_TYPE, mimeType);
+                    cv.put(MediaStore.Downloads.IS_PENDING, 1);
+                    ContentResolver cr = ctx.getContentResolver();
+                    android.net.Uri col = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+                    android.net.Uri item = cr.insert(col, cv);
+                    if (item == null) return false;
+                    try (OutputStream os = cr.openOutputStream(item)) {
+                        os.write(bytes);
+                    }
+                    cv.clear();
+                    cv.put(MediaStore.Downloads.IS_PENDING, 0);
+                    cr.update(item, cv, null, null);
+                } else {
+                    File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                    if (!dir.exists()) dir.mkdirs();
+                    File f = new File(dir, filename);
+                    try (FileOutputStream fos = new FileOutputStream(f, false)) {
+                        fos.write(bytes);
+                    }
+                }
+                return true;
+            } catch (Exception e) { return false; }
         }
 
         private void writeFile(String name, String content) {

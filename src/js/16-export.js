@@ -14,24 +14,26 @@ function exportJSON(){
   };
   var json=JSON.stringify(data,null,2);
   var ym=S.activeKey.split('-');
-  var fname='rayhana_v25_'+ym[0]+'_'+ym[1]+'.json';
+  var fname='rayhana_'+ym[0]+'_'+ym[1]+'.json';
 
-  // دائماً: اعرض نافذة النسخ أولاً حتى لا يضيع الملف
-  _showCopyModal(json, fname);
-
-  // حاول Share API في الخلفية (أندرويد) — بدون return حتى تبقى النافذة مفتوحة
+  // Android: حفظ مباشر في Downloads
+  if(window.AndroidStorage&&window.AndroidStorage.saveToDownloads){
+    var ok=window.AndroidStorage.saveToDownloads(fname,json,'application/json');
+    if(ok){toast('💾 تم الحفظ في Downloads/'+fname);log('تصدير JSON — '+S.activeKey);return;}
+  }
+  // Share API
   if(navigator.share){
     try{
-      var shareFile=new File([json],fname,{type:'application/json'});
-      var canShare=false;
-      try{ canShare=!navigator.canShare||navigator.canShare({files:[shareFile]}); }catch(e){ canShare=true; }
-      if(canShare){
-        navigator.share({files:[shareFile],title:'نسخة احتياطية ريحانة كافيه'})
-          .then(function(){ toast('✅ تم الإرسال عبر قائمة المشاركة'); })
-          .catch(function(){});
+      var sf=new File([json],fname,{type:'application/json'});
+      if(!navigator.canShare||navigator.canShare({files:[sf]})){
+        navigator.share({files:[sf],title:'نسخة احتياطية ريحانة كافيه'})
+          .then(function(){toast('✅ تمت المشاركة');})
+          .catch(function(){_showCopyModal(json,fname);});
+        log('تصدير JSON — '+S.activeKey);return;
       }
     }catch(e){}
   }
+  _showCopyModal(json,fname);
   log('تصدير JSON — '+S.activeKey);
 }
 
@@ -161,19 +163,22 @@ function testGSheetUrl(){
 }
 
 function _csvFallback(csv, fname){
-  try{
-    var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = fname;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
-    toast('🟢 تم تصدير CSV لـ Google Sheets');
-  }catch(e){
-    _showCopyModal(csv, fname);
+  if(window.AndroidStorage&&window.AndroidStorage.saveToDownloads){
+    var ok=window.AndroidStorage.saveToDownloads(fname,csv,'text/csv');
+    if(ok){toast('📊 تم الحفظ في Downloads/'+fname);return;}
   }
+  if(navigator.share){
+    try{
+      var sf=new File([csv],fname,{type:'text/csv'});
+      if(!navigator.canShare||navigator.canShare({files:[sf]})){
+        navigator.share({files:[sf],title:'تقرير ريحانة كافيه'})
+          .then(function(){toast('✅ تمت المشاركة');})
+          .catch(function(){_showCopyModal(csv,fname);});
+        return;
+      }
+    }catch(e){}
+  }
+  _showCopyModal(csv,fname);
 }
 
 function _exportFallback(json,fname){
@@ -428,7 +433,13 @@ function exportExcel(){
     ["إجمالي التكاليف",t.totalExp],[],["صافي الدخل",t.profit],["هامش الربح",t.margin.toFixed(2)+"%"]
   ];
   const wsIs=XLSX.utils.aoa_to_sheet(is);wsIs["!cols"]=[{wch:36},{wch:16}];XLSX.utils.book_append_sheet(wb,wsIs,"قائمة الدخل");
-  XLSX.writeFile(wb,`ريحانة_كافيه_${mn}_${y}.xlsx`);toast("📗 تم تصدير Excel");log(`تصدير Excel — ${mn} ${y}`);
+  var fname=`ريحانة_${mn}_${y}.xlsx`;
+  if(window.AndroidStorage&&window.AndroidStorage.saveBase64ToDownloads){
+    var b64=XLSX.write(wb,{type:'base64',bookType:'xlsx'});
+    var ok=window.AndroidStorage.saveBase64ToDownloads(fname,b64,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    if(ok){toast('📗 تم حفظ Excel في Downloads/'+fname);log(`تصدير Excel — ${mn} ${y}`);return;}
+  }
+  XLSX.writeFile(wb,fname);toast('📗 تم تصدير Excel');log(`تصدير Excel — ${mn} ${y}`);
 }
 /* ═══════════════════════════════════════════════════════
    PDF عبر window.print() — يعمل بدون إنترنت على Android
@@ -474,22 +485,34 @@ function exportPDF(){
     +'<h2>المشتريات</h2><table><thead><tr><th>التاريخ</th><th>المورد</th><th>المبلغ</th><th>البيان</th></tr></thead><tbody>'+purchRows+'</tbody></table>'
     +'</body></html>';
 
-  var old=document.getElementById('_pdf_print_frame');if(old)old.remove();
-  var frame=document.createElement('iframe');
-  frame.id='_pdf_print_frame';
-  frame.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;border:none';
-  document.body.appendChild(frame);
-  frame.contentDocument.open();
-  frame.contentDocument.write(html);
-  frame.contentDocument.close();
-  toast('⏳ جاري تجهيز PDF...');
-  setTimeout(function(){
-    frame.contentWindow.focus();
-    frame.contentWindow.print();
-    setTimeout(function(){frame.remove();},2000);
-    toast('📄 فُتح مربع الطباعة — اختر "حفظ كـ PDF"');
-    log('تصدير PDF — '+mn+' '+y);
-  },400);
+  var fname='rayhana_report_'+y+'_'+m+'.html';
+  // Android: حفظ HTML في Downloads ثم يفتحه المستخدم بـ Chrome للطباعة كـ PDF
+  if(window.AndroidStorage&&window.AndroidStorage.saveToDownloads){
+    var ok=window.AndroidStorage.saveToDownloads(fname,html,'text/html');
+    if(ok){
+      toast('📄 تم حفظ التقرير في Downloads — افتحه من مدير الملفات لطباعته');
+      log('تصدير PDF HTML — '+mn+' '+y);
+      return;
+    }
+  }
+  // Share API — يمكن فتحه في Chrome والطباعة
+  if(navigator.share){
+    try{
+      var sf=new File([html],fname,{type:'text/html'});
+      if(!navigator.canShare||navigator.canShare({files:[sf]})){
+        navigator.share({files:[sf],title:'تقرير ريحانة كافيه — '+mn+' '+y})
+          .then(function(){toast('✅ تمت المشاركة');})
+          .catch(function(){});
+        log('تصدير PDF — '+mn+' '+y);
+        return;
+      }
+    }catch(e){}
+  }
+  // Fallback: فتح في نافذة جديدة
+  var w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();setTimeout(function(){w.print();},300);}
+  else{toast('❌ تعذّر تصدير PDF');}
+  log('تصدير PDF — '+mn+' '+y);
 }
 
 
