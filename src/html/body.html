@@ -89,6 +89,10 @@
       <span class="export-btn-icon">🟢</span>
       <span>Google Sheets</span>
     </button>
+    <button class="export-btn" onclick="openGSheetSetup()">
+      <span class="export-btn-icon">⚙️</span>
+      <span>إعداد Google Sheets</span>
+    </button>
     <button class="export-btn" onclick="shareReport()">
       <span class="export-btn-icon">📤</span>
       <span>مشاركة التقرير</span>
@@ -411,11 +415,6 @@
         </div>
       </div>
       
-      <!-- تقرير الموظفين -->
-      <div id="employeeReport" style="margin-bottom:12px">
-        <!-- سيتم ملؤه بواسطة JavaScript -->
-      </div>
-
       <!-- ═══════════════════════════════════════════════════════════════ -->
       <!-- V15 ULTIMATE - WORLD-CLASS FEATURES                             -->
       <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -633,19 +632,23 @@
 
 
       <!-- بطاقة الربح النهائي الموحّد -->
-      <div class="card" id="final-profit-card" style="margin-top:10px;border-top:3px solid var(--gn)">
-        <div class="card-body" style="padding:14px">
-          <div style="font-size:11px;color:var(--tx3);font-weight:600;margin-bottom:8px;text-align:center">الربح النهائي الموحّد = صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>
-          <div style="font-size:28px;font-weight:800;font-family:'IBM Plex Mono';text-align:center;margin-bottom:6px" id="final-profit-val">0.000 JD</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;font-size:11px">
-            <div style="padding:7px;background:rgba(0,112,242,.07);border-radius:8px;border:1px solid rgba(0,112,242,.2)">
-              <div style="color:#0070F2;font-weight:600">يزن</div><div class="num" id="mgr-yz-n" style="font-weight:700;color:var(--gn)">0.000</div>
+      <div id="final-profit-card" style="margin-top:10px;border-radius:14px;border:2px solid var(--gn);background:var(--surf);box-shadow:none;overflow:hidden">
+        <div style="padding:4px 12px;background:var(--gn);text-align:center;font-size:10.5px;font-weight:700;color:#fff;letter-spacing:.3px">الربح النهائي الموحّد</div>
+        <div style="padding:14px 14px 10px">
+          <div style="font-size:32px;font-weight:800;font-family:'IBM Plex Mono';text-align:center;margin-bottom:4px;letter-spacing:-1px" id="final-profit-val">0.000 JD</div>
+          <div style="font-size:10px;color:var(--tx3);text-align:center;margin-bottom:12px">= صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+            <div style="padding:8px 4px;background:var(--surf2);border-radius:9px;border:1.5px solid rgba(0,112,242,.25)">
+              <div style="font-size:10px;color:#0070F2;font-weight:700;margin-bottom:3px">👤 يزن</div>
+              <div class="num" id="mgr-yz-n" style="font-size:13px;font-weight:800">0.000</div>
             </div>
-            <div style="padding:7px;background:rgba(184,134,11,.07);border-radius:8px;border:1px solid rgba(184,134,11,.2)">
-              <div style="color:#B8860B;font-weight:600">عبدالرحمن</div><div class="num" id="mgr-ab-n" style="font-weight:700;color:var(--gn)">0.000</div>
+            <div style="padding:8px 4px;background:var(--surf2);border-radius:9px;border:1.5px solid rgba(184,134,11,.25)">
+              <div style="font-size:10px;color:#B8860B;font-weight:700;margin-bottom:3px">👤 عبدالرحمن</div>
+              <div class="num" id="mgr-ab-n" style="font-size:13px;font-weight:800">0.000</div>
             </div>
-            <div style="padding:7px;background:rgba(16,185,129,.07);border-radius:8px;border:1px solid rgba(16,185,129,.2)">
-              <div style="color:#059669;font-weight:600">💳 فيزا</div><div class="num" id="mgr-visa-balance" style="font-weight:700;color:var(--gn)">0.000</div>
+            <div style="padding:8px 4px;background:var(--surf2);border-radius:9px;border:1.5px solid rgba(16,185,129,.25)">
+              <div style="font-size:10px;color:#059669;font-weight:700;margin-bottom:3px">💳 فيزا</div>
+              <div class="num" id="mgr-visa-balance" style="font-size:13px;font-weight:800">0.000</div>
             </div>
           </div>
         </div>
@@ -1551,6 +1554,40 @@ create policy "allow_all" on rh_store
   <div class="fg"><label>تأكيد كلمة المرور</label><input type="password" class="fi" id="pwdConf" placeholder="أعد الإدخال"></div>
   <div id="pwdChgErr" style="color:var(--rd);font-size:12px;min-height:16px;margin-bottom:8px"></div>
   <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="changePwd()">✅ تغيير</button><button class="btn btn-ghost" style="flex:1" onclick="cmo('moPin')">إلغاء</button></div>
+</div></div>
+
+<!-- مودال إعداد Google Sheets -->
+<div class="mo-ov" id="moGSheet" onclick="moOut(event,'moGSheet')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moGSheet')">×</button>
+  <div class="mo-title">🟢 إعداد Google Sheets</div>
+  <div class="alert al-i" style="font-size:12px;line-height:1.7">
+    <div><b>خطوات الإعداد:</b></div>
+    <div>١. افتح Google Sheets وأنشئ جدول جديد</div>
+    <div>٢. من القائمة: <b>Extensions → Apps Script</b></div>
+    <div>٣. الصق الكود التالي واحفظه:</div>
+    <pre style="background:var(--surf2);border-radius:6px;padding:8px;font-size:10px;overflow-x:auto;margin:6px 0;direction:ltr;text-align:left">function doPost(e){
+  var d=JSON.parse(e.postData.contents);
+  var ss=SpreadsheetApp.getActiveSpreadsheet();
+  var sh=ss.getSheetByName(d.month)||ss.insertSheet(d.month);
+  sh.clearContents();
+  if(d.rows&&d.rows.length)
+    sh.getRange(1,1,d.rows.length,d.rows[0].length).setValues(d.rows);
+  return ContentService
+    .createTextOutput(JSON.stringify({status:'ok'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+    <div>٤. اضغط <b>Deploy → New deployment → Web App</b></div>
+    <div>٥. Who has access: <b>Anyone</b> → Deploy → انسخ الرابط</div>
+  </div>
+  <div class="fg"><label>رابط Web App (Apps Script)</label>
+    <input type="url" class="fi" id="gsheetUrlInput" placeholder="https://script.google.com/macros/s/...">
+  </div>
+  <div id="gsheetTestResult" style="font-size:12px;min-height:16px;margin-bottom:8px"></div>
+  <div class="btn-row">
+    <button class="btn btn-p" style="flex:1" onclick="saveGSheetUrl()">💾 حفظ الرابط</button>
+    <button class="btn btn-ghost" style="flex:1" onclick="testGSheetUrl()">🔗 اختبار</button>
+    <button class="btn btn-ghost" style="flex:1" onclick="cmo('moGSheet')">إغلاق</button>
+  </div>
 </div></div>
 
 <!-- V22: مودال النسخ الاحتياطية -->

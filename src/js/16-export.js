@@ -37,124 +37,97 @@ function exportJSON(){
 
 // ═══════════════════════════════════════════════════════
 // تصدير Google Sheets (CSV متوافق مع العربية)
-// ═══════════════════════════════════════════════════════
-function exportGoogleSheets(){
-  var d = G();
-  var t = totals();
-  var ym = S.activeKey.split('-');
-  var monthName = (typeof MNA !== 'undefined' ? MNA[parseInt(ym[1])-1] : ym[1]) + ' ' + ym[0];
-  var fname = 'rayhana_' + ym[0] + '_' + ym[1] + '.csv';
-  var rows = [];
-
-  function q(v){ // تحويل قيمة لخلية CSV آمنة
-    var s = String(v === null || v === undefined ? '' : v);
-    if(s.indexOf(',') > -1 || s.indexOf('"') > -1 || s.indexOf('\n') > -1){
-      return '"' + s.replace(/"/g,'""') + '"';
-    }
-    return s;
-  }
-  function row(){ return Array.prototype.slice.call(arguments).map(q).join(','); }
-  function blank(){ rows.push(''); }
-  function header(t){ rows.push(row(t)); }
-
-  // ── الغلاف ─────────────────────────────────────────
-  rows.push(row('ريحانة كافيه — تقرير ' + monthName));
-  rows.push(row('تاريخ التصدير', new Date().toLocaleString('ar-JO')));
-  blank();
-
-  // ── ملخص مالي ──────────────────────────────────────
-  header('=== الملخص المالي ===');
-  rows.push(row('البيان','المبلغ (JD)'));
-  rows.push(row('إجمالي الإيرادات', n3(t.rev)));
-  rows.push(row('إجمالي المصروفات', n3(t.totalExp)));
-  rows.push(row('صافي الربح', n3(t.profit)));
-  rows.push(row('هامش الربح %', t.margin.toFixed(2) + '%'));
-  rows.push(row('إيرادات نقد', n3(t.cash)));
-  rows.push(row('إيرادات فيزا', n3(t.visa)));
-  rows.push(row('تكلفة البضاعة (COGS)', n3(t.bycat ? t.bycat.COGS : 0)));
-  rows.push(row('مصاريف التشغيل', n3(t.bycat ? t.bycat.OPS : 0)));
-  rows.push(row('مجموع الرواتب الشهرية', n3(t.mSalG)));
-  rows.push(row('مجموع الأجور اليومية', n3(t.dwTotal)));
-  rows.push(row('الالتزامات المسددة', n3(t.oblPaid)));
-  rows.push(row('الالتزامات غير المسددة', n3(t.oblTotal - t.oblPaid)));
-  blank();
-
-  // ── المبيعات اليومية ───────────────────────────────
-  header('=== المبيعات اليومية ===');
-  rows.push(row('اليوم','نقد','فيزا','دفعات أخرى','الإجمالي','الملاحظات'));
+// ════════════════════════════��══════════════════════════
+function _buildSheetRows(){
+  var d=G(),t=totals(),ym=S.activeKey.split('-');
+  var mn=(typeof MNA!=='undefined'?MNA[parseInt(ym[1])-1]:ym[1])+' '+ym[0];
+  var rows=[
+    ['ريحانة كافيه — تقرير '+mn,''],
+    ['تاريخ التصدير',new Date().toLocaleString('ar-JO')],
+    [],
+    ['=== الملخص المالي ===',''],
+    ['البيان','المبلغ (JD)'],
+    ['إجمالي الإيرادات',t.rev],
+    ['نقد',t.cash],['فيزا',t.visa],
+    ['إجمالي المصروفات',t.totalExp],
+    ['صافي الربح',t.profit],
+    ['هامش الربح %',t.margin.toFixed(2)+'%'],
+    ['الالتزامات المسددة',t.oblPaid],
+    ['رواتب مدفوعة',t.mSalPaid],
+    ['أجور يومية',t.dwTotal],
+    [],
+    ['=== المبيعات اليومية ===','','','','',''],
+    ['اليوم','نقد','فيزا','دفعات أخرى','الإجمالي','ملاحظات'],
+  ];
   d.sales.forEach(function(s){
-    var total = (s.cash||0)+(s.visa||0)+(s.pmts||0);
-    rows.push(row(s.day, n3(s.cash||0), n3(s.visa||0), n3(s.pmts||0), n3(total), s.notes||''));
+    rows.push([s.day,s.cash||0,s.visa||0,s.pmts||0,(s.cash||0)+(s.visa||0)+(s.pmts||0),s.notes||'']);
   });
-  blank();
-
-  // ── المشتريات ──────────────────────────────────────
-  header('=== المشتريات ===');
-  rows.push(row('التاريخ','المورد','التصنيف','الوصف','المبلغ (JD)'));
-  (d.purchases||[]).forEach(function(p){
-    rows.push(row(p.date||'', p.sName||'', p.cat||'', p.desc||'', n3(p.amt||0)));
-  });
-  if(!(d.purchases||[]).length) rows.push(row('لا توجد مشتريات'));
-  blank();
-
-  // ── الالتزامات ─────────────────────────────────────
-  header('=== الالتزامات الشهرية ===');
-  rows.push(row('البند','المبلغ (JD)','الحالة','تاريخ الاستحقاق'));
-  (d.obligations||[]).forEach(function(o){
-    rows.push(row(o.name||'', n3(o.amt||0), o.paid ? 'مسدد ✓' : 'غير مسدد', o.due||''));
-  });
-  blank();
-
-  // ── الرواتب الشهرية ────────────────────────────────
-  if(S.monthlyEmps && S.monthlyEmps.length){
-    header('=== الرواتب الشهرية ===');
-    rows.push(row('الموظف','الأساسي','البدلات','الخصومات','الصافي','مسدد؟'));
-    S.monthlyEmps.forEach(function(e){
-      var sal = (d.mSal||{})[e.id] || {};
-      var net = (sal.base||0)+(sal.allow||0)-(sal.ded||0);
-      rows.push(row(e.name, n3(sal.base||0), n3(sal.allow||0), n3(sal.ded||0), n3(net), sal.paid ? 'نعم ✓' : 'لا'));
-    });
-    blank();
+  rows.push([]);
+  rows.push(['=== المشتريات ===','','','','']);
+  rows.push(['التاريخ','المورد','التصنيف','الوصف','المبلغ (JD)']);
+  (d.purchases||[]).forEach(function(p){rows.push([p.date||'',p.sName||'',p.cat||'',p.desc||'',p.amt||0]);});
+  rows.push([]);
+  rows.push(['=== الالتزامات ===','','','']);
+  rows.push(['البند','المبلغ (JD)','الحالة','تاريخ الاستحقاق']);
+  (d.obligations||[]).forEach(function(o){rows.push([o.name||'',o.amt||0,o.paid?'مسدد ✓':'غير مسدد',o.due||'']);});
+  if(S.monthlyEmps&&S.monthlyEmps.length){
+    rows.push([]);rows.push(['=== الرواتب الشهرية ===','','','','','']);
+    rows.push(['الموظف','الأساسي','البدلات','الخصومات','الصافي','مسدد؟']);
+    S.monthlyEmps.forEach(function(e){var s=(d.mSal||{})[e.id]||{};rows.push([e.name,s.base||0,s.allow||0,s.ded||0,(s.base||0)+(s.allow||0)-(s.ded||0),s.paid?'نعم':'لا']);});
   }
+  return rows;
+}
 
-  // ── الأجور اليومية ─────────────────────────────────
-  if(S.dailyEmps && S.dailyEmps.length){
-    header('=== الأجور اليومية ===');
-    rows.push(row('الموظف','الأجر اليومي','أيام الحضور','الإجمالي'));
-    S.dailyEmps.forEach(function(e){
-      var w = (d.dWages||{})[e.id] || {rate:0,att:[]};
-      var days = (w.att||[]).length;
-      rows.push(row(e.name, n3(w.rate||0), days, n3((w.rate||0)*days)));
-    });
-    blank();
+function exportGoogleSheets(){
+  var url=localStorage.getItem('gsheetUrl')||'';
+  if(!url){
+    toast('⚙️ أدخل رابط Google Sheets أولاً');
+    openGSheetSetup();
+    return;
   }
+  var ym=S.activeKey.split('-');
+  var monthName=(typeof MNA!=='undefined'?MNA[parseInt(ym[1])-1]:ym[1])+' '+ym[0];
+  var payload={month:monthName,rows:_buildSheetRows()};
+  toast('🔄 جاري الإرسال إلى Google Sheets...');
+  fetch(url,{method:'POST',body:JSON.stringify(payload)})
+    .then(function(r){return r.text();})
+    .then(function(txt){
+      try{var j=JSON.parse(txt);if(j.status==='ok'){toast('✅ تم التحديث في Google Sheets');log('مزامنة Google Sheets — '+monthName);}else{toast('⚠️ Apps Script: '+(j.message||txt));}}
+      catch(e){toast('✅ تم الإرسال إلى Google Sheets');}
+    })
+    .catch(function(err){toast('❌ خطأ: '+err.message+' — تحقق من الرابط والاتصال');});
+}
 
-  // ── السلف ──────────────────────────────────────────
-  if((d.advances||[]).length){
-    header('=== السلف والمدفوعات ===');
-    rows.push(row('التاريخ','الموظف','المبلغ','الحالة','ملاحظة'));
-    d.advances.forEach(function(a){
-      rows.push(row(a.date||'', a.empName||'', n3(a.amt||0), a.status||'', a.note||''));
-    });
-    blank();
-  }
+function openGSheetSetup(){
+  var inp=document.getElementById('gsheetUrlInput');
+  if(inp) inp.value=localStorage.getItem('gsheetUrl')||'';
+  var res=document.getElementById('gsheetTestResult');
+  if(res) res.textContent='';
+  openMo('moGSheet');
+}
 
-  // BOM لدعم العربية في Excel/Sheets + تجميع
-  var csv = '﻿' + rows.join('\r\n');
+function saveGSheetUrl(){
+  var inp=document.getElementById('gsheetUrlInput');
+  if(!inp) return;
+  var val=inp.value.trim();
+  if(!val){toast('⚠️ أدخل الرابط');return;}
+  if(!val.startsWith('https://script.google.com/')){toast('⚠️ الرابط يجب أن يبدأ بـ https://script.google.com/');return;}
+  localStorage.setItem('gsheetUrl',val);
+  toast('✅ تم حفظ رابط Google Sheets');
+  cmo('moGSheet');
+}
 
-  // مشاركة عبر Android أو تنزيل
-  if(navigator.share){
-    try{
-      var f = new File([csv], fname, {type:'text/csv;charset=utf-8'});
-      if(navigator.canShare && navigator.canShare({files:[f]})){
-        navigator.share({files:[f], title:'تقرير ريحانة كافيه — ' + monthName})
-          .then(function(){ toast('🟢 تم تصدير Google Sheets'); })
-          .catch(function(err){ if(err.name!=='AbortError') _csvFallback(csv,fname); });
-        return;
-      }
-    }catch(e){}
-  }
-  _csvFallback(csv, fname);
+function testGSheetUrl(){
+  var inp=document.getElementById('gsheetUrlInput');
+  var res=document.getElementById('gsheetTestResult');
+  if(!inp||!res) return;
+  var val=inp.value.trim();
+  if(!val){res.textContent='⚠️ أدخل الرابط أولاً';res.style.color='var(--rd)';return;}
+  res.textContent='🔄 جاري الاختبار...';res.style.color='var(--tx3)';
+  fetch(val,{method:'POST',body:JSON.stringify({month:'test',rows:[['اختبار','ناجح']]})})
+    .then(function(r){return r.text();})
+    .then(function(t){res.textContent='✅ الاتصال ناجح!';res.style.color='var(--gn)';})
+    .catch(function(e){res.textContent='❌ '+e.message;res.style.color='var(--rd)';});
 }
 
 function _csvFallback(csv, fname){
@@ -427,111 +400,66 @@ function exportExcel(){
   const wsIs=XLSX.utils.aoa_to_sheet(is);wsIs["!cols"]=[{wch:36},{wch:16}];XLSX.utils.book_append_sheet(wb,wsIs,"قائمة الدخل");
   XLSX.writeFile(wb,`ريحانة_كافيه_${mn}_${y}.xlsx`);toast("📗 تم تصدير Excel");log(`تصدير Excel — ${mn} ${y}`);
 }
-/* ═══════════════════════════════════════════════════════════════════════
-   V25: PDF عربي صحيح — html2canvas يصوّر الصفحة كاملةً
-   يحافظ على العربية 100% لأنه يحول الـ HTML لصورة ثم PDF
-═══════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   PDF عبر window.print() — يعمل بدون إنترنت على Android
+═══════════════════════════════════════════════════════ */
 function exportPDF(){
-  // أولاً: اذهب لصفحة التقرير وحدّثها
-  const rptTab=document.querySelectorAll('.ntab')[3];
-  pg('rpt',rptTab);
-  updateRpt();
-  toast('⏳ جاري إنشاء PDF — انتظر...');
+  var[y,m]=S.activeKey.split('-');
+  var mn=MN[parseInt(m)-1];
+  var t=totals(),d=G();
+  var rows=[
+    ['البيان','المبلغ (JD)'],
+    ['إجمالي الإيرادات',n3(t.rev)],
+    ['نقد',n3(t.cash)],
+    ['فيزا',n3(t.visa)],
+    ['إجمالي المصروفات',n3(t.totalExp)],
+    ['مشتريات',n3(t.bycat?(t.bycat.COGS||0)+(t.bycat.OPS||0)+(t.bycat.ADM||0)+(t.bycat.MKT||0):0)],
+    ['التزامات مسددة',n3(t.oblPaid)],
+    ['رواتب شهرية مدفوعة',n3(t.mSalPaid)],
+    ['أجور يومية',n3(t.dwTotal)],
+    ['صافي الربح',n3(t.profit)],
+    ['هامش الربح',t.margin.toFixed(2)+'%'],
+  ];
+  var salesRows=d.sales.filter(function(s){return(s.cash||0)+(s.visa||0)>0;}).map(function(s){
+    return '<tr><td>'+s.day+'/'+m+'</td><td>'+n3(s.cash||0)+'</td><td>'+n3(s.visa||0)+'</td><td>'+n3((s.cash||0)+(s.visa||0))+'</td><td>'+(s.notes||'')+'</td></tr>';
+  }).join('');
+  var purchRows=(d.purchases||[]).map(function(p){
+    return '<tr><td>'+(p.date||'')+'</td><td>'+(p.sName||'')+'</td><td>'+n3(p.amt||0)+'</td><td>'+(p.desc||'')+'</td></tr>';
+  }).join('');
+  var html='<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"><title>ريحانة كافيه — '+mn+' '+y+'</title>'
+    +'<style>*{box-sizing:border-box}body{font-family:"IBM Plex Sans Arabic",Arial,sans-serif;direction:rtl;padding:24px;font-size:13px;color:#1a1a1a;line-height:1.6}'
+    +'h1{font-size:20px;margin:0 0 4px;color:#1a1a1a}h2{font-size:14px;margin:20px 0 8px;color:#555;border-bottom:1px solid #ddd;padding-bottom:4px}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:16px}th,td{padding:7px 10px;border:1px solid #ddd;text-align:right}'
+    +'th{background:#1a1a1a;color:#fff}tr:nth-child(even){background:#f8f8f8}'
+    +'.profit{background:'+(t.profit>=0?'#059669':'#DC2626')+';color:#fff;font-weight:700}'
+    +'@media print{@page{margin:15mm}}</style></head><body>'
+    +'<div style="text-align:center;border-bottom:3px solid #C8920F;padding-bottom:12px;margin-bottom:18px">'
+    +'<div style="font-size:22px;font-weight:800">☕ ريحانة كافيه</div>'
+    +'<div style="color:#666">قائمة الدخل — '+mn+' '+y+'</div>'
+    +'<div style="color:#999;font-size:11px">'+new Date().toLocaleDateString('ar-JO',{year:'numeric',month:'long',day:'numeric'})+'</div></div>'
+    +'<h2>الملخص المالي</h2><table><thead><tr><th>البيان</th><th>المبلغ (JD)</th></tr></thead><tbody>'
+    +rows.slice(1).map(function(r,i){return'<tr'+(r[0]==='صافي الربح'?' class="profit"':'')+'><td>'+r[0]+'</td><td style="font-family:monospace;text-align:left">'+r[1]+'</td></tr>';}).join('')
+    +'</tbody></table>'
+    +'<h2>المبيعات اليومية</h2><table><thead><tr><th>اليوم</th><th>نقد</th><th>فيزا</th><th>الإجمالي</th><th>ملاحظات</th></tr></thead><tbody>'+salesRows+'</tbody></table>'
+    +'<h2>المشتريات</h2><table><thead><tr><th>التاريخ</th><th>المورد</th><th>المبلغ</th><th>البيان</th></tr></thead><tbody>'+purchRows+'</tbody></table>'
+    +'</body></html>';
+
+  var old=document.getElementById('_pdf_print_frame');if(old)old.remove();
+  var frame=document.createElement('iframe');
+  frame.id='_pdf_print_frame';
+  frame.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;border:none';
+  document.body.appendChild(frame);
+  frame.contentDocument.open();
+  frame.contentDocument.write(html);
+  frame.contentDocument.close();
+  toast('⏳ جاري تجهيز PDF...');
   setTimeout(function(){
-    const area=document.getElementById('rpt-printable');
-    if(!area){
-      // fallback: صوّر صفحة التقرير كاملة
-      exportPDFFallback();
-      return;
-    }
-    _renderPDFFromElement(area);
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+    setTimeout(function(){frame.remove();},2000);
+    toast('📄 فُتح مربع الطباعة — اختر "حفظ كـ PDF"');
+    log('تصدير PDF — '+mn+' '+y);
   },400);
-}
-
-function exportPDFFallback(){
-  // صوّر كل محتوى التقرير
-  const rptPage=document.getElementById('rpt');
-  if(!rptPage||typeof html2canvas==='undefined'){
-    toast('❌ مكتبة html2canvas غير محملة');
-    return;
-  }
-  _renderPDFFromElement(rptPage);
-}
-
-function _renderPDFFromElement(el){
-  if(typeof html2canvas==='undefined'){
-    toast('❌ مكتبة html2canvas غير محملة');
-    return;
-  }
-  // إضافة ترويسة عربية مؤقتة
-  const[y,m]=S.activeKey.split('-');
-  const mn=MN[parseInt(m)-1];
-  const t=totals();
-  // بناء HTML مؤقت للطباعة
-  const printDiv=document.createElement('div');
-  printDiv.style.cssText='position:fixed;top:-9999px;left:0;width:800px;background:#fff;color:#000;font-family:IBM Plex Sans Arabic,sans-serif;direction:rtl;padding:30px;font-size:13px;line-height:1.7';
-  printDiv.innerHTML=`
-    <div style="text-align:center;border-bottom:3px solid #C8920F;padding-bottom:16px;margin-bottom:20px">
-      <div style="font-size:22px;font-weight:800;color:#1a1a1a">☕ ريحانة كافيه</div>
-      <div style="font-size:15px;color:#666;margin-top:4px">قائمة الدخل — ${mn} ${y}</div>
-      <div style="font-size:11px;color:#999;margin-top:2px">${new Date().toLocaleDateString('ar-JO',{year:'numeric',month:'long',day:'numeric'})}</div>
-    </div>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
-      <thead><tr style="background:#1a1a1a;color:#fff"><th style="padding:10px;text-align:right">البند</th><th style="padding:10px;text-align:left;font-family:monospace">المبلغ (JD)</th></tr></thead>
-      <tbody>
-        <tr style="background:#f8f4ee"><td style="padding:8px 10px;font-weight:700;color:#C8920F">💰 الإيرادات</td><td></td></tr>
-        <tr><td style="padding:6px 10px 6px 20px">النقدي الصافي</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:#059669">${n3(t.cash)}</td></tr>
-        <tr><td style="padding:6px 10px 6px 20px">الفيزا</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:#059669">${n3(t.visa)}</td></tr>
-        <tr style="background:#EFF6FF"><td style="padding:8px 10px 8px 20px;font-weight:700">صافي البيع (نقد + فيزا)</td><td style="padding:8px 10px;text-align:left;font-family:monospace;font-weight:700;color:#1d4ed8">${n3(t.netSales)}</td></tr>
-        <tr style="color:#888"><td style="padding:6px 10px 6px 20px;font-size:11px">مدفوعات يومية (توثيق)</td><td style="padding:6px 10px;text-align:left;font-family:monospace;font-size:11px">${n3(t.pmts)}</td></tr>
-        <tr style="background:#FEF9C3"><td style="padding:8px 10px;font-weight:700">إجمالي الإيرادات</td><td style="padding:8px 10px;text-align:left;font-family:monospace;font-weight:700">${n3(t.rev)}</td></tr>
-        
-        <tr style="background:#f8f4ee"><td style="padding:8px 10px;font-weight:700;color:#C8920F">📦 تكلفة البضاعة</td><td></td></tr>
-        <tr><td style="padding:6px 10px 6px 20px">COGS</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:#DC2626">(${n3(t.bycat.COGS)})</td></tr>
-        <tr style="background:${t.grossP>=0?'#F0FDF4':'#FEF2F2'}"><td style="padding:8px 10px;font-weight:700">مجمل الربح</td><td style="padding:8px 10px;text-align:left;font-family:monospace;font-weight:700;color:${t.grossP>=0?'#059669':'#DC2626'}">${n3(t.grossP)}</td></tr>
-        
-        <tr style="background:#f8f4ee"><td style="padding:8px 10px;font-weight:700;color:#C8920F">⚙️ المصاريف التشغيلية</td><td></td></tr>
-        ${G().obligations.filter(o=>o.amt>0).map(o=>`<tr${!o.paid?' style="opacity:.5"':''}><td style="padding:6px 10px 6px 20px">${o.name}${o.paid?' ✅':' ⏳ (لم تُدفع)'}</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:${o.paid?'#DC2626':'#92400E'}">${o.paid?'('+n3(o.amt)+')':'—'}</td></tr>`).join('')}
-        <tr><td style="padding:6px 10px 6px 20px">رواتب شهرية مدفوعة ✅</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:#DC2626">(${n3(t.mSalPaid)})</td></tr>
-        ${t.mSalAccrued>0?`<tr style="opacity:.6"><td style="padding:6px 10px 6px 20px;font-size:11px">رواتب مستحقة ⏳ (لا تُطرح)</td><td style="padding:6px 10px;text-align:left;font-family:monospace;font-size:11px;color:#92400E">[${n3(t.mSalAccrued)}]</td></tr>`:''}
-        <tr style="opacity:.5"><td style="padding:6px 10px 6px 20px;font-size:11px">أجور يومية (توثيق)</td><td style="padding:6px 10px;text-align:left;font-family:monospace;font-size:11px">(${n3(t.dwTotal)})</td></tr>
-        
-        <tr style="background:#FEF2F2"><td style="padding:8px 10px;font-weight:700">إجمالي التكاليف الفعلية</td><td style="padding:8px 10px;text-align:left;font-family:monospace;font-weight:700;color:#DC2626">(${n3(t.totalExp)})</td></tr>
-      </tbody>
-      <tfoot>
-        <tr style="background:${t.profit>=0?'#059669':'#DC2626'};color:#fff">
-          <td style="padding:14px 10px;font-size:16px;font-weight:800">صافي الدخل</td>
-          <td style="padding:14px 10px;text-align:left;font-family:monospace;font-size:18px;font-weight:800">${n3(t.profit)} JD</td>
-        </tr>
-      </tfoot>
-    </table>
-    <div style="text-align:center;color:#666;font-size:10px;border-top:1px solid #eee;padding-top:10px">
-      هامش الربح الصافي: ${t.margin.toFixed(2)}% | 
-      المعادلة: صافي الربح = (نقد+فيزا) − (مشتريات + التزامات مدفوعة ✅ + رواتب مدفوعة ✅)
-    </div>`;
-  document.body.appendChild(printDiv);
-  html2canvas(printDiv,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false}).then(function(canvas){
-    document.body.removeChild(printDiv);
-    const imgData=canvas.toDataURL('image/png');
-    const{jsPDF}=window.jspdf;
-    const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-    const pdfW=doc.internal.pageSize.getWidth();
-    const imgH=canvas.height*pdfW/canvas.width;
-    const pdfH=doc.internal.pageSize.getHeight();
-    if(imgH<=pdfH){
-      doc.addImage(imgData,'PNG',0,0,pdfW,imgH);
-    } else {
-      let posY=0;
-      while(posY<imgH){
-        if(posY>0) doc.addPage();
-        doc.addImage(imgData,'PNG',0,-posY,pdfW,imgH);
-        posY+=pdfH;
-      }
-    }
-    doc.save(`ريحانة_${mn}_${y}.pdf`);
-    toast('📄 تم تصدير PDF بالعربية ✅');
-    log(`تصدير PDF عربي — ${mn} ${y}`);
-  }).catch(function(e){ toast('❌ خطأ PDF: '+e.message); });
 }
 
 
