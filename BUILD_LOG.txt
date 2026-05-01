@@ -37,12 +37,12 @@ Configuration on demand is an incubating feature.
 > Task :app:dexBuilderDebug FROM-CACHE
 > Task :app:mergeDebugGlobalSynthetics FROM-CACHE
 > Task :app:processDebugJavaRes NO-SOURCE
+> Task :app:compressDebugAssets
 > Task :app:checkDebugDuplicateClasses
 > Task :app:mergeDebugStartupProfile
 > Task :app:mergeExtDexDebug FROM-CACHE
 > Task :app:mergeLibDexDebug FROM-CACHE
 > Task :app:mergeProjectDexDebug FROM-CACHE
-> Task :app:compressDebugAssets
 > Task :app:mergeDebugJniLibFolders
 > Task :app:mergeDebugNativeLibs NO-SOURCE
 > Task :app:stripDebugDebugSymbols NO-SOURCE
@@ -54,5 +54,5 @@ Configuration on demand is an incubating feature.
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 14s
+BUILD SUCCESSFUL in 11s
 33 actionable tasks: 15 executed, 18 from cache
