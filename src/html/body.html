@@ -1,0 +1,1645 @@
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="pinScreen">
+  <div class="pin-wrap">
+    <div class="pin-logo">
+      <img src="logo.jpg" alt="ريحانة كافيه" style="width:auto;max-width:220px;max-height:160px;object-fit:contain;display:block;margin:0 auto;filter:drop-shadow(0 6px 24px rgba(15,45,24,.22))">
+    </div>
+    <div class="pin-ver">نظام إدارة المقهى</div>
+    <div style="margin-bottom:8px">
+      <input type="password" id="pwdInput"
+        placeholder="كلمة المرور"
+        maxlength="30"
+        autocomplete="current-password"
+        style="width:100%;padding:14px 16px;border-radius:12px;font-size:16px;font-family:'IBM Plex Sans Arabic',sans-serif;outline:none;text-align:center;letter-spacing:4px;margin-bottom:12px;display:block"
+        onkeydown="if(event.key==='Enter')checkPwd()"
+        oninput="document.getElementById('pwd-err').textContent=''">
+      <button onclick="checkPwd()"
+        style="width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#1A5C28,#2A7A3A);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;letter-spacing:.5px;box-shadow:0 4px 16px rgba(26,92,40,.25)">
+        دخول
+      </button>
+      <div id="pwd-err" style="color:#B91C1C;font-size:12px;margin-top:10px;min-height:18px;text-align:center;font-weight:600"></div>
+    </div>
+    <div style="margin-top:16px;font-size:11px;color:rgba(26,61,30,.4);text-align:center">
+      <span style="cursor:pointer;text-decoration:underline;text-underline-offset:2px" onclick="showResetBox()">نسيت كلمة المرور؟</span>
+    </div>
+    <div id="resetBox" style="display:none;margin-top:12px;background:rgba(255,255,255,.7);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:12px;color:#5A3E1B;margin-bottom:10px">سيتم إعادة كلمة المرور إلى <strong>1234</strong></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="doReset()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#1A4A28;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif">تأكيد الإعادة</button>
+        <button onclick="showResetBox()" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(26,74,40,.3);background:transparent;font-size:13px;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;color:#1A4A28">إلغاء</button>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:10px;color:rgba(26,61,30,.3);letter-spacing:1px">Powered by Rayhana ERP v25</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div id="lkbanner" class="lockbanner">⏰ سيتم قفل التطبيق قريباً</div>
+  
+  <!-- مؤشر الحفظ التلقائي -->
+  <div id="saveIndicator" class="save-indicator">
+    <div class="si-icon">✓</div>
+    <div class="si-text">تم الحفظ</div>
+  </div>
+  
+  <!-- مركز الإشعارات -->
+  <div id="notifCenter" class="notif-center">
+    <div class="nc-header">
+      <div class="nc-title">🔔 الإشعارات <span class="nc-badge" id="notifCount">0</span></div>
+      <button class="nc-clear" onclick="clearNotifications()">مسح الكل</button>
+    </div>
+    <div class="nc-list" id="notifList">
+      <div class="nc-empty">
+        <div class="nc-empty-icon">🔔</div>
+        <div>لا توجد إشعارات</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- أزرار الإجراءات السريعة -->
+  <div class="fab-container">
+    <button class="fab-btn fab-secondary" onclick="showBackups()" title="النسخ الاحتياطية">
+      💾
+      <span class="fab-tooltip">النسخ الاحتياطية</span>
+    </button>
+    <button class="fab-btn fab-primary" onclick="quickAddSale()" title="إضافة سريعة">
+      ➕
+      <span class="fab-tooltip">إضافة سريعة</span>
+    </button>
+  </div>
+  
+  <!-- لوحة التصدير -->
+  <div id="exportPanel" class="export-panel">
+    <button class="export-btn" onclick="exportPDF()">
+      <span class="export-btn-icon">📄</span>
+      <span>تصدير PDF</span>
+    </button>
+    <button class="export-btn" onclick="exportExcel()">
+      <span class="export-btn-icon">📊</span>
+      <span>تصدير Excel</span>
+    </button>
+    <button class="export-btn" onclick="exportJSON()">
+      <span class="export-btn-icon">💾</span>
+      <span>نسخ احتياطي JSON</span>
+    </button>
+    <button class="export-btn" id="gsheetExportBtn" onclick="exportGoogleSheets()">
+      <span class="export-btn-icon">🟢</span>
+      <span id="gsheetBtnLabel">Google Sheets</span>
+    </button>
+    <button class="export-btn" onclick="openGSheetSetup()">
+      <span class="export-btn-icon">⚙️</span>
+      <span>إعداد الربط</span>
+    </button>
+    <button class="export-btn" onclick="shareReport()">
+      <span class="export-btn-icon">📤</span>
+      <span>مشاركة التقرير</span>
+    </button>
+  </div>
+  
+  <!-- مودال تعديل الهدف -->
+  <div class="mo-ov" id="moGoal" onclick="moOut(event,'moGoal')">
+    <div class="mo-sh mo-premium">
+      <div class="mo-bar"></div>
+      <button class="mo-x" onclick="cmo('moGoal')">×</button>
+      <div class="mo-title">🎯 تحديد الهدف الشهري</div>
+      <div class="mo-content" style="padding:16px">
+        <div class="fg" style="margin-bottom:16px">
+          <label>الهدف (JD)</label>
+          <input type="number" class="fi" id="goalInput" placeholder="أدخل الهدف الشهري" min="0">
+        </div>
+        <div style="background:var(--ywl);border:1px solid var(--ywb);border-radius:10px;padding:12px;margin-bottom:16px">
+          <div style="font-size:12px;font-weight:600;color:var(--ywd);margin-bottom:6px">💡 نصيحة</div>
+          <div style="font-size:11px;color:var(--tx2)" id="goalTip">بناءً على متوسطك اليومي، يُنصح بهدف حوالي 0 JD</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-p" style="flex:1" onclick="saveGoal()">✅ حفظ الهدف</button>
+          <button class="btn btn-ghost" onclick="cmo('moGoal')">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- نافذة الاختصارات -->
+  <div id="shortcutsOverlay" class="shortcuts-overlay" onclick="if(event.target===this)hideShortcuts()">
+    <div class="shortcuts-box">
+      <div class="shortcuts-title">⌨️ اختصارات لوحة المفاتيح</div>
+      <div class="shortcut-row"><span class="shortcut-desc">حفظ يدوي</span><span class="shortcut-key"><kbd>Ctrl</kbd><kbd>S</kbd></span></div>
+      <div class="shortcut-row"><span class="shortcut-desc">لوحة التحكم</span><span class="shortcut-key"><kbd>1</kbd></span></div>
+      <div class="shortcut-row"><span class="shortcut-desc">الإيرادات</span><span class="shortcut-key"><kbd>2</kbd></span></div>
+      <div class="shortcut-row"><span class="shortcut-desc">المشتريات</span><span class="shortcut-key"><kbd>3</kbd></span></div>
+      <div class="shortcut-row"><span class="shortcut-desc">التقارير</span><span class="shortcut-key"><kbd>4</kbd></span></div>
+      <div class="shortcut-row"><span class="shortcut-desc">الوضع الليلي</span><span class="shortcut-key"><kbd>D</kbd></span></div>
+      <div class="shortcut-row"><span class="shortcut-desc">بحث</span><span class="shortcut-key"><kbd>/</kbd></span></div>
+      <div class="shortcut-row"><span class="shortcut-desc">إغلاق</span><span class="shortcut-key"><kbd>Esc</kbd></span></div>
+      <div style="text-align:center;margin-top:16px"><button class="btn btn-ghost" onclick="hideShortcuts()">إغلاق</button></div>
+    </div>
+  </div>
+
+  <div class="topbar" style="position:relative">
+    <div class="tb-logo" onclick="pg('dash',document.querySelector('.ntab'))" style="cursor:pointer"><div class="tb-ico"><svg viewBox="0 0 30 30" width="18" height="18" xmlns="http://www.w3.org/2000/svg"><line x1="15" y1="25" x2="15" y2="10" stroke="#C17F24" stroke-width="1.8" stroke-linecap="round"/><path d="M15 21 Q11 18 6 20 Q9 24 15 21Z" fill="#7EC89A"/><path d="M15 21 Q19 18 24 20 Q21 24 15 21Z" fill="#7EC89A"/><path d="M15 16 Q12 13 7 14 Q10 18 15 16Z" fill="#7EC89A"/><path d="M15 16 Q18 13 23 14 Q20 18 15 16Z" fill="#7EC89A"/><circle cx="15" cy="9" r="2.2" fill="#C17F24"/><circle cx="11" cy="12" r="1.6" fill="#C17F24"/><circle cx="19" cy="12" r="1.6" fill="#C17F24"/></svg></div><div class="tb-name">ريحانة</div></div>
+    <div class="tb-sep"></div>
+    <div class="tb-mid">
+      <div class="gsearch">
+        <span style="font-size:12px;opacity:.5">🔍</span>
+        <input id="gSearch" type="text" placeholder="بحث..." oninput="doSearch(this.value)" onblur="setTimeout(closeSearch,200)">
+      </div>
+    </div>
+    <div class="tb-right">
+      <div id="syncPill" style="display:none;align-items:center;gap:4px;background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);border-radius:6px;padding:3px 8px;font-size:10.5px;font-weight:600;color:#5AC18E;white-space:nowrap;transition:all .3s"><span id="syncPillDot" style="width:5px;height:5px;border-radius:50%;background:#5AC18E;display:inline-block"></span><span id="syncPillTxt">محفوظ</span></div>
+      <button class="tbtn" id="syncRefreshBtn" onclick="tbSyncRefresh()" title="تحديث البيانات من السحابة" style="font-size:13px;display:none">🔄</button>
+      <button class="tbtn" onclick="toggleNotifications()" title="الإشعارات" id="notifBtn" style="position:relative">
+        🔔
+        <span id="notifDot" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--rd);border-radius:50%"></span>
+      </button>
+      <select class="msel" id="monthSel" onchange="switchMonth(this.value)"></select>
+      <button class="tbtn" onclick="toggleDark()" title="الوضع الليلي" id="darkBtn">🌙</button>
+      <div class="uchip" onclick="lockApp()" title="قفل التطبيق" style="padding:3px 8px;gap:4px"><div class="udot"></div><span id="uname" style="max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">مدير</span></div>
+    </div>
+    <div class="sres" id="sres"></div>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="nav-inner">
+      <button class="ntab on" onclick="pg('dash',this)">📊 لوحة التحكم</button>
+      <button class="ntab" onclick="pg('rev',this)">💰 الإيرادات</button>
+      <button class="ntab" onclick="pg('purch',this)">🛒 المشتريات</button>
+      <button class="ntab" onclick="pg('supp',this)">📦 الموردون</button>
+      <button class="ntab" onclick="pg('oblig',this)">📋 الالتزامات</button>
+      <button class="ntab" onclick="pg('sal',this)">💼 الرواتب</button>
+      <button class="ntab" onclick="pg('adv',this)">💵 السلف</button>
+      <button class="ntab" onclick="pg('cash',this)">🏦 الصندوق</button>
+      <button class="ntab" onclick="pg('rpt',this)">📈 التقارير</button>
+      <button class="ntab" onclick="pg('cloud',this)" id="cloudTab">☁️ السحابة</button>
+      <button class="ntab" onclick="pg('audit',this)">📝 سجل التعديلات</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div id="toast"></div>
+    <button class="fab" onclick="scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+    <!-- DASHBOARD -->
+    <div id="dash" class="pg on">
+      <!-- V24 PRO - SMART ALERTS BAR -->
+      <div id="alertsBar" class="sa-bar" style="display:none"></div>
+
+      <!-- V24 PRO - PROFIT HERO CARD -->
+      <div class="profit-hero" id="profitHero">
+        <div class="ph-label">صافي الربح</div>
+        <div class="ph-value" id="profitHeroValue">0 JD</div>
+        <div class="ph-sub" id="profitHeroSub">هامش 0% • مؤشر الصحة 0/100</div>
+        <div class="ph-trend" id="profitHeroTrend">
+          <span>—</span> مقارنة بالشهر السابق
+        </div>
+      </div>
+
+      <!-- V24 PRO - KPI GRID -->
+      <div class="kpi-grid-v22">
+        <div class="kpi-v22 rev">
+          <div class="kv-icon">💰</div>
+          <div class="kv-label">الإيراد</div>
+          <div class="kv-value" id="kpiRevenue">0</div>
+          <div class="kv-change up" id="kpiRevChange">—</div>
+        </div>
+        <div class="kpi-v22 exp">
+          <div class="kv-icon">📤</div>
+          <div class="kv-label">المصروفات</div>
+          <div class="kv-value" id="kpiExpenses">0</div>
+          <div class="kv-change" id="kpiExpRatio">0%</div>
+        </div>
+        <div class="kpi-v22 avg">
+          <div class="kv-icon">📊</div>
+          <div class="kv-label">متوسط يومي</div>
+          <div class="kv-value" id="kpiAvgDaily">0</div>
+          <div class="kv-change" id="kpiActiveDays">0 يوم</div>
+        </div>
+        <div class="kpi-v22 goal">
+          <div class="kv-icon">🎯</div>
+          <div class="kv-label">الهدف</div>
+          <div class="kv-value" id="kpiGoalPct">0%</div>
+          <div class="kv-change" id="kpiGoalRemain">—</div>
+        </div>
+      </div>
+
+      <!-- V24 PRO - PREDICTIVE ALERTS -->
+      <div id="v22Alerts"></div>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- V15 ULTIMATE - LIVE STATS BAR                                   -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div class="live-stats-bar" id="liveStatsBar">
+        <div class="live-stat">
+          <div class="live-pulse"></div>
+          <div><div class="live-stat-value" id="liveTime">--:--</div><div class="live-stat-label">الوقت الآن</div></div>
+        </div>
+        <div class="live-stat" id="liveTodayStat">
+          <div class="live-stat-icon">📅</div>
+          <div><div class="live-stat-value" id="liveTodayRev">0 JD</div><div class="live-stat-label">إيراد اليوم</div></div>
+        </div>
+        <div class="live-stat" id="liveAvgStat">
+          <div class="live-stat-icon">📊</div>
+          <div><div class="live-stat-value" id="liveAvg">0 JD</div><div class="live-stat-label">المتوسط</div></div>
+        </div>
+        <div class="live-stat" id="liveDaysLeft">
+          <div class="live-stat-icon">⏳</div>
+          <div><div class="live-stat-value" id="liveDays">0</div><div class="live-stat-label">يوم متبقي</div></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- V15 ULTIMATE - GOAL TRACKER                                     -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div class="goal-tracker" id="goalTracker">
+        <div class="goal-header">
+          <div class="goal-title">🎯 الهدف الشهري</div>
+          <button class="goal-edit-btn" onclick="openGoalEditor()">تعديل</button>
+        </div>
+        <div class="goal-progress">
+          <div class="goal-fill" id="goalFill" style="width:0%"></div>
+          <div class="goal-pct" id="goalPct">0%</div>
+        </div>
+        <div class="goal-stats">
+          <div class="goal-stat"><div class="goal-stat-label">الهدف</div><div class="goal-stat-value" id="goalTarget">— JD</div></div>
+          <div class="goal-stat"><div class="goal-stat-label">المحقق</div><div class="goal-stat-value" id="goalAchieved" style="color:var(--gn)">0 JD</div></div>
+          <div class="goal-stat"><div class="goal-stat-label">المتبقي</div><div class="goal-stat-value" id="goalRemaining" style="color:var(--rd)">— JD</div></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- V15 ULTIMATE - QUICK ACTIONS                                    -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div class="quick-actions">
+        <div class="qa-btn" onclick="quickAddSale()">
+          <div class="qa-icon">💵</div>
+          <div class="qa-label">إضافة مبيعات</div>
+        </div>
+        <div class="qa-btn" onclick="openMo('moPurch')">
+          <div class="qa-icon">🛒</div>
+          <div class="qa-label">إضافة مشتريات</div>
+        </div>
+        <div class="qa-btn" onclick="pg('rpt',document.querySelectorAll('.ntab')[3])">
+          <div class="qa-icon">📊</div>
+          <div class="qa-label">التقارير</div>
+        </div>
+        <div class="qa-btn" onclick="toggleExportPanel()">
+          <div class="qa-icon">📤</div>
+          <div class="qa-label">تصدير</div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- V15 ULTIMATE - ANALYTICS CARDS                                  -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div class="analytics-grid">
+        <div class="analytics-card revenue">
+          <div class="ac-header">
+            <div class="ac-icon rev">💰</div>
+            <div class="ac-trend" id="revTrend">—</div>
+          </div>
+          <div class="ac-value" id="acRevenue">0.000</div>
+          <div class="ac-label">إجمالي الإيراد</div>
+          <div class="ac-compare" id="acRevCompare">— مقارنة بالشهر السابق</div>
+        </div>
+        <div class="analytics-card expense">
+          <div class="ac-header">
+            <div class="ac-icon exp">📉</div>
+            <div class="ac-trend" id="expTrend">—</div>
+          </div>
+          <div class="ac-value" id="acExpense">0.000</div>
+          <div class="ac-label">إجمالي المصروفات</div>
+          <div class="ac-compare" id="acExpCompare">— مقارنة بالشهر السابق</div>
+        </div>
+        <div class="analytics-card profit">
+          <div class="ac-header">
+            <div class="ac-icon pro">📈</div>
+            <div class="ac-trend" id="profitTrend">—</div>
+          </div>
+          <div class="ac-value" id="acProfit">0.000</div>
+          <div class="ac-label">صافي الربح</div>
+          <div class="ac-compare" id="acProfitCompare">— مقارنة بالشهر السابق</div>
+        </div>
+        <div class="analytics-card growth">
+          <div class="ac-header">
+            <div class="ac-icon grow">🚀</div>
+            <div class="ac-trend" id="growthTrend">—</div>
+          </div>
+          <div class="ac-value" id="acGrowth">0%</div>
+          <div class="ac-label">نسبة النمو</div>
+          <div class="ac-compare" id="acGrowthCompare">مقارنة بالشهر السابق</div>
+        </div>
+      </div>
+
+      <!-- KPI ROW - Original but enhanced -->
+      <div class="kpi-row">
+        <div class="kpi-tile tc-gold"><div class="kt-bg">💰</div><div class="kt-label">إجمالي الإيراد</div><div class="kt-value" id="kv-rev">0.000</div><div class="kt-sub" id="kv-avg-daily">متوسط — JD/يوم</div></div>
+        <div class="kpi-tile tc-blue"><div class="kt-bg">💳</div><div class="kt-label">صافي البيع</div><div class="kt-value" id="kv-nrev">0.000</div><div class="kt-sub" id="kv-cogs-ratio">COGS 0%</div></div>
+        <div class="kpi-tile tc-green" id="kv-profit-tile"><div class="kt-bg">📈</div><div class="kt-label">صافي الدخل</div><div class="kt-value" id="kv-profit">0.000</div><div class="kt-sub" id="kv-margin">هامش 0%</div></div>
+        <div class="kpi-tile tc-red"><div class="kt-bg">📉</div><div class="kt-label">إجمالي التكاليف</div><div class="kt-value" id="kv-exp">0.000</div><div class="kt-sub" id="kv-exp-ratio">من الإيراد 0%</div></div>
+      </div>
+      <!-- شريط تحذير الرواتب المستحقة -->
+      <div id="kv-accrued" style="display:none;background:var(--ywl);border:1px solid var(--ywb);border-radius:8px;padding:7px 13px;font-size:12px;font-weight:600;color:var(--ywd);margin-bottom:10px;display:flex;align-items:center;gap:7px">
+        ⏳ <span id="kv-accrued-txt">رواتب مستحقة لم تُدفع بعد — لا تؤثر على الربح حتى الدفع</span>
+      </div>
+      
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- SMART ANALYTICS CARDS - V14 PRO -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div class="smart-cards-row">
+        <!-- HEALTH SCORE CARD -->
+        <div class="smart-card health-card" id="healthCardNew">
+          <div class="sc-header">
+            <div class="sc-icon health-icon">💚</div>
+            <div class="sc-title">صحة الكافيه</div>
+          </div>
+          <div class="health-gauge">
+            <svg viewBox="0 0 100 50" class="gauge-svg">
+              <path d="M10,45 A35,35 0 0,1 90,45" class="gauge-bg"/>
+              <path d="M10,45 A35,35 0 0,1 90,45" class="gauge-fill" id="healthGaugeFill"/>
+            </svg>
+            <div class="gauge-value" id="healthScoreValue">—</div>
+            <div class="gauge-label" id="healthScoreLabel">جاري التحميل</div>
+          </div>
+          <div class="health-bars" id="healthBars"></div>
+        </div>
+        
+        <!-- BREAK-EVEN CARD -->
+        <div class="smart-card breakeven-card" id="breakevenCardNew">
+          <div class="sc-header">
+            <div class="sc-icon be-icon">⚖️</div>
+            <div class="sc-title">نقطة التعادل</div>
+          </div>
+          <div class="be-content" id="beContentNew">
+            <div class="be-loading">جاري الحساب...</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- WEEKLY PERFORMANCE HEATMAP -->
+      <div class="smart-card weekly-card" id="weeklyCardNew">
+        <div class="sc-header">
+          <div class="sc-icon weekly-icon">📊</div>
+          <div class="sc-title">أداء الأسبوع</div>
+          <div class="weekly-avg" id="weeklyAvgBadge">—</div>
+        </div>
+        <div class="weekly-grid" id="weeklyGridNew"></div>
+        <div class="weekly-legend">
+          <span class="wl-item"><span class="wl-dot wl-high"></span>ممتاز</span>
+          <span class="wl-item"><span class="wl-dot wl-mid"></span>جيد</span>
+          <span class="wl-item"><span class="wl-dot wl-low"></span>ضعيف</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">📈</span>منحنى الإيرادات اليومية</div><div id="lk-dash"></div></div>
+        <div class="card-body"><div class="ch-lg"><canvas id="chLine"></canvas></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:12px">
+        <div class="card"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-y">🍩</span>توزيع التكاليف</div></div><div class="card-body"><div class="ch"><canvas id="chPie"></canvas></div></div></div>
+        <div class="card"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">📊</span>أعلى الموردين</div></div><div class="card-body"><div class="ch"><canvas id="chSD"></canvas></div></div></div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- V24-3 PRO - ADVANCED ANALYTICS                                  -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      
+      <!-- تحليل الاتجاهات والمقارنة الشهرية -->
+      <div class="smart-cards-row">
+        <div id="trendAnalysis">
+          <!-- سيتم ملؤه بواسطة JavaScript -->
+        </div>
+        <div id="monthComparison">
+          <!-- سيتم ملؤه بواسطة JavaScript -->
+        </div>
+      </div>
+      
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- V15 ULTIMATE - WORLD-CLASS FEATURES                             -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      
+      <!-- SALES FORECASTING - مثل 5-Out & Crunchtime -->
+      <div class="forecast-card" id="forecastCard">
+        <div class="fc-header">
+          <div class="fc-title">🔮 توقعات المبيعات الذكية</div>
+          <div class="fc-badge">AI Powered</div>
+        </div>
+        <div class="fc-grid">
+          <div class="fc-item">
+            <div class="fc-item-value" id="fcToday">—</div>
+            <div class="fc-item-label">متوقع اليوم</div>
+          </div>
+          <div class="fc-item">
+            <div class="fc-item-value" id="fcWeek">—</div>
+            <div class="fc-item-label">هذا الأسبوع</div>
+          </div>
+          <div class="fc-item">
+            <div class="fc-item-value" id="fcMonth">—</div>
+            <div class="fc-item-label">نهاية الشهر</div>
+          </div>
+        </div>
+        <div class="fc-chart" id="fcChart"></div>
+        <div class="fc-confidence" id="fcConfidence">دقة التوقع: —%</div>
+      </div>
+
+      <!-- PERIOD COMPARISON - مثل Toast Analytics -->
+      <div class="period-compare" id="periodCompare">
+        <div class="pc-header">
+          <div class="pc-title">📊 مقارنة الفترات <span id="pcHeader" style="font-size:11px;color:var(--tx3)"></span></div>
+          <div class="pc-select">
+            <button class="pc-btn active" onclick="comparePeriod('month', event)">شهري</button>
+            <button class="pc-btn" onclick="comparePeriod('week', event)">أسبوعي</button>
+          </div>
+        </div>
+        <table class="pc-table">
+          <thead>
+            <tr>
+              <th>البند</th>
+              <th>الحالي</th>
+              <th>السابق</th>
+              <th>التغيير</th>
+            </tr>
+          </thead>
+          <tbody id="pcBody">
+            <tr><td colspan="4" style="text-align:center;color:var(--tx3)">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- COST ANALYSIS - مثل MarketMan -->
+      <div class="cost-analysis" id="costAnalysis">
+        <div class="ca-header">
+          <div class="ca-title">💰 تحليل التكاليف التفصيلي</div>
+        </div>
+        <div style="display:flex;gap:20px;align-items:center">
+          <div class="ca-donut">
+            <svg viewBox="0 0 100 100" width="120" height="120">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--br)" stroke-width="12"/>
+              <circle id="caDonut1" cx="50" cy="50" r="40" fill="none" stroke="var(--rd)" stroke-width="12" stroke-dasharray="0 251" transform="rotate(-90 50 50)"/>
+              <circle id="caDonut2" cx="50" cy="50" r="40" fill="none" stroke="var(--yw)" stroke-width="12" stroke-dasharray="0 251" transform="rotate(-90 50 50)"/>
+              <circle id="caDonut3" cx="50" cy="50" r="40" fill="none" stroke="var(--gn)" stroke-width="12" stroke-dasharray="0 251" transform="rotate(-90 50 50)"/>
+            </svg>
+            <div class="ca-donut-center">
+              <div class="ca-donut-value" id="caTotalPct">—%</div>
+              <div class="ca-donut-label">من الإيراد</div>
+            </div>
+          </div>
+          <div class="ca-legend" style="flex:1">
+            <div class="ca-legend-item"><div class="ca-legend-dot" style="background:var(--rd)"></div><span>COGS: <strong id="caCogs">—</strong></span></div>
+            <div class="ca-legend-item"><div class="ca-legend-dot" style="background:var(--yw)"></div><span>رواتب: <strong id="caSal">—</strong></span></div>
+            <div class="ca-legend-item"><div class="ca-legend-dot" style="background:var(--bl)"></div><span>تشغيلية: <strong id="caOps">—</strong></span></div>
+            <div class="ca-legend-item"><div class="ca-legend-dot" style="background:var(--gn)"></div><span>صافي: <strong id="caNet">—</strong></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SMART ALERTS - مثل Toast & NetSuite -->
+      <div class="alerts-panel" id="alertsPanel">
+        <div class="ap-header">
+          <div class="ap-title">⚡ تنبيهات ذكية <span class="ap-count" id="alertsCount">0</span></div>
+        </div>
+        <div class="ap-list" id="alertsList">
+          <div style="text-align:center;padding:20px;color:var(--tx3)">
+            <div style="font-size:32px;margin-bottom:8px">✅</div>
+            <div>لا توجد تنبيهات حالياً</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SHIFT SUMMARY - مثل Square Analytics -->
+      <div class="shift-summary" id="shiftSummary">
+        <div class="ss-card">
+          <div class="ss-shift">🌅 صباحي (6-12)</div>
+          <div class="ss-value" id="ssAM">—</div>
+          <div class="ss-compare" id="ssAMc">—</div>
+        </div>
+        <div class="ss-card">
+          <div class="ss-shift">☀️ ظهري (12-6)</div>
+          <div class="ss-value" id="ssPM">—</div>
+          <div class="ss-compare" id="ssPMc">—</div>
+        </div>
+        <div class="ss-card">
+          <div class="ss-shift">🌙 مسائي (6-12)</div>
+          <div class="ss-value" id="ssEV">—</div>
+          <div class="ss-compare" id="ssEVc">—</div>
+        </div>
+      </div>
+
+      <!-- DAILY INSIGHTS - مثل NetSuite AI -->
+      <div class="daily-report" id="dailyInsights">
+        <div class="dr-header">
+          <div class="dr-date" id="diDate">—</div>
+          <div class="dr-title">📋 ملخص اليوم الذكي</div>
+        </div>
+        <div class="dr-summary" id="diSummary">
+          <div class="dr-item"><div class="dr-item-icon">💵</div><div class="dr-item-value" id="diRev">—</div><div class="dr-item-label">الإيراد</div></div>
+          <div class="dr-item"><div class="dr-item-icon">📊</div><div class="dr-item-value" id="diAvg">—</div><div class="dr-item-label">vs المتوسط</div></div>
+          <div class="dr-item"><div class="dr-item-icon">🎯</div><div class="dr-item-value" id="diGoal">—</div><div class="dr-item-label">vs الهدف</div></div>
+          <div class="dr-item"><div class="dr-item-icon">📈</div><div class="dr-item-value" id="diTrend">—</div><div class="dr-item-label">الاتجاه</div></div>
+        </div>
+        <div class="dr-insights">
+          <div class="dr-insights-title">💡 رؤية اليوم</div>
+          <div class="dr-insights-text" id="diInsight">جاري تحليل البيانات...</div>
+        </div>
+      </div>
+      
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- AI SMART ASSISTANT - V14 PRO -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div class="ai-assistant-card">
+        <div class="ai-header">
+          <div class="ai-avatar">
+            <div class="ai-avatar-inner">🧠</div>
+            <div class="ai-pulse"></div>
+          </div>
+          <div class="ai-title-section">
+            <div class="ai-title">مستشار ريحانة الذكي</div>
+            <div class="ai-subtitle">تحليل مالي متقدم بالذكاء الاصطناعي</div>
+          </div>
+          <div class="ai-status" id="aiStatusBadge" onclick="showAISettings()" style="cursor:pointer" title="إعدادات AI">
+            <span class="ai-status-dot"></span>
+            <span id="aiStatusText">محلي</span>
+            <span style="margin-right:5px;font-size:10px">⚙️</span>
+          </div>
+        </div>
+        
+        <div class="ai-quick-insights" id="aiQuickInsights">
+          <!-- يتم ملؤها ديناميكياً -->
+        </div>
+        
+        <div class="ai-chat-container">
+          <div class="ai-messages" id="aiMessages">
+            <div class="ai-welcome">
+              <div class="ai-welcome-icon">🤖</div>
+              <div class="ai-welcome-text">
+                <strong>مرحباً! أنا مستشارك المالي الذكي</strong><br><br>
+                اسألني أي سؤال عن الكافيه:<br>
+                • كيف أداء الشهر؟<br>
+                • قارن بالشهر السابق<br>
+                • حلل التكاليف<br>
+                • أعطني نصائح<br><br>
+                <small style="opacity:0.6">💡 اضغط على ⚙️ لتفعيل AI متقدم</small>
+              </div>
+            </div>
+          </div>
+          <div class="ai-suggestions" id="aiSuggestions">
+            <button class="ai-suggest-btn" onclick="askAI('كيف أداء الكافيه هذا الشهر؟')">📊 أداء الشهر</button>
+            <button class="ai-suggest-btn" onclick="askAI('قارن بالشهر السابق')">⚖️ مقارنة</button>
+            <button class="ai-suggest-btn" onclick="askAI('حلل التكاليف والمصروفات')">📉 التكاليف</button>
+            <button class="ai-suggest-btn" onclick="askAI('أعطني نصائح لتحسين الأرباح')">💡 نصائح</button>
+          </div>
+          <div class="ai-input-container">
+            <input type="text" class="ai-input" id="aiInput" placeholder="اكتب سؤالك هنا..." onkeypress="if(event.key==='Enter')sendAIMessage()">
+            <button class="ai-send-btn" id="aiSendBtn" onclick="sendAIMessage()">
+              <span class="ai-send-icon">➤</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- AI Settings Modal -->
+      <div id="aiSettingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:20px">
+        <div style="background:var(--surf);border-radius:16px;width:100%;max-width:380px;box-shadow:var(--sh3)">
+          <div style="padding:16px;border-bottom:1px solid var(--br);display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700;font-size:15px">⚙️ إعدادات المستشار الذكي</div>
+            <button onclick="closeAISettings()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--tx3)">✕</button>
+          </div>
+          <div style="padding:16px">
+            <!-- Gemini — الأولوية الأولى -->
+            <div style="margin-bottom:14px;padding:12px;background:var(--gnl);border-radius:10px;border:1px solid var(--gnb)">
+              <label style="display:block;font-size:12px;font-weight:700;color:var(--gn);margin-bottom:6px">🟢 Groq API Key — مجاني ✅ (الأولوية)</label>
+              <input type="password" id="groqApiKeyInput" class="inp inp-r" placeholder="gsk_xxxxxxxxxxxx..." style="text-align:left;direction:ltr">
+              <div style="font-size:10px;color:var(--tx3);margin-top:4px">احصل عليه مجاناً من <strong>console.groq.com</strong> ← Get API Key</div>
+              <button class="btn btn-g btn-sm" onclick="saveGroqSettings()" style="margin-top:8px;width:100%">💾 حفظ Groq</button>
+            </div>
+            <!-- Claude — اختياري -->
+            <div style="margin-bottom:14px">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:6px">🔵 Claude API Key (اختياري — مدفوع)</label>
+              <input type="password" id="claudeApiKeyInput" class="inp inp-r" placeholder="sk-ant-api03-..." style="text-align:left;direction:ltr">
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button class="btn btn-p btn-sm" style="flex:1" onclick="saveAISettings()">💾 حفظ Claude</button>
+                <button class="btn btn-ghost btn-sm" onclick="clearAIKey()">🗑️</button>
+              </div>
+            </div>
+            <div style="padding:10px;background:var(--surf3);border-radius:8px;font-size:11px;color:var(--tx2)">
+              <div id="aiCurrentStatus" style="font-weight:600;margin-bottom:4px">الحالة: جاري التحقق...</div>
+              <div>بدون مفتاح: ردود محلية محدودة | مع Gemini: AI حقيقي مجاني</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- بطاقة الربح النهائي الموحّد -->
+      <div id="final-profit-card" style="margin-top:10px;border-radius:14px;border:2px solid var(--gn);background:var(--surf);box-shadow:none;overflow:hidden">
+        <div style="padding:4px 12px;background:var(--gn);text-align:center;font-size:10.5px;font-weight:700;color:#fff;letter-spacing:.3px">الربح النهائي الموحّد</div>
+        <div style="padding:14px 14px 10px">
+          <div style="font-size:32px;font-weight:800;font-family:'IBM Plex Mono';text-align:center;margin-bottom:4px;letter-spacing:-1px" id="final-profit-val">0.000 JD</div>
+          <div style="font-size:10px;color:var(--tx3);text-align:center;margin-bottom:12px">= صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+            <div style="padding:8px 4px;background:var(--surf2);border-radius:9px;border:1.5px solid rgba(0,112,242,.25)">
+              <div style="font-size:10px;color:#0070F2;font-weight:700;margin-bottom:3px">👤 يزن</div>
+              <div class="num" id="mgr-yz-n" style="font-size:13px;font-weight:800">0.000</div>
+            </div>
+            <div style="padding:8px 4px;background:var(--surf2);border-radius:9px;border:1.5px solid rgba(184,134,11,.25)">
+              <div style="font-size:10px;color:#B8860B;font-weight:700;margin-bottom:3px">👤 عبدالرحمن</div>
+              <div class="num" id="mgr-ab-n" style="font-size:13px;font-weight:800">0.000</div>
+            </div>
+            <div style="padding:8px 4px;background:var(--surf2);border-radius:9px;border:1.5px solid rgba(16,185,129,.25)">
+              <div style="font-size:10px;color:#059669;font-weight:700;margin-bottom:3px">💳 فيزا</div>
+              <div class="num" id="mgr-visa-balance" style="font-size:13px;font-weight:800">0.000</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- تفاصيل المسؤولين -->
+      <div class="card" style="margin-top:10px">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">⚖</span>تفاصيل المسؤولين</div></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+            <!-- يزن -->
+            <div style="padding:12px;border-radius:9px;border:2px solid #0070F2;background:var(--surf2)">
+              <div style="font-size:13px;font-weight:700;color:#0070F2;margin-bottom:9px">👤 يزن</div>
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">+ نقدي استلمه</span><span id="mgr-yz-r" class="num" style="color:#0070F2;font-weight:700">0.000</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">− مشتريات</span><span id="mgr-yz-p" class="num" style="color:var(--rd)">0.000</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">− التزامات</span><span id="mgr-yz-o" class="num" style="color:var(--rd)">0.000</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">− رواتب</span><span id="mgr-yz-s" class="num" style="color:var(--rd)">0.000</span></div>
+            </div>
+            <!-- عبدالرحمن -->
+            <div style="padding:12px;border-radius:9px;border:2px solid #B8860B;background:var(--surf2)">
+              <div style="font-size:13px;font-weight:700;color:#B8860B;margin-bottom:9px">👤 عبدالرحمن</div>
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">+ نقدي استلمه</span><span id="mgr-ab-r" class="num" style="color:#B8860B;font-weight:700">0.000</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">− مشتريات</span><span id="mgr-ab-p" class="num" style="color:var(--rd)">0.000</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">− التزامات</span><span id="mgr-ab-o" class="num" style="color:var(--rd)">0.000</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">− رواتب</span><span id="mgr-ab-s" class="num" style="color:var(--rd)">0.000</span></div>
+            </div>
+          </div>
+          <!-- رصيد الفيزا -->
+          <div style="padding:10px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:9px;margin-bottom:12px">
+            <div style="font-size:11px;font-weight:700;color:#059669;margin-bottom:7px">💳 رصيد الفيزا</div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid rgba(16,185,129,.15)"><span style="color:var(--tx3)">+ مبيعات الفيزا</span><span id="mgr-visa-sales" class="num" style="font-weight:700">0.000</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span style="color:var(--tx3)">− رواتب من الفيزا</span><span id="mgr-visa-sal" class="num" style="color:var(--rd)">0.000</span></div>
+          </div>
+          <!-- أشرطة التوزيع -->
+          <div style="font-size:11px;color:var(--tx3);font-weight:600;margin-bottom:6px">توزيع النقد المستلم</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="font-size:11px;font-weight:600;color:#0070F2;width:90px">يزن</span>
+            <div style="flex:1;height:7px;background:var(--br);border-radius:4px;overflow:hidden"><div id="b-yz-r" style="height:100%;background:#0070F2;border-radius:4px;width:0%;transition:width .4s"></div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <span style="font-size:11px;font-weight:600;color:#B8860B;width:90px">عبدالرحمن</span>
+            <div style="flex:1;height:7px;background:var(--br);border-radius:4px;overflow:hidden"><div id="b-ab-r" style="height:100%;background:#B8860B;border-radius:4px;width:0%;transition:width .4s"></div></div>
+          </div>
+          <div style="font-size:11px;color:var(--tx3);font-weight:600;margin-bottom:6px">توزيع المشتريات</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="font-size:11px;font-weight:600;color:#0070F2;width:90px">يزن</span>
+            <div style="flex:1;height:7px;background:var(--br);border-radius:4px;overflow:hidden"><div id="b-yz-p" style="height:100%;background:#0070F2;border-radius:4px;width:0%;transition:width .4s"></div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <span style="font-size:11px;font-weight:600;color:#B8860B;width:90px">عبدالرحمن</span>
+            <div style="flex:1;height:7px;background:var(--br);border-radius:4px;overflow:hidden"><div id="b-ab-p" style="height:100%;background:#B8860B;border-radius:4px;width:0%;transition:width .4s"></div></div>
+          </div>
+          <div style="padding:9px;background:var(--surf3);border-radius:7px;border:1px solid var(--br);font-size:12px">
+            <b style="font-size:11px;color:var(--tx3)">غير موزّع</b>
+            <div style="display:flex;justify-content:space-between;margin-top:5px"><span>إيراد</span><span id="mgr-un-r" class="num">0.000 JD</span></div>
+            <div style="display:flex;justify-content:space-between;margin-top:3px"><span>مشتريات</span><span id="mgr-un-p" class="num">0.000 JD</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">📊</span>مؤشرات الأداء</div></div><div class="card-body" id="kpiBox"></div></div>
+    </div>
+
+    <!-- REVENUE -->
+    <div id="rev" class="pg">
+      <!-- Quick Entry Card -->
+      <div class="qentry-card" id="qeCard">
+        <div style="margin-bottom:14px">
+          <div id="lk-rev" style="text-align:center;margin-bottom:8px"></div>
+          <!-- Navigation: 3 equal columns -->
+          <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:6px;align-items:center">
+            <!-- Prev button - large tap area -->
+            <div id="btnPrev" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;height:60px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;font-size:28px;color:#fff;font-weight:300;-webkit-tap-highlight-color:rgba(200,146,15,.3)" onclick="qePrev()">&#8249;</div>
+            <!-- Date center -->
+            <div style="text-align:center">
+              <div class="qe-date" id="qeTitle" style="font-size:22px;line-height:1.2">—</div>
+              <div class="qe-sub" id="qeSub" style="font-size:10px;margin:0;opacity:.7">إدخال إيراد اليوم</div>
+            </div>
+            <!-- Next button - large tap area -->
+            <div id="btnNext" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;height:60px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;font-size:28px;color:#fff;font-weight:300;-webkit-tap-highlight-color:rgba(200,146,15,.3)" onclick="qeNext()">&#8250;</div>
+          </div>
+        </div>
+        <div class="qe-row">
+          <div class="qe-field">
+            <span class="qe-label">💵 نقدي</span>
+            <input class="qe-inp" type="number" id="qeCash" placeholder="0" step="0.001" min="0" oninput="qeCalc()" onchange="qeCalc()">
+          </div>
+          <div class="qe-field">
+            <span class="qe-label">💳 فيزا</span>
+            <input class="qe-inp" type="number" id="qeVisa" placeholder="0" step="0.001" min="0" oninput="qeCalc()" onchange="qeCalc()">
+          </div>
+          <div class="qe-field">
+            <span class="qe-label">📤 مدفوعات</span>
+            <input class="qe-inp" type="number" id="qePmts" placeholder="0" step="0.001" min="0" oninput="qeCalc()" onchange="qeCalc()">
+          </div>
+        </div>
+        <div class="qe-totals">
+          <div class="qe-tot" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3)">
+            <div class="qe-tot-label" style="color:#93C5FD">صافي البيع</div>
+            <div class="qe-tot-val" id="qeNs" style="color:#60A5FA">0.000</div>
+          </div>
+          <div class="qe-tot" style="background:rgba(200,146,15,.15);border:1px solid rgba(200,146,15,.3)">
+            <div class="qe-tot-label" style="color:#FCD34D">الإجمالي</div>
+            <div class="qe-tot-val" id="qeTot" style="color:#F0B429">0.000</div>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <span class="qe-label" style="display:block;margin-bottom:5px">📝 ملاحظات (كتابة اسم العاملة تُسجّل حضورها)</span>
+          <input class="qe-notes" type="text" id="qeNotes" placeholder="مثال: ثراء + عيناء" oninput="qeNotesChange()" onchange="qeNotesChange()">
+        </div>
+        <div style="margin-top:10px">
+          <span class="qe-label" style="display:block;margin-bottom:6px">👤 استلم الإيراد</span>
+          <div class="qe-who">
+            <button class="qe-who-btn" id="qeWhoNone" onclick="qeSetWho('')">— لم يُحدَّد</button>
+            <button class="qe-who-btn" id="qeWhoYz" onclick="qeSetWho('يزن')">يزن</button>
+            <button class="qe-who-btn" id="qeWhoAb" onclick="qeSetWho('عبدالرحمن')">عبدالرحمن</button>
+          </div>
+        </div>
+        <button class="qe-save" onclick="qeSave()">
+          <span>💾</span><span>حفظ إيراد اليوم</span>
+        </button>
+      </div>
+
+      <!-- Full Month Table (collapsible) -->
+      <div class="month-toggle" onclick="toggleMonthTable()">
+        <div class="mt-left">
+          <span>📅</span>
+          <span>عرض جدول الشهر كاملاً</span>
+          <span style="font-size:11px;color:var(--tx3)" id="mtCount"></span>
+        </div>
+        <span class="mt-arrow" id="mtArrow">▼</span>
+      </div>
+      <div class="month-table-wrap" id="monthTableWrap">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-hd" style="padding:10px 14px">
+            <div class="card-title" style="font-size:12px">📊 جدول الشهر — للمراجعة</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button class="btn btn-ghost btn-sm" onclick="clearRevFilter()">✕ مسح الفلتر</button>
+              <input type="number" class="df-inp" id="revFrom" min="1" max="31" placeholder="من" oninput="renderRevTable()" style="width:48px">
+              <span style="color:var(--tx3);font-size:12px">—</span>
+              <input type="number" class="df-inp" id="revTo" min="1" max="31" placeholder="إلى" oninput="renderRevTable()" style="width:48px">
+            </div>
+          </div>
+          <div class="card-body" style="padding:8px">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>اليوم</th><th>نقدي</th><th>فيزا</th><th>مدفوعات</th><th>صافي</th><th>إجمالي</th><th>ملاحظات</th><th>استلم</th></tr></thead>
+                <tbody id="revBody"></tbody>
+                <tfoot><tr><td>المجموع</td><td id="t-cash" class="num">0.000</td><td id="t-visa" class="num">0.000</td><td id="t-pmts" class="num">0.000</td><td id="t-nrev" class="num">0.000</td><td id="t-rev" class="num">0.000</td><td>—</td><td id="t-who-sum" style="font-size:10px">—</td></tr></tfoot>
+              </table>
+            </div>
+            <div id="revFilterSummary" style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PURCHASES -->
+    <div id="purch" class="pg">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-r">🛒</span>مستندات المشتريات</div><button class="btn btn-p btn-sm" onclick="openMo('moPurch')">➕ إضافة</button></div>
+        <div class="card-body" style="padding:11px">
+          <div class="cat-tabs" id="catTabs">
+            <button class="ect on" onclick="filterCat('all',this)">الكل</button>
+            <button class="ect" onclick="filterCat('COGS',this)">📦 تكلفة البضاعة</button>
+            <button class="ect" onclick="filterCat('OPS',this)">⚙️ تشغيلية</button>
+            <button class="ect" onclick="filterCat('ADM',this)">📁 إدارية</button>
+            <button class="ect" onclick="filterCat('MKT',this)">📣 تسويقية</button>
+          </div>
+          <div class="cat-tabs" id="buyerTabs" style="margin-top:6px">
+            <button class="ebt on" onclick="filterBuyer('all',this)">👥 الجميع</button>
+            <button class="ebt" onclick="filterBuyer('يزن',this)" style="color:#0070F2">👤 يزن</button>
+            <button class="ebt" onclick="filterBuyer('عبدالرحمن',this)" style="color:#B8860B">👤 عبدالرحمن</button>
+          </div>
+          <!-- فلتر التاريخ للمشتريات -->
+          <div class="date-filter-bar">
+            <span class="df-label">📅 فلتر الفترة:</span>
+            <div class="df-group">
+              <label>من تاريخ</label>
+              <input type="date" class="df-inp-d" id="purchFrom" oninput="renderPurch()">
+            </div>
+            <span class="df-sep">—</span>
+            <div class="df-group">
+              <label>إلى تاريخ</label>
+              <input type="date" class="df-inp-d" id="purchTo" oninput="renderPurch()">
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="clearPurchFilter()">✕ إلغاء الفلتر</button>
+            <div class="df-summary" id="purchFilterSummary"></div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>التاريخ</th><th>المورد</th><th>الفئة</th><th>البيان</th><th>المبلغ</th><th>المشتري</th><th>فاتورة</th><th>حذف</th></tr></thead>
+              <tbody id="purchBody"></tbody>
+              <tfoot><tr><td colspan="3">إجمالي</td><td id="t-cat-lbl">الكل</td><td id="t-purch" class="num">0.000</td><td colspan="2"></td></tr></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">📊</span>المصاريف حسب الفئة</div></div><div class="card-body" id="catSum"></div></div>
+    </div>
+
+    <!-- SUPPLIERS -->
+    <div id="supp" class="pg">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">📦</span>دليل الموردين</div><button class="btn btn-p btn-sm" onclick="openMo('moSupp')">➕ مورد جديد</button></div>
+        <div class="card-body" id="suppList"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">📊</span>تقرير الموردين</div></div>
+        <div class="card-body" id="suppRpt"></div>
+        <div class="card-body" style="padding-top:0"><div class="ch-md"><canvas id="chSupp"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- OBLIGATIONS -->
+    <div id="oblig" class="pg">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-ico ct-y">📋</span>الالتزامات الشهرية الثابتة</div>
+          <div style="display:flex;gap:6px;align-items:center"><div id="lk-obl"></div><button class="btn btn-p btn-sm" onclick="openMo('moOblig')">➕ إضافة</button></div>
+        </div>
+        <div class="card-body">
+          <div class="alert al-w">⚠️ اضغط ✅/❌ لتغيير حالة السداد — يتحدث الصندوق ولوحة التحكم فوراً</div>
+          <div class="obl-list" id="obligList"></div>
+          <div class="obl-sum">
+            <div class="osb" style="border-color:var(--ywb);background:var(--ywl)"><div style="font-size:10.5px;font-weight:600;color:var(--ywd);margin-bottom:4px">الإجمالي</div><div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono'" id="obl-tot">0.000 JD</div></div>
+            <div class="osb" style="border-color:var(--gnb);background:var(--gnl)"><div style="font-size:10.5px;font-weight:600;color:var(--gnd);margin-bottom:4px">المدفوع</div><div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono';color:var(--gnd)" id="obl-paid">0.000 JD</div></div>
+            <div class="osb" style="border-color:var(--rdb);background:var(--rdl)"><div style="font-size:10.5px;font-weight:600;color:var(--rdd);margin-bottom:4px">المستحق</div><div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono';color:var(--rdd)" id="obl-due">0.000 JD</div></div>
+          </div>
+          <div id="oblByWho" style="display:none;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <span style="padding:4px 12px;border-radius:10px;background:rgba(0,112,242,.1);color:#0070F2;font-size:12px;font-weight:600">👤 يزن: <span id="obl-yz" style="font-family:'IBM Plex Mono'">0.000</span> JD</span>
+            <span style="padding:4px 12px;border-radius:10px;background:rgba(184,134,11,.1);color:#B8860B;font-size:12px;font-weight:600">👤 عبدالرحمن: <span id="obl-ab" style="font-family:'IBM Plex Mono'">0.000</span> JD</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SALARIES -->
+    <div id="sal" class="pg">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">💼</span>رواتب الموظفين الشهريين</div></div>
+        <div class="card-body" style="padding:11px">
+          <div class="alert al-ok">✅ صافي الراتب = الأساسي + البدلات − الاستقطاعات − السلف المستحقة</div>
+          <div class="alert al-w" style="cursor:pointer" onclick="exportJSON()">⚠️ <strong>هام:</strong> الرواتب تُطرح من الربح فقط عند الضغط على ✅ دفع الراتب — لا قبل ذلك. | <u>💾 احتياطي الآن</u></div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>الموظف</th><th>الأساسي</th><th>البدلات</th><th>الإجمالي</th><th>استقطاعات</th><th>سلف مستحقة</th><th>صافي المستحق</th><th>دفع الراتب</th><th>مصدر الدفع</th></tr></thead>
+              <tbody id="mSalBody"></tbody>
+              <tfoot><tr><td>المجموع</td><td id="ms-b">0</td><td id="ms-a">0</td><td id="ms-g">0</td><td id="ms-d">0</td><td id="ms-av">0</td><td id="ms-n">0</td><td id="ms-paid-count" style="font-size:11px">—</td><td></td></tr></tfoot>
+            </table>
+          </div>
+          <button class="btn btn-p btn-full" onclick="calcSal();toast('✅ تم حفظ الرواتب')">💾 حفظ الرواتب</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">👷</span>أجور العاملات اليومية — جدول الحضور</div></div>
+        <div class="card-body">
+          <div class="alert al-i">💡 اضغط على رقم اليوم للتبديل بين حاضرة / غائبة</div>
+          <div id="attGrid"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:var(--ywl);border-radius:8px;border:1px solid var(--ywb);margin-top:4px">
+            <span style="font-size:13px;font-weight:600;color:var(--ywd)">إجمالي أجور العاملات اليومية</span>
+            <span style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono'" id="dwtotal">0.000 JD</span>
+          </div>
+          <button class="btn btn-p btn-full" onclick="calcSal();toast('✅ تم حفظ الأجور')">💾 حفظ الأجور</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADVANCES -->
+    <div id="adv" class="pg">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-y">💵</span>كشوف السلف التراكمية</div><button class="btn btn-p btn-sm" onclick="openMo('moAdv')">➕ سلفة جديدة</button></div>
+        <div class="card-body">
+          <div class="alert al-w">⚠️ السلف تُخصم تلقائياً من صافي الراتب. الرصيد التراكمي لكل موظف:</div>
+          <div id="advLedger"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-r">📋</span>كل السلف</div></div>
+        <div class="card-body" style="padding:11px">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>التاريخ</th><th>الموظف/ة</th><th>المبلغ</th><th>الحالة</th><th>ملاحظة</th><th>إجراء</th></tr></thead>
+              <tbody id="advBody"></tbody>
+              <tfoot><tr><td colspan="2">المستحق</td><td id="t-adv" class="num">0.000</td><td colspan="3"></td></tr></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASH BOX -->
+    <div id="cash" class="pg">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">🏦</span>قائمة التدفقات النقدية</div></div>
+        <div class="card-body">
+          <div class="frow">
+            <div class="fg"><label>رصيد أول المدة (JD)</label><input type="number" class="fi" id="cfOpen" value="0" step="0.001" min="0" oninput="calcCash()"></div>
+            <div class="fg"><label>رصيد الجرد الفعلي (JD)</label><input type="number" class="fi" id="cfAct" value="0" step="0.001" min="0" oninput="calcCash()"></div>
+          </div>
+          <div class="rpt-sec">
+            <div class="rpt-hd">📥 التدفقات الداخلة</div>
+            <div class="rpt-line ind"><span class="rl-lbl">رصيد أول المدة</span><span class="rl-val" id="cf-open">0.000</span></div>
+            <div class="rpt-line ind"><span class="rl-lbl">صافي النقدي المستلم</span><span class="rl-val cr" id="cf-cash">0.000</span></div>
+          </div>
+          <div class="rpt-sec">
+            <div class="rpt-hd">📤 التدفقات الخارجة</div>
+            <div class="rpt-line ind"><span class="rl-lbl">مدفوعات الموردين</span><span class="rl-val dr" id="cf-purch">0.000</span></div>
+            <div class="rpt-line ind"><span class="rl-lbl">الالتزامات المدفوعة فعلاً ✅</span><span class="rl-val dr" id="cf-obl">0.000</span></div>
+            <div class="rpt-line ind"><span class="rl-lbl">السلف الممنوحة</span><span class="rl-val dr" id="cf-adv">0.000</span></div>
+          </div>
+          <div class="rpt-sec">
+            <div class="rpt-hd">📊 نتيجة الصندوق</div>
+            <div class="rpt-line sub"><span class="rl-lbl">الرصيد المحاسبي المتوقع</span><span class="rl-val" id="cf-exp">0.000</span></div>
+            <div class="rpt-line sub"><span class="rl-lbl">رصيد الجرد الفعلي</span><span class="rl-val" id="cf-act2">0.000</span></div>
+            <div class="rpt-line net-p" id="cf-result"><span class="rl-lbl" style="font-weight:700;font-size:14px">الفرق (فائض / عجز)</span><span class="rl-val big" id="cf-diff">0.000</span></div>
+          </div>
+          <button class="btn btn-p btn-full" onclick="calcCash();toast('✅ تم حفظ الصندوق')">💾 حفظ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div id="rpt" class="pg">
+
+      <!-- ══ REPORT HEADER ══ -->
+      <div class="rpt-pro-header">
+        <div class="rpt-pro-brand">
+          <div class="rpt-pro-logo">☕</div>
+          <div>
+            <div class="rpt-pro-title">ريحانة كافيه</div>
+            <div class="rpt-pro-sub" id="rpt-month-label">—</div>
+          </div>
+        </div>
+        <div class="rpt-pro-actions">
+          <button class="rpt-act-btn" onclick="exportPDF()">📄 PDF</button>
+          <button class="rpt-act-btn" onclick="exportExcel()">📗 Excel</button>
+          <button class="rpt-act-btn" onclick="window.print()">🖨️</button>
+        </div>
+      </div>
+
+      <!-- ══ HERO KPIs ══ -->
+      <div class="rpt-hero-grid">
+        <div class="rpt-hero-card rpt-hero-main" id="rpt-hero-profit-card">
+          <div class="rpt-hero-label">صافي الدخل</div>
+          <div class="rpt-hero-value" id="r-profit">0.000</div>
+          <div class="rpt-hero-unit">JD</div>
+          <div class="rpt-hero-sub" id="r-margin">هامش 0.00%</div>
+          <div class="rpt-hero-badge" id="rpt-health-badge">—</div>
+        </div>
+        <div class="rpt-hero-side">
+          <div class="rpt-mini-card">
+            <div class="rpt-mini-icon" style="background:rgba(34,197,94,.15);color:var(--gn)">💰</div>
+            <div>
+              <div class="rpt-mini-lbl">صافي البيع</div>
+              <div class="rpt-mini-val" id="r-nrev">0.000 JD</div>
+            </div>
+          </div>
+          <div class="rpt-mini-card">
+            <div class="rpt-mini-icon" style="background:rgba(239,68,68,.15);color:var(--rd)">📉</div>
+            <div>
+              <div class="rpt-mini-lbl">إجمالي التكاليف</div>
+              <div class="rpt-mini-val" id="rpt-exp-val">0.000 JD</div>
+            </div>
+          </div>
+          <div class="rpt-mini-card">
+            <div class="rpt-mini-icon" style="background:rgba(59,130,246,.15);color:var(--bl)">📦</div>
+            <div>
+              <div class="rpt-mini-lbl">مجمل الربح</div>
+              <div class="rpt-mini-val" id="rpt-gross-val">0.000 JD</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ RATIO INDICATORS ══ -->
+      <div class="rpt-ratios">
+        <div class="rpt-ratio-item">
+          <div class="rpt-ratio-lbl">هامش الربح</div>
+          <div class="rpt-ratio-bar-wrap">
+            <div class="rpt-ratio-bar" id="bar-margin"></div>
+          </div>
+          <div class="rpt-ratio-val" id="rpt-margin-pct">—</div>
+          <div class="rpt-ratio-ref">المعيار: 15-25%</div>
+        </div>
+        <div class="rpt-ratio-item">
+          <div class="rpt-ratio-lbl">تكلفة البضاعة</div>
+          <div class="rpt-ratio-bar-wrap">
+            <div class="rpt-ratio-bar" id="bar-cogs"></div>
+          </div>
+          <div class="rpt-ratio-val" id="rpt-cogs-pct">—</div>
+          <div class="rpt-ratio-ref">المعيار: 28-35%</div>
+        </div>
+        <div class="rpt-ratio-item">
+          <div class="rpt-ratio-lbl">الرواتب المدفوعة</div>
+          <div class="rpt-ratio-bar-wrap">
+            <div class="rpt-ratio-bar" id="bar-sal"></div>
+          </div>
+          <div class="rpt-ratio-val" id="rpt-sal-pct">—</div>
+          <div class="rpt-ratio-ref">المعيار: 25-30%</div>
+        </div>
+        <div class="rpt-ratio-item">
+          <div class="rpt-ratio-lbl">نسبة المصاريف</div>
+          <div class="rpt-ratio-bar-wrap">
+            <div class="rpt-ratio-bar" id="bar-exp"></div>
+          </div>
+          <div class="rpt-ratio-val" id="rpt-exp-pct">—</div>
+          <div class="rpt-ratio-ref">المعيار: أقل من 75%</div>
+        </div>
+      </div>
+
+      <!-- ══ INCOME STATEMENT ══ -->
+      <div class="rpt-statement">
+        <div class="rpt-stmt-title">قائمة الدخل التفصيلية</div>
+
+        <!-- الإيرادات -->
+        <div class="rpt-section">
+          <div class="rpt-section-hd rpt-hd-green">
+            <span>💰 الإيرادات</span>
+            <span id="r-rev" class="rpt-section-total">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-sub">
+            <span class="rpt-row-lbl">💵 نقدي</span>
+            <span class="rpt-row-val green" id="r-cash">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-sub">
+            <span class="rpt-row-lbl">💳 فيزا</span>
+            <span class="rpt-row-val green" id="r-visa">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-highlight">
+            <span class="rpt-row-lbl" style="font-weight:700">صافي البيع (نقد + فيزا)</span>
+            <span class="rpt-row-val green bold" id="r-nrev-2">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-sub rpt-row-muted">
+            <span class="rpt-row-lbl">📝 مدفوعات يومية <small>(توثيق — خُصمت من الكاش)</small></span>
+            <span class="rpt-row-val muted" id="r-pmts">0.000 JD</span>
+          </div>
+        </div>
+
+        <!-- تكلفة البضاعة -->
+        <div class="rpt-section">
+          <div class="rpt-section-hd rpt-hd-orange">
+            <span>📦 تكلفة البضاعة (COGS)</span>
+            <span id="r-cogs" class="rpt-section-total">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-result">
+            <span class="rpt-row-lbl" style="font-weight:700">مجمل الربح — Gross Profit</span>
+            <span class="rpt-row-val bold" id="r-gross">0.000 JD</span>
+          </div>
+        </div>
+
+        <!-- الالتزامات -->
+        <div class="rpt-section">
+          <div class="rpt-section-hd rpt-hd-red">
+            <span>📋 الالتزامات الشهرية</span>
+            <span id="r-obl-total-val" class="rpt-section-total">0.000 JD</span>
+          </div>
+          <div id="r-obl-rows"></div>
+        </div>
+
+        <!-- الرواتب -->
+        <div class="rpt-section">
+          <div class="rpt-section-hd rpt-hd-blue">
+            <span>👥 الرواتب والأجور</span>
+            <span id="r-sal-total" class="rpt-section-total">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-sub">
+            <span class="rpt-row-lbl">✅ رواتب شهرية مدفوعة</span>
+            <span class="rpt-row-val red" id="r-msal">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-sub rpt-row-accrued" id="r-accrued-row">
+            <span class="rpt-row-lbl">⏳ رواتب مستحقة <small>(لا تُطرح — لم تُدفع بعد)</small></span>
+            <span class="rpt-row-val muted" id="r-msal-accrued">0.000 JD</span>
+          </div>
+          <div id="r-dwages-section" style="display:none">
+            <div class="rpt-row rpt-row-sub" style="background:rgba(245,158,11,.06);border-top:1px solid var(--br)">
+              <span class="rpt-row-lbl" style="font-weight:700">👷 أجور يومية <small>(خُصمت من الكاش قبل التسليم)</small></span>
+              <span class="rpt-row-val" style="color:var(--yw);font-weight:700" id="r-dwages">0.000 JD</span>
+            </div>
+            <div id="r-dwages-rows"></div>
+          </div>
+        </div>
+
+        <!-- مصاريف أخرى -->
+        <div class="rpt-section" id="r-other-section" style="display:none">
+          <div class="rpt-section-hd rpt-hd-purple">
+            <span>⚙️ مصاريف أخرى</span>
+            <span id="r-other-total" class="rpt-section-total">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-sub" id="r-ops-row" style="display:none">
+            <span class="rpt-row-lbl">⚙️ تشغيلية (OPS)</span>
+            <span class="rpt-row-val red" id="r-ops">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-sub" id="r-adm-row" style="display:none">
+            <span class="rpt-row-lbl">📁 إدارية (ADM)</span>
+            <span class="rpt-row-val red" id="r-adm">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-sub" id="r-mkt-row" style="display:none">
+            <span class="rpt-row-lbl">📣 تسويقية (MKT)</span>
+            <span class="rpt-row-val red" id="r-mkt">0.000 JD</span>
+          </div>
+        </div>
+
+        <!-- إجمالي التكاليف -->
+        <div class="rpt-row rpt-row-subtotal">
+          <span class="rpt-row-lbl">إجمالي التكاليف الفعلية المدفوعة</span>
+          <span class="rpt-row-val red bold" id="r-texp">0.000 JD</span>
+        </div>
+
+        <!-- صافي الدخل النهائي -->
+        <div class="rpt-net-result" id="rpt-result">
+          <div class="rpt-net-label">صافي الدخل / (الخسارة)</div>
+          <div class="rpt-net-value" id="r-profit-2">0.000 JD</div>
+          <div class="rpt-net-margin" id="r-margin-2">Net Margin: 0.00%</div>
+        </div>
+
+        <!-- معادلة الحساب -->
+        <div class="rpt-formula">
+          <span class="rpt-formula-icon">📐</span>
+          <span>صافي الربح = (نقد+فيزا) − (COGS + التزامات ✅ + رواتب ✅)</span>
+        </div>
+      </div>
+
+      <!-- ══ CHART ══ -->
+      <div class="card" style="margin-top:12px">
+        <div class="card-hd">
+          <div class="card-title">📊 توزيع التكاليف</div>
+          <div id="rpt-chart-total" style="font-size:11px;color:var(--tx3)"></div>
+        </div>
+        <div class="card-body"><div class="ch-lg"><canvas id="chRpt"></canvas></div></div>
+      </div>
+
+      <!-- ══ EXPORT BAR ══ -->
+      <div class="rpt-export-bar">
+        <div class="rpt-export-title">تصدير التقرير</div>
+        <div class="rpt-export-btns">
+          <button class="rpt-export-btn rpt-exp-pdf" onclick="exportPDF()">
+            <span>📄</span><span>PDF عربي</span>
+          </button>
+          <button class="rpt-export-btn rpt-exp-excel" onclick="exportExcel()">
+            <span>📗</span><span>Excel</span>
+          </button>
+          <button class="rpt-export-btn rpt-exp-json" onclick="exportJSON()">
+            <span>💾</span><span>احتياطي</span>
+          </button>
+          <button class="rpt-export-btn" onclick="exportGoogleSheets()">
+            <span>🟢</span><span>Sheets</span>
+          </button>
+          <button class="rpt-export-btn" onclick="window.print()">
+            <span>🖨️</span><span>طباعة</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- CLOUD PAGE -->
+    <div id="cloud" class="pg">
+
+      <!-- Status Header -->
+      <div class="cloud-header" id="cloudHeaderBox">
+        <div class="cloud-status-icon" id="cloudStatusIcon">☁️</div>
+        <div style="flex:1">
+          <div class="cloud-status-title" id="cloudStatusTitle">Supabase — غير مفعّل</div>
+          <div class="cloud-status-sub" id="cloudStatusSub">بياناتك محلية فقط — خطر الفقدان</div>
+        </div>
+        <div class="cloud-status-dot" id="supaDot"></div>
+      </div>
+
+      <!-- SETUP WIZARD (shown when not connected) -->
+      <div id="cloudSetupWizard">
+
+        <!-- استيراد نسخة احتياطية — دائماً ظاهر -->
+        <div class="cloud-wizard-card" style="border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.04)">
+          <div class="cloud-wizard-title" style="color:var(--bl)">📥 استيراد نسخة احتياطية JSON</div>
+          <div style="font-size:12px;color:var(--tx3);margin-bottom:10px">إذا كان لديك ملف JSON محفوظ مسبقاً اضغط هنا لاستعادة بياناتك</div>
+          <button class="btn btn-full" onclick="openImportFile()" style="background:var(--bl);color:#fff;font-size:13px;padding:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:10px">
+            📂 اختر ملف JSON للاستيراد
+          </button>
+          <input type="file" id="impFile" accept="application/json,.json" style="position:fixed;left:-9999px;top:-9999px;width:0;height:0;opacity:0" onchange="importJSON(event)">
+          <div style="font-size:11px;color:var(--tx4);text-align:center;margin-top:7px">يدعم ملفات V22 وV24 وV25</div>
+          <button onclick="importFromText()" style="width:100%;margin-top:8px;padding:9px;border:1.5px dashed var(--br);background:transparent;border-radius:10px;font-size:12px;color:var(--tx3);cursor:pointer;font-family:inherit">
+            📋 لصق نص JSON يدوياً (بديل إذا لم يعمل الملف)
+          </button>
+        </div>
+        <div class="cloud-wizard-card">
+          <div class="cloud-wizard-title">🚀 إعداد Supabase — مرة واحدة فقط</div>
+          <div class="cloud-wizard-sub">بعد الإعداد: بياناتك محمية في السحابة مجاناً، ويزن وعبدالرحمن يرون نفس البيانات</div>
+
+          <!-- Step 1 -->
+          <div class="cloud-step">
+            <div class="cloud-step-num">١</div>
+            <div class="cloud-step-body">
+              <div class="cloud-step-title">أنشئ مشروع Supabase</div>
+              <div class="cloud-step-desc">اذهب لـ <strong style="color:var(--gold2)">supabase.com</strong> ← اضغط <strong>Start your project</strong> ← سجّل بـ Google ← اضغط <strong>New project</strong> ← اختر اسماً واضغط <strong>Create new project</strong> ← انتظر دقيقة حتى يكتمل</div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="cloud-step">
+            <div class="cloud-step-num">٢</div>
+            <div class="cloud-step-body">
+              <div class="cloud-step-title">انسخ URL والمفتاح</div>
+              <div class="cloud-step-desc">داخل المشروع: اضغط <strong>Settings</strong> (الإعدادات) ← <strong>API</strong> ← انسخ <strong>Project URL</strong> والصقه أدناه ← انسخ <strong>anon public</strong> key والصقه أدناه</div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="cloud-step">
+            <div class="cloud-step-num">٣</div>
+            <div class="cloud-step-body">
+              <div class="cloud-step-title">شغّل SQL لإنشاء الجدول</div>
+              <div class="cloud-step-desc">اضغط <strong>SQL Editor</strong> في القائمة الجانبية ← اضغط <strong>New query</strong> ← الصق الكود التالي ← اضغط <strong>Run</strong></div>
+              <div class="cloud-sql-box">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                  <span style="font-size:10px;color:var(--tx4)">SQL — انسخ وشغّل في Supabase:</span>
+                  <button onclick="copySupaSQL()" class="cloud-copy-btn">📋 نسخ</button>
+                </div>
+                <pre id="supaSQL" style="font-size:11px;color:var(--gn);direction:ltr;white-space:pre;margin:0;overflow-x:auto">create table if not exists rh_store (
+  key text primary key,
+  value jsonb not null,
+  updated_at timestamptz default now()
+);
+alter table rh_store enable row level security;
+create policy "allow_all" on rh_store
+  for all using (true) with check (true);</pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3.5: Disable API Allowlist -->
+          <div class="cloud-step">
+            <div class="cloud-step-num" style="background:var(--yw);color:#000">!</div>
+            <div class="cloud-step-body">
+              <div class="cloud-step-title">السماح بالاتصال من أي مصدر</div>
+              <div class="cloud-step-desc"><strong>مهم:</strong> في Supabase Dashboard ← <strong>Settings</strong> ← <strong>API</strong> ← قسم <strong>API Settings</strong> ← ابحث عن <strong>API Allowlist</strong> وتأكد أنه <strong>معطّل</strong> أو أضف <code style="background:var(--surf3);padding:1px 5px;border-radius:4px">*</code> ليسمح بجميع المصادر. بدون هذه الخطوة ستظهر رسالة <em>"Host not in allowlist"</em></div>
+            </div>
+          </div>
+
+          <!-- Step 4: Connect -->
+          <div class="cloud-step">
+            <div class="cloud-step-num">٤</div>
+            <div class="cloud-step-body">
+              <div class="cloud-step-title">الصق البيانات واضغط ربط</div>
+              <div class="fg" style="margin-top:8px">
+                <label>Project URL</label>
+                <input type="text" class="fi" id="supaUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" style="direction:ltr;font-family:monospace;font-size:12px">
+              </div>
+              <div class="fg">
+                <label>Anon Public Key</label>
+                <input type="password" class="fi" id="supaAnonKey" placeholder="eyJhbGciOiJIUzI1NiIs... أو sb_publishable_..." style="direction:ltr;font-family:monospace;font-size:11px">
+              </div>
+              <button class="btn btn-g btn-full" onclick="supaConnectAndTest()" style="font-size:14px;padding:12px">🔗 ربط وتفعيل المزامنة</button>
+              <div id="supaConnectErr" style="color:var(--rd);font-size:12px;margin-top:8px;min-height:16px;text-align:center"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONNECTED VIEW (shown when connected) -->
+      <div id="cloudConnectedPanel" style="display:none">
+
+        <!-- Status -->
+        <div class="cloud-connected-card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--gn);box-shadow:0 0 8px var(--gn)"></div>
+            <div style="font-size:13px;font-weight:700;color:var(--gn)">متصل بـ Supabase ✅</div>
+          </div>
+          <div style="font-size:11.5px;color:var(--tx3);margin-bottom:14px" id="supaLastSync">—</div>
+
+          <!-- Sync buttons -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+            <button class="btn btn-g" onclick="supaSync('push')">↑ رفع الآن</button>
+            <button class="btn btn-ghost" onclick="supaSync('pull')">↓ تحميل</button>
+          </div>
+
+          <!-- Auto sync -->
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surf3);border-radius:var(--r);margin-bottom:8px">
+            <div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--tx2)">🔄 مزامنة تلقائية</div>
+              <div style="font-size:10.5px;color:var(--tx3)">كل 5 دقائق تلقائياً</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="supaAutoBtn" onclick="toggleSupaAuto()">تشغيل</button>
+          </div>
+        </div>
+
+        <!-- Import/Export -->
+        <div class="cloud-wizard-card" style="margin-top:10px">
+          <div class="cloud-wizard-title">💾 نسخ احتياطية</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-p" onclick="exportJSON()">📤 تصدير JSON</button>
+            <button class="btn btn-ghost" onclick="openImportFile()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px">📥 استيراد JSON</button>
+          </div>
+          <div class="alert al-w" style="margin-top:10px;font-size:11.5px">
+            ⚠️ الاستيراد يستبدل البيانات الحالية — تأكد من رفع نسخة احتياطية أولاً
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div style="margin-top:10px;text-align:center">
+          <button class="btn btn-ghost btn-sm" onclick="supaDisconnect()" style="color:var(--rd);border-color:rgba(239,68,68,.3)">⛔ قطع الاتصال</button>
+        </div>
+      </div>
+
+      <!-- Why Supabase -->
+      <div class="cloud-wizard-card" style="margin-top:10px" id="cloudWhyBox">
+        <div class="cloud-wizard-title">🛡️ لماذا Supabase؟</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div class="cloud-why-row"><span class="cloud-why-icon">✅</span><span>مجاني تماماً — 500MB كافية لسنوات</span></div>
+          <div class="cloud-why-row"><span class="cloud-why-icon">🔒</span><span>بياناتك لا تُمسح أبداً حتى لو مسحت الكاش</span></div>
+          <div class="cloud-why-row"><span class="cloud-why-icon">📱</span><span>يزن وعبدالرحمن يرون نفس البيانات من أي جهاز</span></div>
+          <div class="cloud-why-row"><span class="cloud-why-icon">⚡</span><span>كل حفظ يُرفع تلقائياً للسحابة خلال 3 ثواني</span></div>
+          <div class="cloud-why-row"><span class="cloud-why-icon">🔄</span><span>عند أي تحديث للنظام بياناتك تبقى كاملة</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- AUDIT -->
+    <div id="audit" class="pg">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">📝</span>سجل التعديلات</div><button class="btn btn-ghost btn-sm" onclick="clearLog()">🗑️ مسح</button></div>
+        <div style="max-height:65vh;overflow-y:auto" id="auditList"></div>
+      </div>
+    </div>
+
+    <!-- INVENTORY + TARGETS -->
+    <div id="inv" class="pg">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-ico ct-y">📦</span>المخزون والأهداف</div>
+          <button class="btn btn-p btn-sm" onclick="openMo('moInv')">➕ صنف جديد</button>
+        </div>
+        <div class="card-body" style="padding:11px">
+          <div class="target-card">
+            <div class="target-hd">
+              <span class="target-title">🎯 هدف الإيراد الشهري</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="number" id="targetInput" class="fi" style="width:85px;padding:4px 8px;font-size:12px;font-family:monospace" placeholder="JD الهدف" min="0" onchange="saveTarget()">
+                <span class="target-pct" id="targetPct">0%</span>
+              </div>
+            </div>
+            <div class="tprog"><div class="tprog-f" id="targetBar" style="width:0%"></div></div>
+            <div class="target-vals"><span id="targetCurrent">محقق: — JD</span><span id="targetRemain">— JD متبقي</span></div>
+          </div>
+          <div id="invList"><div class="alert al-i">لم تُضَف أصناف بعد. اضغط + لإضافة مخزون.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANNUAL -->
+    <div id="annual" class="pg">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-ico ct-g">📅</span>الملخص السنوي</div>
+          <select id="annualYear" class="msel" onchange="renderAnnual()" style="font-size:12px;padding:4px 8px"></select>
+        </div>
+        <div class="card-body" style="padding:11px">
+          <div class="ann-kpis">
+            <div class="ann-kpi"><div class="ann-kpi-l">إجمالي الإيرادات</div><div class="ann-kpi-v" id="ann-tot-rev">0.000</div></div>
+            <div class="ann-kpi"><div class="ann-kpi-l">إجمالي المصروفات</div><div class="ann-kpi-v" id="ann-tot-exp">0.000</div></div>
+            <div class="ann-kpi"><div class="ann-kpi-l">صافي الأرباح</div><div class="ann-kpi-v" id="ann-tot-profit" style="color:var(--gn)">0.000</div></div>
+            <div class="ann-kpi"><div class="ann-kpi-l">أفضل شهر</div><div class="ann-kpi-v" id="ann-best-month" style="font-size:12px">—</div></div>
+          </div>
+          <div class="ann-grid" id="annualGrid"></div>
+          <div class="card" style="margin:0">
+            <div class="card-hd" style="padding:10px 12px"><div class="card-title" style="font-size:12px">⚖️ مقارنة شهرين</div></div>
+            <div class="card-body" style="padding:10px">
+              <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px">
+                <select id="cmpA" class="fs" style="font-size:11px" onchange="renderCompare()"></select>
+                <span style="color:var(--tx3);font-size:11px">vs</span>
+                <select id="cmpB" class="fs" style="font-size:11px" onchange="renderCompare()"></select>
+              </div>
+              <div id="compareResult"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI ASSISTANT -->
+    <div id="ai" class="pg">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-ico ct-p">🤖</span>المستشار المالي الذكي</div>
+          <button class="btn btn-ghost btn-sm" onclick="clearAiChat()">🗑️ مسح</button>
+        </div>
+        <div class="card-body" style="padding:12px">
+          <div class="ai-ctx" id="aiCtxBar" style="margin-bottom:10px;font-size:11px;color:var(--tx3)">
+            <span>📊 السياق:</span>
+            <span class="ai-chip" id="aiCtxMonth">—</span>
+            <span class="ai-chip" id="aiCtxRev">إيراد: —</span>
+            <span class="ai-chip" id="aiCtxProfit">ربح: —</span>
+            <span class="ai-chip" id="aiCtxDays">أيام: —</span>
+          </div>
+          <div class="ai-quick" style="margin-bottom:10px" id="aiQuickRow">
+            <button class="ai-qbtn" onclick="askAI('حلل الأداء المالي الكامل لهذا الشهر وأعطني تقريراً شاملاً')">📈 تحليل شامل</button>
+            <button class="ai-qbtn" onclick="askAI('ما هي أبرز المشاكل والمخاطر في بيانات الكافيه؟')">⚠️ المشاكل</button>
+            <button class="ai-qbtn" onclick="askAI('قارن هذا الشهر بالشهر السابق وأخبرني ما الذي تغير')">⚖️ مقارنة</button>
+            <button class="ai-qbtn" onclick="askAI('كيف يمكن تقليل التكاليف وزيادة الأرباح بشكل عملي؟')">💡 تحسين الأرباح</button>
+            <button class="ai-qbtn" onclick="askAI('هل رواتب الموظفين مناسبة لحجم الإيراد؟ وهل نحتاج تعديل؟')">👷 تقييم الرواتب</button>
+            <button class="ai-qbtn" onclick="askAI('توقع الإيراد المتوقع نهاية الشهر ونهاية السنة')">🎯 التوقع</button>
+            <button class="ai-qbtn" onclick="askAI('هل مصروفات المشتريات والموردين معقولة؟ من أين يمكن التوفير؟')">🛒 المشتريات</button>
+            <button class="ai-qbtn" onclick="askAI('ما هي أيام الذروة والأيام الضعيفة؟ وما التوصية؟')">📅 تحليل الأيام</button>
+            <button class="ai-qbtn" onclick="askAI('هل التزامات الكافيه (الإيجار والجمعية) مستدامة بالمستوى الحالي للإيرادات؟')">📋 الالتزامات</button>
+            <button class="ai-qbtn" onclick="askAI('أعطني خطة عمل لتحسين أداء الكافيه خلال الشهر القادم')">🗺️ خطة العمل</button>
+          </div>
+          <div class="ai-msgs" id="aiMsgs2">
+            <div class="ai-msg bot">مرحباً يزن! 🌿 أنا مستشارك المالي لريحانة كافيه.<br><br>أنا محمّل ببيانات الكافيه الكاملة — الإيرادات، المصروفات، الرواتب، الموردين، الالتزامات، والمخزون.<br><br>اسألني أي شيء أو اختر من الأسئلة السريعة أعلاه.</div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="ai-input-row">
+            <textarea class="ai-ta" id="aiInput2" rows="1" placeholder="اسأل عن أي جانب مالي للكافيه..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAI(this.value);this.value='';}"></textarea>
+            <button class="ai-send" id="aiSendBtn2" onclick="askAI(document.getElementById('aiInput2').value);document.getElementById('aiInput2').value='';">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="mo-ov" id="moInv" onclick="moOut(event,'moInv')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moInv')">×</button>
+  <div class="mo-title">📦 صنف مخزون</div>
+  <input type="hidden" id="invEditIdx" value="-1">
+  <div class="fg"><label>اسم الصنف</label><input type="text" class="fi" id="invName" placeholder="مثال: حبوب قهوة، حليب..."></div>
+  <div class="fg"><label>الفئة</label><select class="fs" id="invCat">
+    <option value="قهوة">☕ قهوة ومشروبات</option>
+    <option value="حليب">🥛 ألبان وكريمة</option>
+    <option value="مواد">🧴 مواد استهلاكية</option>
+    <option value="تعبئة">📦 تعبئة وتغليف</option>
+    <option value="أخرى">📋 أخرى</option>
+  </select></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="fg"><label>الكمية الحالية</label><input type="number" class="fi" id="invQty" placeholder="0" step="0.1" min="0"></div>
+    <div class="fg"><label>وحدة القياس</label><input type="text" class="fi" id="invUnit" placeholder="كغ، لتر، علبة..."></div>
+  </div>
+  <div class="fg"><label>حد التنبيه (الكمية الدنيا)</label><input type="number" class="fi" id="invMin" placeholder="0" step="0.1" min="0"></div>
+  <div class="fg"><label>سعر الوحدة JD (اختياري)</label><input type="number" class="fi" id="invPrice" placeholder="0.000" step="0.001" min="0"></div>
+  <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="saveInvItem()">💾 حفظ</button>
+</div>
+</div>
+<div class="mo-ov" id="moPurch" onclick="moOut(event,'moPurch')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="closePurchModal()">×</button>
+  <div class="mo-title">🛒 تسجيل مستند مشترى</div>
+  <input type="hidden" id="pEditIdx" value="-1">
+  <div class="fg"><label>التاريخ</label><input type="date" class="fi" id="pDate"></div>
+  <div class="fg"><label>المورد</label><select class="fs" id="pSupp"><option value="">— اختر —</option></select></div>
+  <div class="fg"><label>فئة المصروف</label><select class="fs" id="pCat">
+    <option value="COGS">تكلفة البضاعة (COGS)</option>
+    <option value="OPS">تشغيلية (OPS)</option>
+    <option value="ADM">إدارية (ADM)</option>
+    <option value="MKT">تسويقية (MKT)</option>
+    <option value="OTHER">أخرى (OTHER)</option>
+  </select></div>
+  <div class="fg"><label>المشتري / المسؤول</label><select class="fs" id="pBuyer">
+    <option value="">— اختر —</option>
+    <option value="يزن">يزن</option>
+    <option value="عبدالرحمن">عبدالرحمن</option>
+  </select></div>
+  <div class="fg"><label>البيان</label><input type="text" class="fi" id="pDesc" placeholder="نوع البضاعة أو الخدمة..."></div>
+  <div class="fg"><label>المبلغ (JD)</label><input type="number" class="fi" id="pAmt" step="0.001" min="0" placeholder="0.000"></div>
+  <div class="fg"><label>رقم الفاتورة</label><input type="text" class="fi" id="pInv" placeholder="اختياري..."></div>
+  <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="savePurch()">✅ حفظ</button><button class="btn btn-ghost" style="flex:1" onclick="closePurchModal()">إلغاء</button></div>
+</div></div>
+
+<div class="mo-ov" id="moSupp" onclick="moOut(event,'moSupp')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moSupp')">×</button>
+  <div class="mo-title" id="suppTit">📦 إضافة مورد</div>
+  <input type="hidden" id="suppEI">
+  <div class="fg"><label>اسم المورد</label><input type="text" class="fi" id="sName" placeholder="اسم المورد..."></div>
+  <div class="fg"><label>التصنيف</label><select class="fs" id="sCat"><option>مواد غذائية ومواد خام</option><option>مشروبات ومواد القهوة</option><option>مواد التعبئة والتغليف</option><option>مواد النظافة والتعقيم</option><option>مستلزمات التشغيل</option><option>خدمات وصيانة</option><option>أخرى</option></select></div>
+  <div class="fg"><label>ملاحظة / تواصل</label><input type="text" class="fi" id="sNote" placeholder="هاتف، عنوان..."></div>
+  <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="saveSupp()">✅ حفظ</button><button class="btn btn-ghost" style="flex:1" onclick="cmo('moSupp')">إلغاء</button></div>
+</div></div>
+
+<div class="mo-ov" id="moOblig" onclick="moOut(event,'moOblig')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moOblig')">×</button>
+  <div class="mo-title" id="oblTit">📋 إضافة التزام</div>
+  <input type="hidden" id="oblEI">
+  <div class="fg"><label>اسم الالتزام</label><input type="text" class="fi" id="oName" placeholder="مثال: إيجار المحل..."></div>
+  <div class="fg"><label>المبلغ الشهري (JD)</label><input type="number" class="fi" id="oAmt" step="0.001" min="0" placeholder="0.000"></div>
+  <div class="fg"><label>تاريخ الاستحقاق</label><input type="date" class="fi" id="oDue"></div>
+  <div class="fg"><label>من دفع؟ (عند التعديل)</label><select class="fs" id="oPaidBy"><option value="">— اختر —</option><option value="يزن">👤 يزن</option><option value="عبدالرحمن">👤 عبدالرحمن</option></select></div>
+  <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="saveOblig()">✅ حفظ</button><button class="btn btn-ghost" style="flex:1" onclick="cmo('moOblig')">إلغاء</button></div>
+</div></div>
+
+<div class="mo-ov" id="moAdv" onclick="moOut(event,'moAdv')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moAdv')">×</button>
+  <div class="mo-title">💵 تسجيل سلفة</div>
+  <div class="fg"><label>التاريخ</label><input type="date" class="fi" id="aDate"></div>
+  <div class="fg"><label>الموظف/ة</label><select class="fs" id="aEmp"><option value="">— اختر —</option></select></div>
+  <div class="fg"><label>المبلغ (JD)</label><input type="number" class="fi" id="aAmt" step="0.001" min="0" placeholder="0.000"></div>
+  <div class="fg"><label>الحالة</label><select class="fs" id="aStat"><option>مستحقة</option><option>مسددة</option><option>مسددة جزئياً</option></select></div>
+  <div class="fg"><label>السبب</label><input type="text" class="fi" id="aNote" placeholder="الغرض..."></div>
+  <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="addAdv()">✅ تسجيل</button><button class="btn btn-ghost" style="flex:1" onclick="cmo('moAdv')">إلغاء</button></div>
+</div></div>
+
+<div class="mo-ov" id="moPwd" onclick="moOut(event,'moPin')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moPin')">×</button>
+  <div class="mo-title">🔑 تغيير كلمة المرور</div>
+  <div class="fg"><label>كلمة المرور الحالية</label><input type="password" class="fi" id="pwdOld" placeholder="كلمة المرور الحالية"></div>
+  <div class="fg"><label>كلمة المرور الجديدة</label><input type="password" class="fi" id="pwdNew" placeholder="4 أحرف على الأقل"></div>
+  <div class="fg"><label>تأكيد كلمة المرور</label><input type="password" class="fi" id="pwdConf" placeholder="أعد الإدخال"></div>
+  <div id="pwdChgErr" style="color:var(--rd);font-size:12px;min-height:16px;margin-bottom:8px"></div>
+  <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="changePwd()">✅ تغيير</button><button class="btn btn-ghost" style="flex:1" onclick="cmo('moPin')">إلغاء</button></div>
+</div></div>
+
+<!-- مودال إعداد Google Sheets -->
+<div class="mo-ov" id="moGSheet" onclick="moOut(event,'moGSheet')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moGSheet')">×</button>
+  <div class="mo-title">🟢 ربط Google Sheets</div>
+
+  <!-- الجدول المحدد -->
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--gnl);border:1px solid var(--gnb);border-radius:10px;margin-bottom:12px">
+    <span style="font-size:20px">📊</span>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--gnd)">جدول البيانات المرتبط</div>
+      <div style="font-size:11px;color:var(--tx3);font-family:'IBM Plex Mono'">ريحانة كافيه</div>
+    </div>
+    <span style="margin-right:auto;background:var(--gnd);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600">جاهز ✓</span>
+  </div>
+
+  <!-- خطوة 1 -->
+  <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+    <div style="min-width:24px;height:24px;border-radius:50%;background:var(--sap);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">1</div>
+    <div style="flex:1">
+      <div style="font-size:12.5px;font-weight:700;margin-bottom:4px">افتح محرر السكريبت</div>
+      <a href="https://script.google.com/create" target="_blank" onclick="toast('⏳ جاري فتح Google...')"
+        style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#4285F4;color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;font-family:inherit">
+        🔗 فتح script.google.com
+      </a>
+    </div>
+  </div>
+
+  <!-- خطوة 2 -->
+  <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+    <div style="min-width:24px;height:24px;border-radius:50%;background:var(--sap);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">2</div>
+    <div style="flex:1">
+      <div style="font-size:12.5px;font-weight:700;margin-bottom:4px">احذف كل شيء والصق هذا الكود</div>
+      <div style="position:relative">
+        <pre id="gsScriptCode" style="background:var(--surf2);border:1px solid var(--br);border-radius:8px;padding:10px;font-size:10.5px;overflow-x:auto;margin:0;direction:ltr;text-align:left;line-height:1.6;white-space:pre-wrap">function doPost(e){
+  var d=JSON.parse(e.postData.contents);
+  var ss=SpreadsheetApp.openById(
+    '12OVl-fiDvRNzDaktGo8SPY4N_cR67OJDqMbSdJJhnUw');
+  var sh=ss.getSheetByName(d.month)
+        ||ss.insertSheet(d.month);
+  sh.clearContents();
+  if(d.rows&&d.rows.length)
+    sh.getRange(1,1,d.rows.length,
+      d.rows[0].length).setValues(d.rows);
+  return ContentService
+    .createTextOutput(JSON.stringify({status:'ok'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+        <button onclick="copyGsCode()" style="position:absolute;top:6px;left:6px;padding:4px 10px;font-size:11px;border:1px solid var(--br);border-radius:6px;background:var(--surf);cursor:pointer;font-family:inherit" id="copyGsBtn">📋 نسخ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- خطوة 3 -->
+  <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">
+    <div style="min-width:24px;height:24px;border-radius:50%;background:var(--sap);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">3</div>
+    <div style="flex:1">
+      <div style="font-size:12.5px;font-weight:700;margin-bottom:2px">Deploy → New deployment → Web App</div>
+      <div style="font-size:11px;color:var(--tx3)">Execute as: <b>Me</b> | Who has access: <b>Anyone</b> → Deploy → انسخ الرابط والصقه أدناه</div>
+    </div>
+  </div>
+
+  <div class="fg" style="margin-bottom:6px"><label>رابط Web App</label>
+    <input type="url" class="fi" id="gsheetUrlInput" placeholder="https://script.google.com/macros/s/AKfy...">
+  </div>
+  <div id="gsheetTestResult" style="font-size:12px;min-height:16px;margin-bottom:8px;padding:0 2px"></div>
+  <div class="btn-row">
+    <button class="btn btn-p" style="flex:1" onclick="saveGSheetUrl()">💾 حفظ وتفعيل</button>
+    <button class="btn btn-ghost" onclick="testGSheetUrl()">🔗 اختبار</button>
+  </div>
+</div></div>
+
+<!-- V22: مودال النسخ الاحتياطية -->
+<div class="mo-ov" id="moBackup" onclick="moOut(event,'moBackup')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moBackup')">×</button>
+  <div class="mo-title">📦 النسخ الاحتياطية</div>
+  <div id="backupContent" style="max-height:300px;overflow-y:auto">
+    <div class="alert al-i">جاري التحميل...</div>
+  </div>
+  <div style="margin-top:12px;display:flex;gap:8px">
+    <button class="btn btn-p" style="flex:1" onclick="exportDataJSON()">📤 تصدير JSON</button>
+    <button class="btn btn-ghost" style="flex:1" onclick="cmo('moBackup')">إغلاق</button>
+  </div>
+</div></div>
+
