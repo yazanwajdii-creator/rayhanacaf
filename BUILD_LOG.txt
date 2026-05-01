@@ -15,8 +15,8 @@ Configuration on demand is an incubating feature.
 > Task :app:preDebugBuild UP-TO-DATE
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
 > Task :app:javaPreCompileDebug FROM-CACHE
-> Task :app:generateDebugResValues FROM-CACHE
 > Task :app:checkDebugAarMetadata
+> Task :app:generateDebugResValues FROM-CACHE
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources FROM-CACHE
 > Task :app:mergeDebugResources FROM-CACHE
@@ -42,11 +42,11 @@ Note: Recompile with -Xlint:deprecation for details.
 > Task :app:dexBuilderDebug
 > Task :app:mergeDebugGlobalSynthetics FROM-CACHE
 > Task :app:processDebugJavaRes NO-SOURCE
-> Task :app:mergeDebugStartupProfile
 > Task :app:checkDebugDuplicateClasses
-> Task :app:mergeDebugJniLibFolders
+> Task :app:mergeDebugStartupProfile
 > Task :app:mergeExtDexDebug FROM-CACHE
 > Task :app:mergeLibDexDebug FROM-CACHE
+> Task :app:mergeDebugJniLibFolders
 > Task :app:mergeDebugNativeLibs NO-SOURCE
 > Task :app:stripDebugDebugSymbols NO-SOURCE
 > Task :app:mergeDebugJavaResource
