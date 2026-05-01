@@ -15,8 +15,8 @@ Configuration on demand is an incubating feature.
 > Task :app:preDebugBuild UP-TO-DATE
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
 > Task :app:javaPreCompileDebug FROM-CACHE
-> Task :app:checkDebugAarMetadata
 > Task :app:generateDebugResValues FROM-CACHE
+> Task :app:checkDebugAarMetadata
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources FROM-CACHE
 > Task :app:mergeDebugResources FROM-CACHE
@@ -58,5 +58,5 @@ Note: Recompile with -Xlint:deprecation for details.
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 16s
+BUILD SUCCESSFUL in 10s
 33 actionable tasks: 18 executed, 15 from cache
