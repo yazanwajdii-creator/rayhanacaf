@@ -1,0 +1,96 @@
+/* DARK MODE - Premium Night Theme */
+body.dark{
+  --bg:#1A1D21;--surf:#22262B;--surf2:#282D33;--surf3:#2E343A;--br:#3A4149;--br2:#4A535C;
+  --tx:#E8E6E3;--tx2:#B8B4AF;--tx3:#8A8580;--tx4:#5A5752;
+  --sap:#60A5FA;--sap-d:#3B82F6;--sap-l:rgba(96,165,250,.1);--sap-m:rgba(96,165,250,.2);
+  --bll:rgba(74,144,164,.12);--gnl:rgba(46,139,87,.12);--ywl:rgba(212,160,23,.12);--rdl:rgba(199,84,80,.12);
+  --gnb:rgba(46,139,87,.2);--ywb:rgba(212,160,23,.2);--rdb:rgba(199,84,80,.2);--blb:rgba(74,144,164,.2);
+  --gnd:#5AC18E;--ywd:#E8C547;--rdd:#E8A5A5;--bld:#7BC4D4;
+  --purl:rgba(123,107,141,.12);
+}
+body.dark .card,body.dark .obl-row,body.dark .att-card,body.dark .sup-card,body.dark .kpi-tile{background:var(--surf);border-color:var(--br)}
+body.dark .card-hd{background:var(--surf2);border-color:var(--br)}
+body.dark th{background:linear-gradient(135deg,#0A0604,#0F172A)}
+body.dark .profit-hero{box-shadow:0 16px 48px rgba(5,150,105,.2),0 0 0 1px rgba(255,255,255,.06) inset}
+body.dark .btn-g{background:linear-gradient(135deg,#047857,#059669);box-shadow:0 2px 8px rgba(5,150,105,.2)}
+body.dark .kpi-v22{background:var(--surf);border-color:var(--br)}
+body.dark .live-stats-bar{background:linear-gradient(135deg,#0A0604 0%,#140E08 50%,#1C1408 100%)}
+body.dark tfoot td{background:linear-gradient(135deg,#0A0604,#0F172A)!important}
+body.dark .fi,body.dark .fs,body.dark .inp,body.dark .att-ri,body.dark .who-sel{background:var(--surf2);border-color:var(--br);color:var(--tx)}
+body.dark .mo-sh{background:#1C2128;border:1px solid var(--br)}
+body.dark .mo-x{background:var(--surf);color:var(--tx2);border:1px solid var(--br)}
+body.dark .btn-ghost{border-color:var(--br2);color:var(--tx2)}
+body.dark .btn-ghost:hover{background:rgba(0,112,242,.1)}
+body.dark tbody tr:hover td{background:rgba(59,130,246,.08)}
+body.dark td{border-color:var(--br);color:var(--tx)}
+body.dark .nav-tabs{background:var(--surf);border-color:var(--br)}
+body.dark .ntab{color:var(--tx3)}
+body.dark .ntab:hover,body.dark .ntab.on{background:rgba(0,112,242,.12);color:#60A5FA}
+body.dark .rpt-line{background:var(--surf);border-color:var(--br)}
+body.dark .rpt-line.ind{background:var(--surf2)}
+body.dark .rpt-line.sub{background:rgba(245,158,11,.12)}
+body.dark .rpt-line.net-p{background:rgba(16,185,129,.15)}
+body.dark .rpt-line.net-n{background:rgba(239,68,68,.15)}
+body.dark .rl-lbl{color:var(--tx2)}
+body.dark .rl-val{color:var(--tx)}
+body.dark .rl-val.cr{color:#34D399}
+body.dark .rl-val.dr{color:#FCA5A5}
+body.dark .rl-val.big{color:var(--tx)}
+body.dark .ect,body.dark .ebt{background:var(--surf2);border-color:var(--br);color:var(--tx3)}
+body.dark .ect.on,body.dark .ect:hover,body.dark .ebt.on,body.dark .ebt:hover{background:rgba(0,112,242,.12);color:#60A5FA;border-color:#3B82F6}
+body.dark .exp-btn{background:var(--surf2);border-color:var(--br);color:var(--tx2)}
+body.dark .exp-btn:hover{background:rgba(0,112,242,.12);border-color:#3B82F6;color:#60A5FA}
+body.dark .td-g{background:rgba(16,185,129,.18);color:#34D399}
+body.dark .td-y{background:rgba(245,158,11,.18);color:#FCD34D}
+body.dark .td-b{background:rgba(59,130,246,.18);color:#93C5FD}
+body.dark .td-r{background:rgba(239,68,68,.18);color:#FCA5A5}
+body.dark .obl-row.paid{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.3)}
+body.dark .obl-toggle{background:rgba(239,68,68,.15)}
+body.dark .obl-toggle.ps{background:rgba(16,185,129,.15)}
+body.dark .obl-name{color:var(--tx)}
+body.dark .att-foot{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.25)}
+body.dark .att-sum-badge{background:var(--surf2);color:var(--tx3)}
+body.dark .att-d{background:var(--surf2);border-color:var(--br);color:var(--tx3)}
+body.dark .att-d.here{background:#059669;border-color:#059669;color:#fff}
+body.dark .kpi-tile{box-shadow:none}
+body.dark .kt-label{color:var(--tx3)}
+body.dark .kt-value{color:var(--tx)}
+body.dark .kt-sub{color:var(--tx3)}
+body.dark .sres{background:var(--surf);border:1px solid var(--br)}
+body.dark .sri{border-color:var(--br);color:var(--tx)}
+body.dark .sri:hover{background:rgba(0,112,242,.1)}
+body.dark .lock-chip{background:var(--surf2);color:var(--tx3);border-color:var(--br)}
+body.dark .lock-chip.locked{background:rgba(239,68,68,.15);color:#FCA5A5;border-color:rgba(239,68,68,.3)}
+body.dark .osb{background:var(--surf2);border-color:var(--br)}
+body.dark .adv-emp-hd{background:var(--surf2);border-color:var(--br)}
+body.dark .adv-emp-name{color:var(--tx)}
+body.dark .adv-block{border-color:var(--br)}
+body.dark .log-item{border-color:var(--br)}
+body.dark .log-t{color:var(--tx3)}
+body.dark .lockbanner{background:var(--surf2);border:1px solid var(--br)}
+body.dark .sup-ico{background:var(--surf2);border-color:var(--br)}
+body.dark .prog{background:var(--br)}
+body.dark .section-label{color:var(--tx3)}
+body.dark .sec-lbl{color:var(--tx3)}
+body.dark .sec-lbl::after{background:var(--br)}
+body.dark .al-i{background:rgba(59,130,246,.12);color:#93C5FD}
+body.dark .al-ok{background:rgba(16,185,129,.12);color:#34D399}
+body.dark .al-w{background:rgba(245,158,11,.12);color:#FCD34D}
+body.dark .al-e{background:rgba(239,68,68,.12);color:#FCA5A5}
+body.dark .ins-g{background:rgba(16,185,129,.12);color:#34D399;border-color:#059669}
+body.dark .ins-b{background:rgba(59,130,246,.12);color:#93C5FD;border-color:#3B82F6}
+body.dark .ins-y{background:rgba(245,158,11,.12);color:#FCD34D;border-color:#D97706}
+body.dark .ins-r{background:rgba(239,68,68,.12);color:#FCA5A5;border-color:#DC2626}
+body.dark .badge.bg-ok{background:rgba(16,185,129,.2);color:#34D399}
+body.dark .badge.bg-e{background:rgba(239,68,68,.2);color:#FCA5A5}
+body.dark .badge.bg-w{background:rgba(245,158,11,.2);color:#FCD34D}
+body.dark .badge.bg-i{background:rgba(59,130,246,.2);color:#93C5FD}
+body.dark .badge.bg-lock{background:var(--surf2);color:var(--tx3)}
+body.dark .fg label{color:var(--tx2)}
+body.dark .mo-title{color:var(--tx)}
+body.dark .rpt-hd{background:#1C2128;color:var(--tx)}
+body.dark .date-filter-bar{background:var(--surf2);border-color:var(--br)}
+body.dark .df-label{color:var(--tx2)}
+body.dark .df-inp,body.dark .df-inp-d{background:var(--surf2);border-color:var(--br);color:var(--tx)}
+
+
