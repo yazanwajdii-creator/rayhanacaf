@@ -6105,12 +6105,9 @@ renderAll=function(){
 
 var _saOrig=saveAll;
 saveAll=function(){
-  try{
-    if(!S.targets)S.targets={};
-    if(!S.inventory)S.inventory=[];
-    var sv={months:S.months,suppliers:S.suppliers,activeKey:S.activeKey,lockedMonths:S.lockedMonths||[],dailyEmps:S.dailyEmps,monthlyEmps:S.monthlyEmps,targets:S.targets,inventory:S.inventory};
-    safeLS.setItem(SK,JSON.stringify(sv));
-  }catch(e){}
+  if(!S.targets)S.targets={};
+  if(!S.inventory)S.inventory=[];
+  _saOrig();
 };
 
 var _lsOrig=loadStore;
@@ -10609,7 +10606,9 @@ async function supaSync(direction){
     if(sv.suppliers&&sv.suppliers.length) S.suppliers=sv.suppliers;
     if(sv.targets&&Object.keys(sv.targets).length) S.targets=sv.targets;
     if(sv.inventory&&sv.inventory.length) S.inventory=sv.inventory;
+    _supaIsPulling = true;
     saveAll();
+    _supaIsPulling = false;
     // تحديث واجهة الشهر قبل الرسم
     if(typeof buildMonthSel==='function') buildMonthSel();
     var mSel=document.getElementById('monthSel');
@@ -10764,6 +10763,7 @@ function copySupaSQL(){
 var _supaRetryCount = 0;
 var _supaRetryTimer = null;
 var _supaLastErrorMsg = '';
+var _supaIsPulling = false;
 
 function supaHandleSyncError(e) {
   _supaRetryCount++;
@@ -10805,7 +10805,7 @@ function supaHandleSyncError(e) {
 var _origSaveAll = saveAll;
 saveAll = function(){
   _origSaveAll();
-  if(SUPA){
+  if(SUPA && !_supaIsPulling){
     // debounce 3s — خاصية المزامنة لا تُشغَّل حتى يهدأ المستخدم
     if(window._supaDebounce) clearTimeout(window._supaDebounce);
     window._supaDebounce = setTimeout(function(){
