@@ -341,113 +341,13 @@ function renderEmployeeReport() {
   container.innerHTML = html;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* V24-3 PRO: وضع العرض (Presentation Mode)                                    */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-function enterPresentationMode() {
-  document.body.classList.add('presentation-mode');
-  
-  var calc = getCalc();
-  var analysis = analyzeTrends();
-  
-  // إنشاء واجهة العرض
-  var html = '<button class="presentation-exit" onclick="exitPresentationMode()">✕ خروج</button>';
-  html += '<div class="presentation-dashboard">';
-  
-  // Header
-  html += '<div class="presentation-header">';
-  html += '<div class="presentation-logo">☕ ريحانة كافيه</div>';
-  html += '<div style="text-align:left"><div class="presentation-time" id="presTime"></div><div class="presentation-date" id="presDate"></div></div>';
-  html += '</div>';
-  
-  // Card 1: الإيراد
-  html += '<div class="presentation-card">';
-  html += '<div class="presentation-card-title">💰 إيراد الشهر</div>';
-  html += '<div class="presentation-big-number positive">' + n3(calc.revenue) + ' JD</div>';
-  html += '<div style="text-align:center;color:var(--tx3)">متوسط يومي: ' + n3(calc.avgDaily) + ' JD</div>';
-  html += '</div>';
-  
-  // Card 2: الربح
-  html += '<div class="presentation-card">';
-  html += '<div class="presentation-card-title">📊 صافي الربح</div>';
-  html += '<div class="presentation-big-number ' + (calc.profit >= 0 ? 'positive' : 'negative') + '">' + n3(calc.profit) + ' JD</div>';
-  html += '<div style="text-align:center;color:var(--tx3)">هامش الربح: ' + calc.margin.toFixed(1) + '%</div>';
-  html += '</div>';
-  
-  // Card 3: الاتجاه
-  var trendIcon = analysis.trend === 'up' ? '📈' : analysis.trend === 'down' ? '📉' : '➡️';
-  var hasGrowthData = analysis.trend !== 'insufficient' && typeof analysis.avgGrowth === 'number';
-  html += '<div class="presentation-card">';
-  html += '<div class="presentation-card-title">' + trendIcon + ' اتجاه النمو</div>';
-  if (hasGrowthData) {
-    html += '<div class="presentation-big-number" style="color:' + (analysis.avgGrowth >= 0 ? 'var(--gn)' : 'var(--rd)') + '">' + (analysis.avgGrowth >= 0 ? '+' : '') + analysis.avgGrowth.toFixed(1) + '%</div>';
-    html += '<div style="text-align:center;color:var(--tx3)">توقع الشهر القادم: ' + n3(analysis.forecast) + ' JD</div>';
-  } else {
-    html += '<div class="presentation-big-number" style="color:var(--tx3)">—</div>';
-    html += '<div style="text-align:center;color:var(--tx3)">بيانات غير كافية (يحتاج شهرين)</div>';
-  }
-  html += '</div>';
-  
-  // Card 4: مؤشر الصحة
-  html += '<div class="presentation-card">';
-  html += '<div class="presentation-card-title">❤️ مؤشر الصحة المالية</div>';
-  html += '<div class="presentation-big-number" style="color:' + (calc.healthScore >= 70 ? 'var(--gn)' : calc.healthScore >= 40 ? 'var(--gold)' : 'var(--rd)') + '">' + calc.healthScore + '/100</div>';
-  html += '<div style="text-align:center;color:var(--tx3)">' + (calc.healthScore >= 70 ? 'ممتاز' : calc.healthScore >= 40 ? 'جيد' : 'يحتاج تحسين') + '</div>';
-  html += '</div>';
-  
-  html += '</div>';
-  
-  // إضافة العناصر
-  var overlay = document.createElement('div');
-  overlay.id = 'presentationOverlay';
-  overlay.innerHTML = html;
-  document.body.appendChild(overlay);
-  
-  // تحديث الوقت
-  function updatePresTime() {
-    var now = new Date();
-    var timeEl = document.getElementById('presTime');
-    var dateEl = document.getElementById('presDate');
-    if (timeEl) timeEl.textContent = now.toLocaleTimeString('ar-JO', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-    if (dateEl) dateEl.textContent = now.toLocaleDateString('ar-JO', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
-  }
-  updatePresTime();
-  window.presInterval = setInterval(updatePresTime, 1000);
-  
-  // الخروج بضغط Escape
-  document.addEventListener('keydown', function escHandler(e) {
-    if (e.key === 'Escape') {
-      exitPresentationMode();
-      document.removeEventListener('keydown', escHandler);
-    }
-  });
-}
 
-function exitPresentationMode() {
-  document.body.classList.remove('presentation-mode');
-  var overlay = document.getElementById('presentationOverlay');
-  if (overlay) overlay.remove();
-  if (window.presInterval) clearInterval(window.presInterval);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* V24-3 PRO: تهيئة الميزات الجديدة                                            */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-var _v24Interval = null;
 function initV24Features() {
-  debugLog('🚀 V24-3 Features Initializing...');
-
   setTimeout(function() {
-    renderTrendAnalysis();
-    renderMonthComparison();
-    renderEmployeeReport();
-  }, 500);
-
-  if (_v24Interval) clearInterval(_v24Interval);
-  _v24Interval = setInterval(function() {
-    renderTrendAnalysis();
-    renderMonthComparison();
-  }, 60000);
+    try{ renderTrendAnalysis(); }catch(e){}
+    try{ renderMonthComparison(); }catch(e){}
+    try{ renderEmployeeReport(); }catch(e){}
+  }, 300);
 }
 
 // تركيز تلقائي على حقل الباسورد
@@ -455,33 +355,6 @@ document.addEventListener('DOMContentLoaded', function(){
   var pw = document.getElementById('pwdInput');
   if(pw) setTimeout(function(){ pw.focus(); }, 300);
 });
-
-// إضافة زر وضع العرض
-setTimeout(function() {
-  var fabContainer = document.querySelector('.fab-container');
-  if (fabContainer && !document.getElementById('fabPresentation')) {
-    var presBtn = document.createElement('div');
-    presBtn.id = 'fabPresentation';
-    presBtn.className = 'fab-btn';
-    presBtn.innerHTML = '📺';
-    presBtn.title = 'وضع العرض';
-    presBtn.onclick = enterPresentationMode;
-    presBtn.style.background = 'linear-gradient(135deg, #8B5CF6, #6366F1)';
-    fabContainer.insertBefore(presBtn, fabContainer.firstChild);
-  }
-  
-  // إضافة زر النسخ الاحتياطي
-  if (fabContainer && !document.getElementById('fabBackup')) {
-    var backupBtn = document.createElement('div');
-    backupBtn.id = 'fabBackup';
-    backupBtn.className = 'fab-btn';
-    backupBtn.innerHTML = '💾';
-    backupBtn.title = 'النسخ الاحتياطي';
-    backupBtn.onclick = showBackupManager;
-    backupBtn.style.background = 'linear-gradient(135deg, #10B981, #059669)';
-    fabContainer.insertBefore(backupBtn, fabContainer.firstChild);
-  }
-}, 2000);
 
 /* ═══════════════════════════════════════════════════════════════════════
    ريحانة V25 — SUPABASE SYNC ENGINE

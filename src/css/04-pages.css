@@ -468,27 +468,6 @@ body.dark .wg-day.low{background:rgba(199,84,80,.15)}
 /* ═══════════════════════════════════════════════════════════════ */
 /* SMART NOTIFICATIONS CENTER                                       */
 /* ═══════════════════════════════════════════════════════════════ */
-.notif-center{position:fixed;top:58px;left:14px;width:320px;max-height:400px;background:var(--surf);border:1px solid var(--br);border-radius:16px;box-shadow:var(--sh3);z-index:600;display:none;overflow:hidden}
-.notif-center.open{display:block;animation:notifslide .3s ease-out}
-@keyframes notifslide{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-.nc-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--br);background:var(--surf2)}
-.nc-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
-.nc-badge{background:var(--rd);color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
-.nc-clear{background:none;border:none;color:var(--tx3);font-size:11px;cursor:pointer}
-.nc-list{max-height:320px;overflow-y:auto}
-.nc-item{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--br);transition:background .15s}
-.nc-item:hover{background:var(--surf2)}
-.nc-item.unread{background:var(--sap-l)}
-.nc-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.nc-icon.warn{background:var(--ywl)}
-.nc-icon.error{background:var(--rdl)}
-.nc-icon.info{background:var(--bll)}
-.nc-icon.success{background:var(--gnl)}
-.nc-content{flex:1;min-width:0}
-.nc-msg{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:3px}
-.nc-time{font-size:10px;color:var(--tx3)}
-.nc-empty{text-align:center;padding:40px 20px;color:var(--tx3)}
-.nc-empty-icon{font-size:40px;margin-bottom:10px;opacity:.5}
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* COMPARISON WITH PREVIOUS MONTH                                   */
@@ -506,28 +485,6 @@ body.dark .wg-day.low{background:rgba(199,84,80,.15)}
 .spark-bar{width:6px;background:var(--gold);border-radius:2px;transition:height .5s ease-out}
 .spark-bar.negative{background:var(--rd)}
 
-/* ═══════════════════════════════════════════════════════════════ */
-/* PRESENTATION MODE                                                 */
-/* ═══════════════════════════════════════════════════════════════ */
-body.presentation-mode .topbar,
-body.presentation-mode .nav-tabs,
-body.presentation-mode .fab,
-body.presentation-mode .btn-row{display:none!important}
-body.presentation-mode .main{padding:20px}
-body.presentation-mode .card{border-radius:20px;box-shadow:var(--sh3)}
-body.presentation-mode .kpi-tile{transform:scale(1.05)}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* KEYBOARD SHORTCUTS OVERLAY                                        */
-/* ═══════════════════════════════════════════════════════════════ */
-.shortcuts-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9000;display:none;align-items:center;justify-content:center}
-.shortcuts-overlay.show{display:flex}
-.shortcuts-box{background:var(--surf);border-radius:20px;padding:24px;max-width:400px;width:90%}
-.shortcuts-title{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.shortcut-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--br)}
-.shortcut-key{display:flex;gap:4px}
-.shortcut-key kbd{padding:4px 8px;background:var(--surf2);border:1px solid var(--br);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600}
-.shortcut-desc{font-size:12px;color:var(--tx2)}
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* FLOATING ACTION BUTTONS                                           */

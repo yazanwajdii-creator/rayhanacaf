@@ -174,9 +174,7 @@ async function supaSync(direction){
       var _localT = new Date(_localLastPush).getTime();
       var _remoteT = new Date(sv.savedAt).getTime();
       if(_localT > _remoteT + 60000){
-        // Local push is newer than cloud by more than 1 minute — warn via toast
         toast('⚠️ تنبيه: بياناتك المحلية أحدث من السحابة — تحقق من آخر رفع');
-        addNotification('warn','تحذير تعارض: آخر رفع محلي أحدث من بيانات السحابة المُحمَّلة');
       }
     }
     if(sv.months) Object.keys(sv.months).forEach(function(k){S.months[k]=sv.months[k];});
@@ -444,9 +442,6 @@ function supaHandleSyncError(e) {
     var finalMsg = '❌ تعذّر الوصول للسحابة — بياناتك محفوظة محلياً فقط';
     toast(finalMsg);
     supaSetStatus('error', finalMsg);
-    if (typeof addNotification === 'function') {
-      addNotification('warn', finalMsg);
-    }
   }
 }
 

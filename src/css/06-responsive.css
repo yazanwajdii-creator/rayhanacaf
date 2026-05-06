@@ -64,69 +64,6 @@
   .mo-sh{max-height:80vh;padding:12px 15px 20px}
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* V24-3 PRO: وضع العرض للشاشات الكبيرة / التلفزيون                           */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-body.presentation-mode{
-  background:linear-gradient(135deg,#0F0604 0%,#1a0f0a 50%,#0F0604 100%)!important;
-  overflow:hidden
-}
-body.presentation-mode .topbar,
-body.presentation-mode .nav-tabs,
-body.presentation-mode .fab-container{display:none!important}
-body.presentation-mode .pg{padding:0!important}
-body.presentation-mode .presentation-dashboard{
-  display:grid!important;
-  grid-template-columns:1fr 1fr;
-  grid-template-rows:auto 1fr 1fr;
-  gap:20px;
-  padding:30px;
-  height:100vh;
-  box-sizing:border-box
-}
-.presentation-header{
-  grid-column:1/-1;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:20px 30px;
-  background:linear-gradient(135deg,rgba(200,146,15,.15),rgba(139,90,43,.1));
-  border-radius:20px;
-  border:1px solid rgba(200,146,15,.3)
-}
-.presentation-logo{font-size:32px;font-weight:800;color:#C8920F;display:flex;align-items:center;gap:15px}
-.presentation-logo img{width:50px;height:50px}
-.presentation-time{font-size:48px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#fff}
-.presentation-date{font-size:18px;color:rgba(255,255,255,.6)}
-.presentation-card{
-  background:var(--surf);
-  border-radius:24px;
-  padding:24px;
-  border:1px solid var(--br);
-  display:flex;
-  flex-direction:column
-}
-.presentation-card-title{font-size:18px;font-weight:700;color:var(--tx);margin-bottom:16px;display:flex;align-items:center;gap:10px}
-.presentation-big-number{font-size:56px;font-weight:800;font-family:'IBM Plex Mono',monospace;text-align:center;padding:20px 0}
-.presentation-big-number.positive{color:#10B981}
-.presentation-big-number.negative{color:#EF4444}
-.presentation-chart{flex:1;min-height:200px}
-.presentation-exit{
-  position:fixed;
-  top:20px;
-  right:20px;
-  background:rgba(0,0,0,.5);
-  color:#fff;
-  border:none;
-  padding:10px 20px;
-  border-radius:10px;
-  cursor:pointer;
-  font-size:14px;
-  z-index:9999;
-  opacity:0;
-  transition:opacity .3s
-}
-body.presentation-mode:hover .presentation-exit{opacity:1}
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* V24-3 PRO: Sparkline Charts                                                 */

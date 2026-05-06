@@ -142,7 +142,7 @@ function doLogin(role) {
       try { updateDailyInsights(); } catch(e) { console.log('Insights:', e); }
       try { updateQuickInsights(); } catch(e) { console.log('QuickIns:', e); }
       try { startAutoSave(); } catch(e) { console.log('AutoSave:', e); }
-      try { initV24Features(); } catch(e) { console.log('V24:', e); }
+      try { initV24Features(); } catch(e) {}
     // Supabase: تهيئة وتحميل بعد الدخول
     try {
       supaInit();

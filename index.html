@@ -693,27 +693,6 @@ body.dark .wg-day.low{background:rgba(199,84,80,.15)}
 /* ═══════════════════════════════════════════════════════════════ */
 /* SMART NOTIFICATIONS CENTER                                       */
 /* ═══════════════════════════════════════════════════════════════ */
-.notif-center{position:fixed;top:58px;left:14px;width:320px;max-height:400px;background:var(--surf);border:1px solid var(--br);border-radius:16px;box-shadow:var(--sh3);z-index:600;display:none;overflow:hidden}
-.notif-center.open{display:block;animation:notifslide .3s ease-out}
-@keyframes notifslide{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-.nc-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--br);background:var(--surf2)}
-.nc-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
-.nc-badge{background:var(--rd);color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
-.nc-clear{background:none;border:none;color:var(--tx3);font-size:11px;cursor:pointer}
-.nc-list{max-height:320px;overflow-y:auto}
-.nc-item{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--br);transition:background .15s}
-.nc-item:hover{background:var(--surf2)}
-.nc-item.unread{background:var(--sap-l)}
-.nc-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.nc-icon.warn{background:var(--ywl)}
-.nc-icon.error{background:var(--rdl)}
-.nc-icon.info{background:var(--bll)}
-.nc-icon.success{background:var(--gnl)}
-.nc-content{flex:1;min-width:0}
-.nc-msg{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:3px}
-.nc-time{font-size:10px;color:var(--tx3)}
-.nc-empty{text-align:center;padding:40px 20px;color:var(--tx3)}
-.nc-empty-icon{font-size:40px;margin-bottom:10px;opacity:.5}
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* COMPARISON WITH PREVIOUS MONTH                                   */
@@ -731,28 +710,6 @@ body.dark .wg-day.low{background:rgba(199,84,80,.15)}
 .spark-bar{width:6px;background:var(--gold);border-radius:2px;transition:height .5s ease-out}
 .spark-bar.negative{background:var(--rd)}
 
-/* ═══════════════════════════════════════════════════════════════ */
-/* PRESENTATION MODE                                                 */
-/* ═══════════════════════════════════════════════════════════════ */
-body.presentation-mode .topbar,
-body.presentation-mode .nav-tabs,
-body.presentation-mode .fab,
-body.presentation-mode .btn-row{display:none!important}
-body.presentation-mode .main{padding:20px}
-body.presentation-mode .card{border-radius:20px;box-shadow:var(--sh3)}
-body.presentation-mode .kpi-tile{transform:scale(1.05)}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* KEYBOARD SHORTCUTS OVERLAY                                        */
-/* ═══════════════════════════════════════════════════════════════ */
-.shortcuts-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9000;display:none;align-items:center;justify-content:center}
-.shortcuts-overlay.show{display:flex}
-.shortcuts-box{background:var(--surf);border-radius:20px;padding:24px;max-width:400px;width:90%}
-.shortcuts-title{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.shortcut-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--br)}
-.shortcut-key{display:flex;gap:4px}
-.shortcut-key kbd{padding:4px 8px;background:var(--surf2);border:1px solid var(--br);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600}
-.shortcut-desc{font-size:12px;color:var(--tx2)}
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* FLOATING ACTION BUTTONS                                           */
@@ -1303,69 +1260,6 @@ body.dark .df-inp,body.dark .df-inp-d{background:var(--surf2);border-color:var(-
   .mo-sh{max-height:80vh;padding:12px 15px 20px}
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* V24-3 PRO: وضع العرض للشاشات الكبيرة / التلفزيون                           */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-body.presentation-mode{
-  background:linear-gradient(135deg,#0F0604 0%,#1a0f0a 50%,#0F0604 100%)!important;
-  overflow:hidden
-}
-body.presentation-mode .topbar,
-body.presentation-mode .nav-tabs,
-body.presentation-mode .fab-container{display:none!important}
-body.presentation-mode .pg{padding:0!important}
-body.presentation-mode .presentation-dashboard{
-  display:grid!important;
-  grid-template-columns:1fr 1fr;
-  grid-template-rows:auto 1fr 1fr;
-  gap:20px;
-  padding:30px;
-  height:100vh;
-  box-sizing:border-box
-}
-.presentation-header{
-  grid-column:1/-1;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:20px 30px;
-  background:linear-gradient(135deg,rgba(200,146,15,.15),rgba(139,90,43,.1));
-  border-radius:20px;
-  border:1px solid rgba(200,146,15,.3)
-}
-.presentation-logo{font-size:32px;font-weight:800;color:#C8920F;display:flex;align-items:center;gap:15px}
-.presentation-logo img{width:50px;height:50px}
-.presentation-time{font-size:48px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#fff}
-.presentation-date{font-size:18px;color:rgba(255,255,255,.6)}
-.presentation-card{
-  background:var(--surf);
-  border-radius:24px;
-  padding:24px;
-  border:1px solid var(--br);
-  display:flex;
-  flex-direction:column
-}
-.presentation-card-title{font-size:18px;font-weight:700;color:var(--tx);margin-bottom:16px;display:flex;align-items:center;gap:10px}
-.presentation-big-number{font-size:56px;font-weight:800;font-family:'IBM Plex Mono',monospace;text-align:center;padding:20px 0}
-.presentation-big-number.positive{color:#10B981}
-.presentation-big-number.negative{color:#EF4444}
-.presentation-chart{flex:1;min-height:200px}
-.presentation-exit{
-  position:fixed;
-  top:20px;
-  right:20px;
-  background:rgba(0,0,0,.5);
-  color:#fff;
-  border:none;
-  padding:10px 20px;
-  border-radius:10px;
-  cursor:pointer;
-  font-size:14px;
-  z-index:9999;
-  opacity:0;
-  transition:opacity .3s
-}
-body.presentation-mode:hover .presentation-exit{opacity:1}
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* V24-3 PRO: Sparkline Charts                                                 */
@@ -1803,20 +1697,7 @@ body.dark .ss-card{background:var(--surf)}
     <div class="si-text">تم الحفظ</div>
   </div>
   
-  <!-- مركز الإشعارات -->
-  <div id="notifCenter" class="notif-center">
-    <div class="nc-header">
-      <div class="nc-title">🔔 الإشعارات <span class="nc-badge" id="notifCount">0</span></div>
-      <button class="nc-clear" onclick="clearNotifications()">مسح الكل</button>
-    </div>
-    <div class="nc-list" id="notifList">
-      <div class="nc-empty">
-        <div class="nc-empty-icon">🔔</div>
-        <div>لا توجد إشعارات</div>
-      </div>
-    </div>
-  </div>
-  
+
   <!-- أزرار الإجراءات السريعة -->
   <div class="fab-container">
     <button class="fab-btn fab-secondary" onclick="showBackups()" title="النسخ الاحتياطية">
@@ -1880,21 +1761,6 @@ body.dark .ss-card{background:var(--surf)}
     </div>
   </div>
   
-  <!-- نافذة الاختصارات -->
-  <div id="shortcutsOverlay" class="shortcuts-overlay" onclick="if(event.target===this)hideShortcuts()">
-    <div class="shortcuts-box">
-      <div class="shortcuts-title">⌨️ اختصارات لوحة المفاتيح</div>
-      <div class="shortcut-row"><span class="shortcut-desc">حفظ يدوي</span><span class="shortcut-key"><kbd>Ctrl</kbd><kbd>S</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">لوحة التحكم</span><span class="shortcut-key"><kbd>1</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">الإيرادات</span><span class="shortcut-key"><kbd>2</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">المشتريات</span><span class="shortcut-key"><kbd>3</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">التقارير</span><span class="shortcut-key"><kbd>4</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">الوضع الليلي</span><span class="shortcut-key"><kbd>D</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">بحث</span><span class="shortcut-key"><kbd>/</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">إغلاق</span><span class="shortcut-key"><kbd>Esc</kbd></span></div>
-      <div style="text-align:center;margin-top:16px"><button class="btn btn-ghost" onclick="hideShortcuts()">إغلاق</button></div>
-    </div>
-  </div>
 
   <div class="topbar" style="position:relative">
     <div class="tb-logo" onclick="pg('dash',document.querySelector('.ntab'))" style="cursor:pointer"><div class="tb-ico"><svg viewBox="0 0 30 30" width="18" height="18" xmlns="http://www.w3.org/2000/svg"><line x1="15" y1="25" x2="15" y2="10" stroke="#C17F24" stroke-width="1.8" stroke-linecap="round"/><path d="M15 21 Q11 18 6 20 Q9 24 15 21Z" fill="#7EC89A"/><path d="M15 21 Q19 18 24 20 Q21 24 15 21Z" fill="#7EC89A"/><path d="M15 16 Q12 13 7 14 Q10 18 15 16Z" fill="#7EC89A"/><path d="M15 16 Q18 13 23 14 Q20 18 15 16Z" fill="#7EC89A"/><circle cx="15" cy="9" r="2.2" fill="#C17F24"/><circle cx="11" cy="12" r="1.6" fill="#C17F24"/><circle cx="19" cy="12" r="1.6" fill="#C17F24"/></svg></div><div class="tb-name">ريحانة</div></div>
@@ -1908,10 +1774,6 @@ body.dark .ss-card{background:var(--surf)}
     <div class="tb-right">
       <div id="syncPill" style="display:none;align-items:center;gap:4px;background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);border-radius:6px;padding:3px 8px;font-size:10.5px;font-weight:600;color:#5AC18E;white-space:nowrap;transition:all .3s"><span id="syncPillDot" style="width:5px;height:5px;border-radius:50%;background:#5AC18E;display:inline-block"></span><span id="syncPillTxt">محفوظ</span></div>
       <button class="tbtn" id="syncRefreshBtn" onclick="tbSyncRefresh()" title="تحديث البيانات من السحابة" style="font-size:13px;display:none">🔄</button>
-      <button class="tbtn" onclick="toggleNotifications()" title="الإشعارات" id="notifBtn" style="position:relative">
-        🔔
-        <span id="notifDot" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--rd);border-radius:50%"></span>
-      </button>
       <select class="msel" id="monthSel" onchange="switchMonth(this.value)"></select>
       <button class="tbtn" onclick="toggleDark()" title="الوضع الليلي" id="darkBtn">🌙</button>
       <div class="uchip" onclick="lockApp()" title="قفل التطبيق" style="padding:3px 8px;gap:4px"><div class="udot"></div><span id="uname" style="max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">مدير</span></div>
@@ -3714,7 +3576,7 @@ function doLogin(role) {
       try { updateDailyInsights(); } catch(e) { console.log('Insights:', e); }
       try { updateQuickInsights(); } catch(e) { console.log('QuickIns:', e); }
       try { startAutoSave(); } catch(e) { console.log('AutoSave:', e); }
-      try { initV24Features(); } catch(e) { console.log('V24:', e); }
+      try { initV24Features(); } catch(e) {}
     // Supabase: تهيئة وتحميل بعد الدخول
     try {
       supaInit();
@@ -4013,203 +3875,30 @@ function doSearch(q){
 }
 function closeSearch(){$("sres").classList.remove("open");$("gSearch").value="";}
 
-// SMART NOTIFICATIONS SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════
-
-let notifications = [];
-
-function toggleNotifications() {
-  var nc = document.getElementById('notifCenter');
-  if (nc) nc.classList.toggle('open');
-}
-
-function addNotification(type, message) {
-  notifications.unshift({
-    id: Date.now(),
-    type: type,
-    message: message,
-    time: new Date(),
-    read: false
-  });
-  
-  // الاحتفاظ بآخر 20 إشعار
-  if (notifications.length > 20) notifications.pop();
-  
-  renderNotifications();
-  updateNotifBadge();
-}
-
-function renderNotifications() {
-  var list = document.getElementById('notifList');
-  if (!list) return;
-  
-  if (notifications.length === 0) {
-    list.innerHTML = '<div class="nc-empty"><div class="nc-empty-icon">🔔</div><div>لا توجد إشعارات</div></div>';
-    return;
-  }
-  
-  list.innerHTML = notifications.map(function(n) {
-    var iconClass = n.type === 'warn' ? 'warn' : n.type === 'error' ? 'error' : n.type === 'success' ? 'success' : 'info';
-    var icon = n.type === 'warn' ? '⚠️' : n.type === 'error' ? '❌' : n.type === 'success' ? '✅' : 'ℹ️';
-    var timeAgo = getTimeAgo(n.time);
-    
-    return '<div class="nc-item ' + (n.read ? '' : 'unread') + '" onclick="markNotifRead(' + n.id + ')"><div class="nc-icon ' + iconClass + '">' + icon + '</div><div class="nc-content"><div class="nc-msg">' + n.message + '</div><div class="nc-time">' + timeAgo + '</div></div></div>';
-  }).join('');
-}
-
-function markNotifRead(id) {
-  var n = notifications.find(function(x) { return x.id === id; });
-  if (n) n.read = true;
-  renderNotifications();
-  updateNotifBadge();
-}
-
-function clearNotifications() {
-  notifications = [];
-  renderNotifications();
-  updateNotifBadge();
-}
-
-function updateNotifBadge() {
-  var count = notifications.filter(function(n) { return !n.read; }).length;
-  var badge = document.getElementById('notifCount');
-  var dot = document.getElementById('notifDot');
-  
-  if (badge) badge.textContent = count;
-  if (dot) dot.style.display = count > 0 ? 'block' : 'none';
-}
-
-function getTimeAgo(date) {
-  var seconds = Math.floor((new Date() - date) / 1000);
-  if (seconds < 60) return 'الآن';
-  if (seconds < 3600) return Math.floor(seconds / 60) + ' دقيقة';
-  if (seconds < 86400) return Math.floor(seconds / 3600) + ' ساعة';
-  return Math.floor(seconds / 86400) + ' يوم';
-}
-
-// التنبيهات الذكية
-function checkSmartAlerts() {
-  var t = totals(), d = G();
-  var active = d.sales.filter(function(s) { return (s.cash||0)+(s.visa||0)+(s.pmts||0) > 0; });
-  var avg = active.length ? t.rev / active.length : 0;
-  
-  // تنبيه هامش ربح منخفض
-  if (t.margin < 5 && t.rev > 0) {
-    var existing = notifications.find(function(n) { return n.message.indexOf('هامش الربح') > -1; });
-    if (!existing) {
-      addNotification('warn', 'هامش الربح منخفض جداً (' + t.margin.toFixed(1) + '%) - راجع التكاليف');
-    }
-  }
-  
-  // تنبيه التزامات غير مسددة
-  var unpaid = d.obligations.filter(function(o) { return !o.paid && o.amt > 0; });
-  if (unpaid.length >= 3) {
-    var existing = notifications.find(function(n) { return n.message.indexOf('التزامات') > -1; });
-    if (!existing) {
-      addNotification('warn', unpaid.length + ' التزامات غير مسددة بإجمالي ' + n3(unpaid.reduce(function(s,o){return s+o.amt},0)) + ' JD');
-    }
-  }
-  
-  // تنبيه المخزون المنخفض
-  if (S.inventory) {
-    var lowItems = S.inventory.filter(function(i) { return i.qty <= (i.min || 0); });
-    if (lowItems.length > 0) {
-      var existing = notifications.find(function(n) { return n.message.indexOf('مخزون') > -1; });
-      if (!existing) {
-        addNotification('error', lowItems.length + ' أصناف في المخزون تحتاج إعادة طلب');
-      }
-    }
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// COMPARISON WITH PREVIOUS MONTH
-// ═══════════════════════════════════════════════════════════════════════════
-
-function showShortcuts() {
-  var overlay = document.getElementById('shortcutsOverlay');
-  if (overlay) overlay.classList.add('show');
-}
-
-function hideShortcuts() {
-  var overlay = document.getElementById('shortcutsOverlay');
-  if (overlay) overlay.classList.remove('show');
-}
 
 document.addEventListener('keydown', function(e) {
-  // تجاهل إذا كان المستخدم يكتب في حقل
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-  
-  // Ctrl + S للحفظ
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault();
-    performAutoSave();
+    try{ saveAll(); }catch(ex){}
     toast('💾 تم الحفظ');
   }
-  
-  // مفاتيح الأرقام للتنقل
-  if (!e.ctrlKey && !e.altKey) {
-    var tabs = document.querySelectorAll('.ntab');
-    if (e.key === '1' && tabs[0]) { tabs[0].click(); }
-    if (e.key === '2' && tabs[1]) { tabs[1].click(); }
-    if (e.key === '3' && tabs[2]) { tabs[2].click(); }
-    if (e.key === '4' && tabs[3]) { tabs[3].click(); }
-  }
-  
-  // D للوضع الليلي
-  if (e.key === 'd' || e.key === 'D') {
-    toggleDark();
-  }
-  
-  // / للبحث
-  if (e.key === '/') {
-    e.preventDefault();
-    var search = document.getElementById('gSearch');
-    if (search) search.focus();
-  }
-  
-  // ? لعرض الاختصارات
-  if (e.key === '?') {
-    showShortcuts();
-  }
-  
-  // Escape للإغلاق
   if (e.key === 'Escape') {
-    hideShortcuts();
-    var nc = document.getElementById('notifCenter');
-    if (nc) nc.classList.remove('open');
+    document.querySelectorAll('.mo-ov.open').forEach(function(el){ cmo(el.id); });
   }
 });
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PRESENTATION MODE
-// ═══════════════════════════════════════════════════════════════════════════
-
-function togglePresentationMode() {
-  document.body.classList.toggle('presentation-mode');
-  var isOn = document.body.classList.contains('presentation-mode');
-  toast(isOn ? '📺 وضع العرض - اضغط ESC للخروج' : '📺 الوضع العادي');
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// SPARKLINES
-// ═══════════════════════════════════════════════════════════════════════════
 
 function createSparkline(containerId, data) {
   var container = document.getElementById(containerId);
   if (!container || !data || !data.length) return;
-  
   var max = Math.max.apply(null, data);
   if (max === 0) max = 1;
-  
   container.innerHTML = data.slice(-10).map(function(v) {
     var height = Math.max(4, (v / max * 100));
-    var cls = v >= 0 ? '' : 'negative';
-    return '<div class="spark-bar ' + cls + '" style="height:' + height + '%"></div>';
+    return '<div class="spark-bar' + (v < 0 ? ' negative' : '') + '" style="height:' + height + '%"></div>';
   }).join('');
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
 /* TOTALS ENGINE */
 /* ═══════════════════════════════════════════════════════════════════════════
    V24-2 FIX: إصلاحات محاسبية حرجة
@@ -7829,9 +7518,7 @@ async function supaSync(direction){
       var _localT = new Date(_localLastPush).getTime();
       var _remoteT = new Date(sv.savedAt).getTime();
       if(_localT > _remoteT + 60000){
-        // Local push is newer than cloud by more than 1 minute — warn via toast
         toast('⚠️ تنبيه: بياناتك المحلية أحدث من السحابة — تحقق من آخر رفع');
-        addNotification('warn','تحذير تعارض: آخر رفع محلي أحدث من بيانات السحابة المُحمَّلة');
       }
     }
     if(sv.months) Object.keys(sv.months).forEach(function(k){S.months[k]=sv.months[k];});
@@ -8099,9 +7786,6 @@ function supaHandleSyncError(e) {
     var finalMsg = '❌ تعذّر الوصول للسحابة — بياناتك محفوظة محلياً فقط';
     toast(finalMsg);
     supaSetStatus('error', finalMsg);
-    if (typeof addNotification === 'function') {
-      addNotification('warn', finalMsg);
-    }
   }
 }
 
@@ -10332,113 +10016,13 @@ function renderEmployeeReport() {
   container.innerHTML = html;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* V24-3 PRO: وضع العرض (Presentation Mode)                                    */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-function enterPresentationMode() {
-  document.body.classList.add('presentation-mode');
-  
-  var calc = getCalc();
-  var analysis = analyzeTrends();
-  
-  // إنشاء واجهة العرض
-  var html = '<button class="presentation-exit" onclick="exitPresentationMode()">✕ خروج</button>';
-  html += '<div class="presentation-dashboard">';
-  
-  // Header
-  html += '<div class="presentation-header">';
-  html += '<div class="presentation-logo">☕ ريحانة كافيه</div>';
-  html += '<div style="text-align:left"><div class="presentation-time" id="presTime"></div><div class="presentation-date" id="presDate"></div></div>';
-  html += '</div>';
-  
-  // Card 1: الإيراد
-  html += '<div class="presentation-card">';
-  html += '<div class="presentation-card-title">💰 إيراد الشهر</div>';
-  html += '<div class="presentation-big-number positive">' + n3(calc.revenue) + ' JD</div>';
-  html += '<div style="text-align:center;color:var(--tx3)">متوسط يومي: ' + n3(calc.avgDaily) + ' JD</div>';
-  html += '</div>';
-  
-  // Card 2: الربح
-  html += '<div class="presentation-card">';
-  html += '<div class="presentation-card-title">📊 صافي الربح</div>';
-  html += '<div class="presentation-big-number ' + (calc.profit >= 0 ? 'positive' : 'negative') + '">' + n3(calc.profit) + ' JD</div>';
-  html += '<div style="text-align:center;color:var(--tx3)">هامش الربح: ' + calc.margin.toFixed(1) + '%</div>';
-  html += '</div>';
-  
-  // Card 3: الاتجاه
-  var trendIcon = analysis.trend === 'up' ? '📈' : analysis.trend === 'down' ? '📉' : '➡️';
-  var hasGrowthData = analysis.trend !== 'insufficient' && typeof analysis.avgGrowth === 'number';
-  html += '<div class="presentation-card">';
-  html += '<div class="presentation-card-title">' + trendIcon + ' اتجاه النمو</div>';
-  if (hasGrowthData) {
-    html += '<div class="presentation-big-number" style="color:' + (analysis.avgGrowth >= 0 ? 'var(--gn)' : 'var(--rd)') + '">' + (analysis.avgGrowth >= 0 ? '+' : '') + analysis.avgGrowth.toFixed(1) + '%</div>';
-    html += '<div style="text-align:center;color:var(--tx3)">توقع الشهر القادم: ' + n3(analysis.forecast) + ' JD</div>';
-  } else {
-    html += '<div class="presentation-big-number" style="color:var(--tx3)">—</div>';
-    html += '<div style="text-align:center;color:var(--tx3)">بيانات غير كافية (يحتاج شهرين)</div>';
-  }
-  html += '</div>';
-  
-  // Card 4: مؤشر الصحة
-  html += '<div class="presentation-card">';
-  html += '<div class="presentation-card-title">❤️ مؤشر الصحة المالية</div>';
-  html += '<div class="presentation-big-number" style="color:' + (calc.healthScore >= 70 ? 'var(--gn)' : calc.healthScore >= 40 ? 'var(--gold)' : 'var(--rd)') + '">' + calc.healthScore + '/100</div>';
-  html += '<div style="text-align:center;color:var(--tx3)">' + (calc.healthScore >= 70 ? 'ممتاز' : calc.healthScore >= 40 ? 'جيد' : 'يحتاج تحسين') + '</div>';
-  html += '</div>';
-  
-  html += '</div>';
-  
-  // إضافة العناصر
-  var overlay = document.createElement('div');
-  overlay.id = 'presentationOverlay';
-  overlay.innerHTML = html;
-  document.body.appendChild(overlay);
-  
-  // تحديث الوقت
-  function updatePresTime() {
-    var now = new Date();
-    var timeEl = document.getElementById('presTime');
-    var dateEl = document.getElementById('presDate');
-    if (timeEl) timeEl.textContent = now.toLocaleTimeString('ar-JO', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-    if (dateEl) dateEl.textContent = now.toLocaleDateString('ar-JO', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
-  }
-  updatePresTime();
-  window.presInterval = setInterval(updatePresTime, 1000);
-  
-  // الخروج بضغط Escape
-  document.addEventListener('keydown', function escHandler(e) {
-    if (e.key === 'Escape') {
-      exitPresentationMode();
-      document.removeEventListener('keydown', escHandler);
-    }
-  });
-}
 
-function exitPresentationMode() {
-  document.body.classList.remove('presentation-mode');
-  var overlay = document.getElementById('presentationOverlay');
-  if (overlay) overlay.remove();
-  if (window.presInterval) clearInterval(window.presInterval);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* V24-3 PRO: تهيئة الميزات الجديدة                                            */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-var _v24Interval = null;
 function initV24Features() {
-  debugLog('🚀 V24-3 Features Initializing...');
-
   setTimeout(function() {
-    renderTrendAnalysis();
-    renderMonthComparison();
-    renderEmployeeReport();
-  }, 500);
-
-  if (_v24Interval) clearInterval(_v24Interval);
-  _v24Interval = setInterval(function() {
-    renderTrendAnalysis();
-    renderMonthComparison();
-  }, 60000);
+    try{ renderTrendAnalysis(); }catch(e){}
+    try{ renderMonthComparison(); }catch(e){}
+    try{ renderEmployeeReport(); }catch(e){}
+  }, 300);
 }
 
 // تركيز تلقائي على حقل الباسورد
@@ -10446,33 +10030,6 @@ document.addEventListener('DOMContentLoaded', function(){
   var pw = document.getElementById('pwdInput');
   if(pw) setTimeout(function(){ pw.focus(); }, 300);
 });
-
-// إضافة زر وضع العرض
-setTimeout(function() {
-  var fabContainer = document.querySelector('.fab-container');
-  if (fabContainer && !document.getElementById('fabPresentation')) {
-    var presBtn = document.createElement('div');
-    presBtn.id = 'fabPresentation';
-    presBtn.className = 'fab-btn';
-    presBtn.innerHTML = '📺';
-    presBtn.title = 'وضع العرض';
-    presBtn.onclick = enterPresentationMode;
-    presBtn.style.background = 'linear-gradient(135deg, #8B5CF6, #6366F1)';
-    fabContainer.insertBefore(presBtn, fabContainer.firstChild);
-  }
-  
-  // إضافة زر النسخ الاحتياطي
-  if (fabContainer && !document.getElementById('fabBackup')) {
-    var backupBtn = document.createElement('div');
-    backupBtn.id = 'fabBackup';
-    backupBtn.className = 'fab-btn';
-    backupBtn.innerHTML = '💾';
-    backupBtn.title = 'النسخ الاحتياطي';
-    backupBtn.onclick = showBackupManager;
-    backupBtn.style.background = 'linear-gradient(135deg, #10B981, #059669)';
-    fabContainer.insertBefore(backupBtn, fabContainer.firstChild);
-  }
-}, 2000);
 
 /* ═══════════════════════════════════════════════════════════════════════
    ريحانة V25 — SUPABASE SYNC ENGINE

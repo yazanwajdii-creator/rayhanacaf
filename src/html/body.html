@@ -45,20 +45,7 @@
     <div class="si-text">تم الحفظ</div>
   </div>
   
-  <!-- مركز الإشعارات -->
-  <div id="notifCenter" class="notif-center">
-    <div class="nc-header">
-      <div class="nc-title">🔔 الإشعارات <span class="nc-badge" id="notifCount">0</span></div>
-      <button class="nc-clear" onclick="clearNotifications()">مسح الكل</button>
-    </div>
-    <div class="nc-list" id="notifList">
-      <div class="nc-empty">
-        <div class="nc-empty-icon">🔔</div>
-        <div>لا توجد إشعارات</div>
-      </div>
-    </div>
-  </div>
-  
+
   <!-- أزرار الإجراءات السريعة -->
   <div class="fab-container">
     <button class="fab-btn fab-secondary" onclick="showBackups()" title="النسخ الاحتياطية">
@@ -122,21 +109,6 @@
     </div>
   </div>
   
-  <!-- نافذة الاختصارات -->
-  <div id="shortcutsOverlay" class="shortcuts-overlay" onclick="if(event.target===this)hideShortcuts()">
-    <div class="shortcuts-box">
-      <div class="shortcuts-title">⌨️ اختصارات لوحة المفاتيح</div>
-      <div class="shortcut-row"><span class="shortcut-desc">حفظ يدوي</span><span class="shortcut-key"><kbd>Ctrl</kbd><kbd>S</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">لوحة التحكم</span><span class="shortcut-key"><kbd>1</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">الإيرادات</span><span class="shortcut-key"><kbd>2</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">المشتريات</span><span class="shortcut-key"><kbd>3</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">التقارير</span><span class="shortcut-key"><kbd>4</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">الوضع الليلي</span><span class="shortcut-key"><kbd>D</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">بحث</span><span class="shortcut-key"><kbd>/</kbd></span></div>
-      <div class="shortcut-row"><span class="shortcut-desc">إغلاق</span><span class="shortcut-key"><kbd>Esc</kbd></span></div>
-      <div style="text-align:center;margin-top:16px"><button class="btn btn-ghost" onclick="hideShortcuts()">إغلاق</button></div>
-    </div>
-  </div>
 
   <div class="topbar" style="position:relative">
     <div class="tb-logo" onclick="pg('dash',document.querySelector('.ntab'))" style="cursor:pointer"><div class="tb-ico"><svg viewBox="0 0 30 30" width="18" height="18" xmlns="http://www.w3.org/2000/svg"><line x1="15" y1="25" x2="15" y2="10" stroke="#C17F24" stroke-width="1.8" stroke-linecap="round"/><path d="M15 21 Q11 18 6 20 Q9 24 15 21Z" fill="#7EC89A"/><path d="M15 21 Q19 18 24 20 Q21 24 15 21Z" fill="#7EC89A"/><path d="M15 16 Q12 13 7 14 Q10 18 15 16Z" fill="#7EC89A"/><path d="M15 16 Q18 13 23 14 Q20 18 15 16Z" fill="#7EC89A"/><circle cx="15" cy="9" r="2.2" fill="#C17F24"/><circle cx="11" cy="12" r="1.6" fill="#C17F24"/><circle cx="19" cy="12" r="1.6" fill="#C17F24"/></svg></div><div class="tb-name">ريحانة</div></div>
@@ -150,10 +122,6 @@
     <div class="tb-right">
       <div id="syncPill" style="display:none;align-items:center;gap:4px;background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);border-radius:6px;padding:3px 8px;font-size:10.5px;font-weight:600;color:#5AC18E;white-space:nowrap;transition:all .3s"><span id="syncPillDot" style="width:5px;height:5px;border-radius:50%;background:#5AC18E;display:inline-block"></span><span id="syncPillTxt">محفوظ</span></div>
       <button class="tbtn" id="syncRefreshBtn" onclick="tbSyncRefresh()" title="تحديث البيانات من السحابة" style="font-size:13px;display:none">🔄</button>
-      <button class="tbtn" onclick="toggleNotifications()" title="الإشعارات" id="notifBtn" style="position:relative">
-        🔔
-        <span id="notifDot" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--rd);border-radius:50%"></span>
-      </button>
       <select class="msel" id="monthSel" onchange="switchMonth(this.value)"></select>
       <button class="tbtn" onclick="toggleDark()" title="الوضع الليلي" id="darkBtn">🌙</button>
       <div class="uchip" onclick="lockApp()" title="قفل التطبيق" style="padding:3px 8px;gap:4px"><div class="udot"></div><span id="uname" style="max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">مدير</span></div>

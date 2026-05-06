@@ -258,200 +258,27 @@ function doSearch(q){
 }
 function closeSearch(){$("sres").classList.remove("open");$("gSearch").value="";}
 
-// SMART NOTIFICATIONS SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════
-
-let notifications = [];
-
-function toggleNotifications() {
-  var nc = document.getElementById('notifCenter');
-  if (nc) nc.classList.toggle('open');
-}
-
-function addNotification(type, message) {
-  notifications.unshift({
-    id: Date.now(),
-    type: type,
-    message: message,
-    time: new Date(),
-    read: false
-  });
-  
-  // الاحتفاظ بآخر 20 إشعار
-  if (notifications.length > 20) notifications.pop();
-  
-  renderNotifications();
-  updateNotifBadge();
-}
-
-function renderNotifications() {
-  var list = document.getElementById('notifList');
-  if (!list) return;
-  
-  if (notifications.length === 0) {
-    list.innerHTML = '<div class="nc-empty"><div class="nc-empty-icon">🔔</div><div>لا توجد إشعارات</div></div>';
-    return;
-  }
-  
-  list.innerHTML = notifications.map(function(n) {
-    var iconClass = n.type === 'warn' ? 'warn' : n.type === 'error' ? 'error' : n.type === 'success' ? 'success' : 'info';
-    var icon = n.type === 'warn' ? '⚠️' : n.type === 'error' ? '❌' : n.type === 'success' ? '✅' : 'ℹ️';
-    var timeAgo = getTimeAgo(n.time);
-    
-    return '<div class="nc-item ' + (n.read ? '' : 'unread') + '" onclick="markNotifRead(' + n.id + ')"><div class="nc-icon ' + iconClass + '">' + icon + '</div><div class="nc-content"><div class="nc-msg">' + n.message + '</div><div class="nc-time">' + timeAgo + '</div></div></div>';
-  }).join('');
-}
-
-function markNotifRead(id) {
-  var n = notifications.find(function(x) { return x.id === id; });
-  if (n) n.read = true;
-  renderNotifications();
-  updateNotifBadge();
-}
-
-function clearNotifications() {
-  notifications = [];
-  renderNotifications();
-  updateNotifBadge();
-}
-
-function updateNotifBadge() {
-  var count = notifications.filter(function(n) { return !n.read; }).length;
-  var badge = document.getElementById('notifCount');
-  var dot = document.getElementById('notifDot');
-  
-  if (badge) badge.textContent = count;
-  if (dot) dot.style.display = count > 0 ? 'block' : 'none';
-}
-
-function getTimeAgo(date) {
-  var seconds = Math.floor((new Date() - date) / 1000);
-  if (seconds < 60) return 'الآن';
-  if (seconds < 3600) return Math.floor(seconds / 60) + ' دقيقة';
-  if (seconds < 86400) return Math.floor(seconds / 3600) + ' ساعة';
-  return Math.floor(seconds / 86400) + ' يوم';
-}
-
-// التنبيهات الذكية
-function checkSmartAlerts() {
-  var t = totals(), d = G();
-  var active = d.sales.filter(function(s) { return (s.cash||0)+(s.visa||0)+(s.pmts||0) > 0; });
-  var avg = active.length ? t.rev / active.length : 0;
-  
-  // تنبيه هامش ربح منخفض
-  if (t.margin < 5 && t.rev > 0) {
-    var existing = notifications.find(function(n) { return n.message.indexOf('هامش الربح') > -1; });
-    if (!existing) {
-      addNotification('warn', 'هامش الربح منخفض جداً (' + t.margin.toFixed(1) + '%) - راجع التكاليف');
-    }
-  }
-  
-  // تنبيه التزامات غير مسددة
-  var unpaid = d.obligations.filter(function(o) { return !o.paid && o.amt > 0; });
-  if (unpaid.length >= 3) {
-    var existing = notifications.find(function(n) { return n.message.indexOf('التزامات') > -1; });
-    if (!existing) {
-      addNotification('warn', unpaid.length + ' التزامات غير مسددة بإجمالي ' + n3(unpaid.reduce(function(s,o){return s+o.amt},0)) + ' JD');
-    }
-  }
-  
-  // تنبيه المخزون المنخفض
-  if (S.inventory) {
-    var lowItems = S.inventory.filter(function(i) { return i.qty <= (i.min || 0); });
-    if (lowItems.length > 0) {
-      var existing = notifications.find(function(n) { return n.message.indexOf('مخزون') > -1; });
-      if (!existing) {
-        addNotification('error', lowItems.length + ' أصناف في المخزون تحتاج إعادة طلب');
-      }
-    }
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// COMPARISON WITH PREVIOUS MONTH
-// ═══════════════════════════════════════════════════════════════════════════
-
-function showShortcuts() {
-  var overlay = document.getElementById('shortcutsOverlay');
-  if (overlay) overlay.classList.add('show');
-}
-
-function hideShortcuts() {
-  var overlay = document.getElementById('shortcutsOverlay');
-  if (overlay) overlay.classList.remove('show');
-}
 
 document.addEventListener('keydown', function(e) {
-  // تجاهل إذا كان المستخدم يكتب في حقل
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-  
-  // Ctrl + S للحفظ
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault();
-    performAutoSave();
+    try{ saveAll(); }catch(ex){}
     toast('💾 تم الحفظ');
   }
-  
-  // مفاتيح الأرقام للتنقل
-  if (!e.ctrlKey && !e.altKey) {
-    var tabs = document.querySelectorAll('.ntab');
-    if (e.key === '1' && tabs[0]) { tabs[0].click(); }
-    if (e.key === '2' && tabs[1]) { tabs[1].click(); }
-    if (e.key === '3' && tabs[2]) { tabs[2].click(); }
-    if (e.key === '4' && tabs[3]) { tabs[3].click(); }
-  }
-  
-  // D للوضع الليلي
-  if (e.key === 'd' || e.key === 'D') {
-    toggleDark();
-  }
-  
-  // / للبحث
-  if (e.key === '/') {
-    e.preventDefault();
-    var search = document.getElementById('gSearch');
-    if (search) search.focus();
-  }
-  
-  // ? لعرض الاختصارات
-  if (e.key === '?') {
-    showShortcuts();
-  }
-  
-  // Escape للإغلاق
   if (e.key === 'Escape') {
-    hideShortcuts();
-    var nc = document.getElementById('notifCenter');
-    if (nc) nc.classList.remove('open');
+    document.querySelectorAll('.mo-ov.open').forEach(function(el){ cmo(el.id); });
   }
 });
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PRESENTATION MODE
-// ═══════════════════════════════════════════════════════════════════════════
-
-function togglePresentationMode() {
-  document.body.classList.toggle('presentation-mode');
-  var isOn = document.body.classList.contains('presentation-mode');
-  toast(isOn ? '📺 وضع العرض - اضغط ESC للخروج' : '📺 الوضع العادي');
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// SPARKLINES
-// ═══════════════════════════════════════════════════════════════════════════
 
 function createSparkline(containerId, data) {
   var container = document.getElementById(containerId);
   if (!container || !data || !data.length) return;
-  
   var max = Math.max.apply(null, data);
   if (max === 0) max = 1;
-  
   container.innerHTML = data.slice(-10).map(function(v) {
     var height = Math.max(4, (v / max * 100));
-    var cls = v >= 0 ? '' : 'negative';
-    return '<div class="spark-bar ' + cls + '" style="height:' + height + '%"></div>';
+    return '<div class="spark-bar' + (v < 0 ? ' negative' : '') + '" style="height:' + height + '%"></div>';
   }).join('');
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
