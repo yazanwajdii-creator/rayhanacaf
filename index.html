@@ -9,12 +9,17 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <title>ريحانة V24-3 PRO</title>
+<!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<!-- الخطوط: تحميل غير محجب -->
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Chart.js و Supabase: defer — لا يحجبان عرض الصفحة، يُنفَّذان بعد تحميل HTML -->
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- jsPDF + html2canvas + XLSX: لا تُحمَّل هنا — تُحمَّل عند الضغط على التصدير فقط -->
 <style>
 :root{
   /* ═══════════════════════════════════════════════════════════════════════════
@@ -3769,6 +3774,21 @@ const $=id=>document.getElementById(id);
 const T=(id,v)=>{const e=$(id);if(e)e.textContent=v;};
 let toastT=null;
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2800);}
+
+/* تحميل سكريبت خارجي عند الحاجة فقط (للمكتبات الثقيلة) */
+var _loadedScripts={};
+function loadScript(url){
+  if(_loadedScripts[url]) return _loadedScripts[url];
+  _loadedScripts[url]=new Promise(function(resolve,reject){
+    var s=document.createElement('script');
+    s.src=url;
+    s.onload=resolve;
+    s.onerror=function(){ delete _loadedScripts[url]; reject(new Error('فشل تحميل: '+url)); };
+    document.head.appendChild(s);
+  });
+  return _loadedScripts[url];
+}
+
 function toggleDark(){document.body.classList.toggle("dark");safeLS.setItem("rh_dark",document.body.classList.contains("dark")?"1":"0");}
 if(safeLS.getItem("rh_dark")==="1")document.body.classList.add("dark");
 function openMo(id){$(id).classList.add("open");document.body.style.overflow="hidden";}
@@ -4893,6 +4913,12 @@ function updateRpt(){
 
 /* RENDER ALL */
 function renderAll(){calcRevTots();renderPurch();renderSuppList();renderSuppRpt();renderCatSum();renderObligList();renderAdv();renderAdvLedger();loadCashFields();calcCash();updateDash();updateRpt();updLkChips();}
+/* نسخة مُدمجة: تجمع الاستدعاءات المتتالية في 60ms في استدعاء واحد */
+var _renderAllTimer=null;
+function renderAllDebounced(){
+  if(_renderAllTimer) cancelAnimationFrame(_renderAllTimer);
+  _renderAllTimer=requestAnimationFrame(function(){_renderAllTimer=null;renderAll();});
+}
 function loadCashFields(){const cf=G().cashflow||{};const o=$("cfOpen"),a=$("cfAct");if(o)o.value=cf.opening||0;if(a)a.value=cf.actual||0;}
 function buildSelects(){buildPurchSupp();buildAdvEmpSel();}
 
@@ -5233,7 +5259,13 @@ function importJSON(ev){
 }
 
 function exportExcel(){
-  if(!window.XLSX){toast("❌ مكتبة Excel غير محملة");return;}
+  if(!window.XLSX){
+    toast('⏳ جاري تحميل مكتبة Excel...');
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')
+      .then(function(){ exportExcel(); })
+      .catch(function(){ toast('❌ تعذّر تحميل مكتبة Excel — تحقق من الاتصال'); });
+    return;
+  }
   const t=totals(),d=G();const[y,m]=S.activeKey.split("-");const mn=MN[parseInt(m)-1];
   const wb=XLSX.utils.book_new();
   const rv=[["ريحانة كافيه — الإيرادات"],[],["اليوم","نقدي","فيزا","مدفوعات","صافي البيع","إجمالي الإيراد","ملاحظات"]];
@@ -5271,7 +5303,21 @@ function exportExcel(){
    يحافظ على العربية 100% لأنه يحول الـ HTML لصورة ثم PDF
 ═══════════════════════════════════════════════════════════════════════ */
 function exportPDF(){
-  // أولاً: اذهب لصفحة التقرير وحدّثها
+  var needsLoad = typeof html2canvas==='undefined' || typeof window.jspdf==='undefined';
+  if(needsLoad){
+    toast('⏳ جاري تحميل مكتبة PDF...');
+    Promise.all([
+      typeof html2canvas==='undefined'
+        ? loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
+        : Promise.resolve(),
+      typeof window.jspdf==='undefined'
+        ? loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+        : Promise.resolve()
+    ]).then(function(){ exportPDF(); })
+      .catch(function(){ toast('❌ تعذّر تحميل مكتبة PDF — تحقق من الاتصال'); });
+    return;
+  }
+  // المكتبات جاهزة — نفّذ التصدير
   const rptTab=document.querySelectorAll('.ntab')[3];
   pg('rpt',rptTab);
   updateRpt();
@@ -5279,7 +5325,6 @@ function exportPDF(){
   setTimeout(function(){
     const area=document.getElementById('rpt-printable');
     if(!area){
-      // fallback: صوّر صفحة التقرير كاملة
       exportPDFFallback();
       return;
     }
