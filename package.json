@@ -1,0 +1,20 @@
+{
+  "name": "rayhanacaf",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageThreshold": {
+      "global": {
+        "functions": 70,
+        "lines": 70
+      }
+    }
+  }
+}
