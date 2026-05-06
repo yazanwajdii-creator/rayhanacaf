@@ -322,6 +322,76 @@ function supaSetStatus(type, txt){
   }
 }
 
+/* ── فحص وتشخيص الربط الشامل ── */
+function supaRunDiag(){
+  var box=document.getElementById('supaDiagBox');
+  if(!box) return;
+  box.style.display='block';
+  box.innerHTML='<div style="color:var(--tx3)">⏳ جاري الفحص...</div>';
+
+  var checks=[];
+
+  // 1. هل SUPA موجود؟
+  checks.push({label:'اتصال Supabase', ok:!!SUPA, detail: SUPA ? 'تم إنشاء الاتصال' : 'لا يوجد اتصال — تحقق من URL والمفتاح'});
+
+  // 2. هل URL محفوظ؟
+  var url=_kGet(SUPA_URL_KEY)||'';
+  checks.push({label:'Project URL', ok:!!url&&url.startsWith('https://'), detail: url ? url.slice(0,40)+'...' : 'غير محفوظ'});
+
+  // 3. هل المفتاح محفوظ؟
+  var key=_kGet(SUPA_KEY_KEY)||'';
+  checks.push({label:'Anon Key', ok:key.length>30, detail: key ? 'محفوظ ('+key.length+' حرف)' : 'غير محفوظ'});
+
+  // 4. آخر مزامنة
+  var last=_kGet('rh_supa_last')||'';
+  checks.push({label:'آخر رفع', ok:!!last, detail: last||'لم تتم مزامنة بعد'});
+
+  // 5. المزامنة التلقائية
+  checks.push({label:'المزامنة التلقائية', ok:SUPA_AUTO, detail: SUPA_AUTO?'مفعّلة ✅':'معطّلة (البيانات تُرفع عند كل تغيير وعند الإغلاق)'});
+
+  // 6. حجم البيانات المحلية
+  var months=Object.keys(S.months||{}).length;
+  checks.push({label:'بيانات محلية', ok:months>0, detail: months+' شهر محفوظ'});
+
+  // عرض نتائج فورية
+  _renderDiag(box, checks, null);
+
+  if(!SUPA){ return; }
+
+  // 7. اختبار شبكي حقيقي
+  SUPA.from(SUPA_TABLE).select('updated_at').eq('key',SUPA_ROW).single()
+    .then(function(res){
+      var netOk = !res.error || res.error.code==='PGRST116';
+      var detail = res.error
+        ? (res.error.code==='PGRST116' ? 'الجدول موجود — لا توجد بيانات بعد (ارفع الآن)' : '❌ '+res.error.message)
+        : 'الجدول موجود ✅ — آخر تحديث: '+(res.data&&res.data.updated_at ? new Date(res.data.updated_at).toLocaleString('ar') : '—');
+      checks.push({label:'اتصال الشبكة بـ Supabase', ok:netOk, detail:detail});
+      _renderDiag(box, checks, netOk);
+    })
+    .catch(function(e){
+      checks.push({label:'اتصال الشبكة بـ Supabase', ok:false, detail:'❌ '+e.message});
+      _renderDiag(box, checks, false);
+    });
+}
+
+function _renderDiag(box, checks, netResult){
+  var allOk = checks.every(function(c){return c.ok;}) && netResult!==false;
+  var html='<div style="font-weight:700;font-size:13px;margin-bottom:10px;color:'+(allOk?'var(--gn)':netResult===null?'var(--tx)':'var(--rd)')+'">'
+    +(netResult===null?'⏳ جاري التحقق من الشبكة...':allOk?'✅ كل شيء يعمل بشكل صحيح':'⚠️ يوجد مشكلة — راجع التفاصيل')+'</div>';
+  checks.forEach(function(c){
+    html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--br);gap:8px">'
+      +'<span style="font-size:11.5px;color:var(--tx2);flex-shrink:0">'+(c.ok?'✅':'❌')+' '+c.label+'</span>'
+      +'<span style="font-size:11px;color:'+(c.ok?'var(--tx3)':'var(--rd)')+';text-align:left;direction:ltr">'+c.detail+'</span>'
+      +'</div>';
+  });
+  if(netResult!==null && !allOk){
+    html+='<button onclick="supaSync(\'push\').then(function(){toast(\'✅ تم الرفع\');supaRunDiag();}).catch(function(e){toast(\'❌ \'+e.message);})" style="width:100%;margin-top:10px;padding:10px;background:var(--gn);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">☁️ رفع البيانات الآن</button>';
+  } else if(netResult===true){
+    html+='<div style="margin-top:8px;padding:8px 10px;background:rgba(5,150,105,.08);border-radius:8px;font-size:11.5px;color:var(--gn);font-weight:600">✅ Supabase مهيأ بشكل صحيح — بياناتك محمية</div>';
+  }
+  box.innerHTML=html;
+}
+
 /* ── نسخ SQL ── */
 function copySupaSQL(){
   var el = document.getElementById('supaSQL');

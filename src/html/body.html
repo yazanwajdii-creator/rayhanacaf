@@ -1313,23 +1313,27 @@ create policy "allow_all" on rh_store
 
         <!-- Status -->
         <div class="cloud-connected-card">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-            <div style="width:10px;height:10px;border-radius:50%;background:var(--gn);box-shadow:0 0 8px var(--gn)"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <div style="width:12px;height:12px;border-radius:50%;background:var(--gn);box-shadow:0 0 10px var(--gn);flex-shrink:0"></div>
             <div style="font-size:13px;font-weight:700;color:var(--gn)">متصل بـ Supabase ✅</div>
           </div>
           <div style="font-size:11.5px;color:var(--tx3);margin-bottom:14px" id="supaLastSync">—</div>
 
+          <!-- فحص الربط -->
+          <button onclick="supaRunDiag()" style="width:100%;padding:11px;background:rgba(0,112,242,.1);border:1.5px solid rgba(0,112,242,.35);border-radius:10px;font-size:13px;font-weight:700;color:var(--sap);cursor:pointer;font-family:inherit;margin-bottom:10px">🔍 فحص الربط والمزامنة</button>
+          <div id="supaDiagBox" style="display:none;background:var(--surf2);border-radius:10px;padding:12px;margin-bottom:10px;font-size:12px"></div>
+
           <!-- Sync buttons -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-            <button class="btn btn-g" onclick="supaSync('push')">↑ رفع الآن</button>
-            <button class="btn btn-ghost" onclick="supaSync('pull')">↓ تحميل</button>
+            <button class="btn btn-g" onclick="supaSync('push').catch(function(e){toast('❌ '+e.message)})">☁️ رفع الآن</button>
+            <button class="btn btn-ghost" onclick="supaSync('pull').catch(function(e){toast('❌ '+e.message)})">⬇️ تحميل</button>
           </div>
 
           <!-- Auto sync -->
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surf3);border-radius:var(--r);margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surf3);border-radius:var(--r)">
             <div>
               <div style="font-size:12.5px;font-weight:600;color:var(--tx2)">🔄 مزامنة تلقائية</div>
-              <div style="font-size:10.5px;color:var(--tx3)">كل 5 دقائق تلقائياً</div>
+              <div style="font-size:10.5px;color:var(--tx3)">كل حفظ يُرفع خلال 5 ثوانٍ</div>
             </div>
             <button class="btn btn-ghost btn-sm" id="supaAutoBtn" onclick="toggleSupaAuto()">تشغيل</button>
           </div>
@@ -1349,7 +1353,7 @@ create policy "allow_all" on rh_store
 
         <!-- Settings -->
         <div style="margin-top:10px;text-align:center">
-          <button class="btn btn-ghost btn-sm" onclick="supaDisconnect()" style="color:var(--rd);border-color:rgba(239,68,68,.3)">⛔ قطع الاتصال</button>
+          <button class="btn btn-ghost btn-sm" onclick="supaDisconnect()" style="color:var(--rd);border-color:rgba(220,38,38,.3)">⛔ قطع الاتصال</button>
         </div>
       </div>
 
