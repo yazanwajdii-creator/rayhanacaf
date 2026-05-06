@@ -61,6 +61,8 @@ function saveAll(){
     pendingSave = false;
     showSaveIndicator('saved');
     setTimeout(hideSaveIndicator, 1500);
+    // رفع السحابة خلال 5 ثوانٍ من آخر تغيير
+    if(typeof _supaQueuePush === 'function') try{ _supaQueuePush(); }catch(e){}
   }catch(e){
     var isQuota = e && (e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||e.code===22||e.code===1014);
     if(isQuota){

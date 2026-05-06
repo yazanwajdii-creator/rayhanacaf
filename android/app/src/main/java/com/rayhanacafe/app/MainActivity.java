@@ -363,16 +363,19 @@ public class MainActivity extends Activity {
         webView.loadUrl("file:///android_asset/public/index.html");
     }
 
-    // ── حفظ عند الضغط على Home أو التبديل بين التطبيقات ──
+    // ── حفظ ورفع سحابي عند الضغط على Home أو التبديل بين التطبيقات ──
     @Override
     protected void onPause() {
-        // استدعاء الحفظ قبل super.onPause() لضمان تشغيل JS قبل تجميد الصفحة
         if (webView != null) {
+            // saveAll() أولاً ثم رفع السحابة فوراً
             webView.evaluateJavascript(
-                "(function(){ try{ if(typeof saveAll==='function') saveAll(); }catch(e){} })()",
+                "(function(){" +
+                "  try{ if(typeof saveAll==='function') saveAll(); }catch(e){}" +
+                "  try{ if(typeof _supaPushIfChanged==='function') _supaPushIfChanged(); }catch(e){}" +
+                "})()",
                 null
             );
-            webView.onPause(); // إيقاف الرسوم فقط — لا يوقف JS
+            webView.onPause();
         }
         CookieManager.getInstance().flush();
         super.onPause();
@@ -383,6 +386,13 @@ public class MainActivity extends Activity {
         super.onResume();
         if (webView != null) {
             webView.onResume();
+            // سحب صامت إذا مرّت أكثر من 3 دقائق منذ آخر سحب
+            webView.evaluateJavascript(
+                "(function(){" +
+                "  try{ if(window.SUPA && typeof _supaSilentPull==='function') _supaSilentPull(); }catch(e){}" +
+                "})()",
+                null
+            );
         }
     }
 

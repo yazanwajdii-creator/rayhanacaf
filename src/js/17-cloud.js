@@ -379,9 +379,35 @@ function supaHandleSyncError(e) {
   }
 }
 
+/* ── سحب صامت عند العودة للتطبيق (بدون overlay) ── */
+// يُستدعى من onResume — يسحب فقط إذا مرّت أكثر من 3 دقائق منذ آخر سحب
+var _supaLastPullAt = 0;
+function _supaSilentPull(){
+  if(!SUPA || !CR) return;
+  var now = Date.now();
+  if(now - _supaLastPullAt < 3 * 60 * 1000) return; // أقل من 3 دقائق — لا تسحب
+  _supaLastPullAt = now;
+  supaSync('pull').then(function(){
+    toast('🔄 تم التزامن مع السحابة');
+  }).catch(function(e){
+    console.warn('silent pull error:', e && e.message);
+  });
+}
+
+/* ── رفع فوري (debounced) بعد كل saveAll ── */
+// يُستدعى من saveAll() — يرفع خلال 5 ثوانٍ من آخر تغيير بدل الانتظار 90 ثانية
+var _supaQueueTimer = null;
+function _supaQueuePush(){
+  if(!SUPA || !CR) return;
+  if(_supaQueueTimer) clearTimeout(_supaQueueTimer);
+  _supaQueueTimer = setTimeout(function(){
+    _supaQueueTimer = null;
+    _supaPushIfChanged();
+  }, 5000);
+}
+
 /* ── Supabase push — interval مستقل عن saveAll ── */
-// المشكلة القديمة: debounce يُعاد ضبطه مع كل auto-save → push لا يُرسَل أبداً
-// الحل: interval منفصل يتحقق من تغيُّر البيانات كل 90 ثانية
+// يتحقق من تغيُّر البيانات كل 90 ثانية (شبكة ضعيفة / إغلاق بطيء)
 var _supaLastPushedSig = null;
 var _supaPushInProgress = false; // منع التزامن المتعدد
 var _supaPushIntervalId = null;  // لإيقافه عند قفل التطبيق

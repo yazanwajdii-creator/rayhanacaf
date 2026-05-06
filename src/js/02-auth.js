@@ -147,9 +147,12 @@ function doLogin(role) {
     try {
       supaInit();
       supaUpdateUI(!!SUPA);
-      // فقط اسحب إذا كانت المزامنة التلقائية مفعّلة سابقاً
-      var _autoWasOn = _kGet('rh_supa_auto') === '1';
-      if(SUPA && _autoWasOn){ SUPA_AUTO=true; _supaStartupPull(0); }
+      if(SUPA){
+        // تفعيل المزامنة التلقائية إذا كانت مفعّلة سابقاً
+        if(_kGet('rh_supa_auto')==='1'){ SUPA_AUTO=true; }
+        // اسحب دائماً من السحابة عند كل دخول — حماية من فقدان البيانات
+        _supaStartupPull(0);
+      }
     } catch(e) {}
     }, 500);
   }, 100);
