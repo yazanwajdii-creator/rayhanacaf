@@ -10543,38 +10543,50 @@ function supaConnectAndTest(){
 }
 
 /* ── رفع وتحميل ── */
-async function supaSync(direction){
+async function supaSync(direction, opts){
   if(!SUPA) throw new Error('Supabase not connected');
-  
+  var forceOverwrite = (opts && opts.force) || false;
+
   if(direction === 'push'){
-    // تأجيل إطار واحد حتى لا تتجمد واجهة المستخدم أثناء التسلسل
-    await new Promise(function(r){ setTimeout(r, 0); });
-    supaSetStatus('saving', '☁️ جاري الحفظ في السحابة...');
-    var payload = {
-      v: 25,
-      activeKey: S.activeKey,
-      months: S.months,
-      monthlyEmps: S.monthlyEmps,
-      dailyEmps: S.dailyEmps,
-      lockedMonths: S.lockedMonths||[],
-      suppliers: S.suppliers||[],
-      targets: S.targets||{},
-      inventory: S.inventory||[],
-      savedAt: new Date().toISOString(),
-      device: navigator.userAgent.slice(0,60)
-    };
-    var res = await SUPA
-      .from(SUPA_TABLE)
-      .upsert({key: SUPA_ROW, value: payload, updated_at: new Date().toISOString()});
-    if(res.error) throw new Error(res.error.message);
-    var now = new Date().toLocaleTimeString('ar');
-    safeLS.setItem('rh_supa_last', now);
-    safeLS.setItem('rh_last_push_at', payload.savedAt);
-    supaSetStatus('ok', '✅ محفوظ في السحابة · '+now);
-    T('supaLastSync', 'آخر مزامنة: '+now);
-    setTimeout(function(){supaSetStatus('ok','✅ متصل بـ Supabase');},3000);
-    
+    // إذا كان هناك رفع أو سحب جارٍ — تجاهل هذا الطلب
+    if(_supaPushInProgress || _supaPullInProgress) return;
+    _supaPushInProgress = true;
+    try {
+      // تأجيل إطار واحد حتى لا تتجمد واجهة المستخدم أثناء التسلسل
+      await new Promise(function(r){ setTimeout(r, 0); });
+      supaSetStatus('saving', '☁️ جاري الحفظ في السحابة...');
+      var payload = {
+        v: 25,
+        activeKey: S.activeKey,
+        months: S.months,
+        monthlyEmps: S.monthlyEmps,
+        dailyEmps: S.dailyEmps,
+        lockedMonths: S.lockedMonths||[],
+        suppliers: S.suppliers||[],
+        targets: S.targets||{},
+        inventory: S.inventory||[],
+        savedAt: new Date().toISOString(),
+        device: navigator.userAgent.slice(0,60)
+      };
+      var res = await SUPA
+        .from(SUPA_TABLE)
+        .upsert({key: SUPA_ROW, value: payload, updated_at: new Date().toISOString()});
+      if(res.error) throw new Error(res.error.message);
+      _supaPendingSync = false; // نجح الرفع — لا توجد بيانات معلقة
+      var now = new Date().toLocaleTimeString('ar');
+      safeLS.setItem('rh_supa_last', now);
+      safeLS.setItem('rh_last_push_at', payload.savedAt);
+      supaSetStatus('ok', '✅ محفوظ في السحابة · '+now);
+      T('supaLastSync', 'آخر مزامنة: '+now);
+      setTimeout(function(){supaSetStatus('ok','✅ متصل بـ Supabase');},3000);
+    } finally {
+      _supaPushInProgress = false;
+    }
+
   } else if(direction === 'pull'){
+    if(_supaPushInProgress){ throw new Error('يوجد رفع جارٍ — حاول بعد لحظة'); }
+    _supaPullInProgress = true;
+    try {
     supaSetStatus('loading', '⬇️ جاري التحميل من السحابة...');
     var res = await SUPA
       .from(SUPA_TABLE)
@@ -10589,16 +10601,27 @@ async function supaSync(direction){
       throw new Error(res.error.message);
     }
     var sv = res.data.value;
-    // Conflict info — note if cloud data is from a different device (non-blocking)
+    // كشف التعارض: هل البيانات المحلية أحدث من السحابة؟
     var _localDevice = navigator.userAgent.slice(0,60);
     var _localLastPush = safeLS.getItem('rh_last_push_at');
-    if(sv.device && sv.device !== _localDevice && _localLastPush && sv.savedAt){
+    if(!forceOverwrite && sv.device && sv.device !== _localDevice && _localLastPush && sv.savedAt){
       var _localT = new Date(_localLastPush).getTime();
       var _remoteT = new Date(sv.savedAt).getTime();
       if(_localT > _remoteT + 60000){
-        // Local push is newer than cloud by more than 1 minute — warn via toast
-        toast('⚠️ تنبيه: بياناتك المحلية أحدث من السحابة — تحقق من آخر رفع');
-        addNotification('warn','تحذير تعارض: آخر رفع محلي أحدث من بيانات السحابة المُحمَّلة');
+        // البيانات المحلية أحدث بأكثر من دقيقة — نسأل المستخدم قبل الكتابة فوقها
+        var cloudTime = new Date(sv.savedAt).toLocaleString('ar');
+        var localTime = new Date(_localLastPush).toLocaleString('ar');
+        var confirmed = confirm(
+          '⚠️ تحذير: بياناتك المحلية أحدث من السحابة!\n\n' +
+          'آخر رفع محلي: ' + localTime + '\n' +
+          'بيانات السحابة من: ' + cloudTime + '\n\n' +
+          'هل تريد استبدال البيانات المحلية ببيانات السحابة الأقدم؟\n' +
+          'اضغط "موافق" للاستمرار أو "إلغاء" للإبقاء على بياناتك.'
+        );
+        if(!confirmed){
+          supaSetStatus('ok','✅ متصل بـ Supabase — تم الإبقاء على البيانات المحلية');
+          return;
+        }
       }
     }
     if(sv.months) Object.keys(sv.months).forEach(function(k){S.months[k]=sv.months[k];});
@@ -10622,6 +10645,9 @@ async function supaSync(direction){
     T('supaLastSync','آخر مزامنة: '+new Date().toLocaleTimeString('ar'));
     toast('✅ تم تحميل البيانات من السحابة');
     log('تحميل من Supabase · '+when);
+    } finally {
+      _supaPullInProgress = false;
+    }
   }
 }
 
@@ -10764,6 +10790,9 @@ function copySupaSQL(){
 var _supaRetryCount = 0;
 var _supaRetryTimer = null;
 var _supaLastErrorMsg = '';
+var _supaPushInProgress = false; // قفل: يمنع رفعين في نفس الوقت
+var _supaPullInProgress = false; // قفل: يمنع الرفع أثناء السحب
+var _supaPendingSync    = false; // علامة: يوجد بيانات لم تُرفع بعد
 
 function supaHandleSyncError(e) {
   _supaRetryCount++;
@@ -10792,7 +10821,8 @@ function supaHandleSyncError(e) {
     // بعد 3 محاولات فاشلة
     _supaRetryCount = 0;
     _supaRetryTimer = null;
-    var finalMsg = '❌ تعذّر الوصول للسحابة — بياناتك محفوظة محلياً فقط';
+    _supaPendingSync = true; // علامة: توجد بيانات لم تُرفع — سيُعاد المحاولة عند عودة الإنترنت
+    var finalMsg = '❌ تعذّر الوصول للسحابة — بياناتك محفوظة محلياً، وستُرفع تلقائياً عند عودة الاتصال';
     toast(finalMsg);
     supaSetStatus('error', finalMsg);
     if (typeof addNotification === 'function') {
@@ -10800,6 +10830,15 @@ function supaHandleSyncError(e) {
     }
   }
 }
+
+/* ── إعادة المحاولة تلقائياً عند عودة الإنترنت ── */
+window.addEventListener('online', function(){
+  if(SUPA && _supaPendingSync){
+    _supaPendingSync = false;
+    toast('🌐 عاد الاتصال — جاري رفع البيانات المعلقة...');
+    supaSync('push').catch(supaHandleSyncError);
+  }
+});
 
 /* ── Hook: رفع تلقائي بعد كل حفظ ── */
 var _origSaveAll = saveAll;

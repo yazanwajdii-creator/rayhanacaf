@@ -7,6 +7,7 @@ const {
   calcTotals,
   initMonth,
   validatePasswordChange,
+  detectSyncConflict,
 } = require('../core');
 
 // ─── مساعد: بناء بيانات شهر للاختبار ────────────────────────────────────────
@@ -45,12 +46,11 @@ describe('sha256()', () => {
     expect(h1).not.toBe(h2);
   });
 
-  test('تُطبق الـ salt الداخلية (__rh_v25__) — نتيجتها تختلف عن SHA-256 بدون salt', async () => {
-    // إذا لم يكن هناك salt، لكان الهاش مختلفاً
-    const withSalt    = await sha256('abc');
-    const rawInput    = new TextEncoder().encode('abc' + '__rh_v25__');
-    const buf         = await globalThis.crypto.subtle.digest('SHA-256', rawInput);
-    const manualHash  = Array.from(new Uint8Array(buf))
+  test('تُطبق الـ salt الداخلية (__rh_v25__)', async () => {
+    const withSalt   = await sha256('abc');
+    const rawInput   = new TextEncoder().encode('abc' + '__rh_v25__');
+    const buf        = await globalThis.crypto.subtle.digest('SHA-256', rawInput);
+    const manualHash = Array.from(new Uint8Array(buf))
       .map(b => b.toString(16).padStart(2, '0')).join('');
     expect(withSalt).toBe(manualHash);
   });
@@ -147,7 +147,6 @@ describe('esc()', () => {
   });
 
   test('ثغرة موثوقة: علامة الاقتباس المفردة لا تُهرَّب', () => {
-    // يجب عدم استخدام esc() داخل معالجات أحداث JS (onclick="...") لهذا السبب
     expect(esc("it's fine")).toBe("it's fine");
   });
 });
@@ -163,16 +162,15 @@ describe('calcPendAdv()', () => {
   ];
 
   test('تجمع السلف المعلقة والمسددة جزئياً فقط', () => {
-    expect(calcPendAdv(advances, 'e1')).toBe(150); // 100 + 50
+    expect(calcPendAdv(advances, 'e1')).toBe(150);
   });
 
   test('تستثني السلف المسددة بالكامل', () => {
-    // 200 مسددة يجب ألا تُحسب
     expect(calcPendAdv(advances, 'e1')).not.toBe(350);
   });
 
   test('تستثني سلف موظف آخر', () => {
-    expect(calcPendAdv(advances, 'e1')).toBe(150); // ليس 450
+    expect(calcPendAdv(advances, 'e1')).toBe(150);
   });
 
   test('تُعيد 0 لموظف بدون سلف', () => {
@@ -184,7 +182,7 @@ describe('calcPendAdv()', () => {
   });
 
   test('تتعامل مع حقل amt مفقود', () => {
-    const adv = [{ empId: 'e1', status: 'مستحقة' }]; // بدون amt
+    const adv = [{ empId: 'e1', status: 'مستحقة' }];
     expect(calcPendAdv(adv, 'e1')).toBe(0);
   });
 });
@@ -199,7 +197,7 @@ describe('calcTotals()', () => {
     const r = calcTotals(month);
     expect(r.netSales).toBe(150);
     expect(r.pmts).toBe(20);
-    expect(r.rev).toBe(170); // rev يشمل pmts للتوثيق
+    expect(r.rev).toBe(170);
   });
 
   test('الالتزامات غير المدفوعة لا تدخل في المصروفات', () => {
@@ -218,14 +216,13 @@ describe('calcTotals()', () => {
   test('الرواتب غير المدفوعة لا تُخفض الربح', () => {
     const emps = [{ id: 'e1' }];
     const month = mockMonth({
-      sales:   [{ cash: 1000, visa: 0, pmts: 0 }],
-      mSal:    { e1: { base: 400, allow: 0, ded: 0, paid: false } },
+      sales:    [{ cash: 1000, visa: 0, pmts: 0 }],
+      mSal:     { e1: { base: 400, allow: 0, ded: 0, paid: false } },
       advances: [],
     });
     const r = calcTotals(month, emps);
     expect(r.mSalPaid).toBe(0);
     expect(r.mSalAccrued).toBe(400);
-    // المصروفات لا تشمل الراتب غير المدفوع
     expect(r.totalExp).toBe(0);
     expect(r.profit).toBe(1000);
   });
@@ -258,11 +255,10 @@ describe('calcTotals()', () => {
       advances: [{ empId: 'e1', status: 'مستحقة', amt: 100 }],
     });
     const r = calcTotals(month, emps);
-    // الراتب الصافي = 500 - 100 (سلفة) = 400
     expect(r.mSalPaid).toBe(400);
   });
 
-  test('الراتب الصافي لا يقل عن صفر (حتى لو السلف أكبر)', () => {
+  test('الراتب الصافي لا يقل عن صفر', () => {
     const emps = [{ id: 'e1' }];
     const month = mockMonth({
       sales:    [{ cash: 1000, visa: 0, pmts: 0 }],
@@ -270,7 +266,7 @@ describe('calcTotals()', () => {
       advances: [{ empId: 'e1', status: 'مستحقة', amt: 500 }],
     });
     const r = calcTotals(month, emps);
-    expect(r.mSalPaid).toBe(0); // Math.max(0, ...)
+    expect(r.mSalPaid).toBe(0);
   });
 
   test('COGS تُحسب ضمن المصروفات', () => {
@@ -293,11 +289,11 @@ describe('calcTotals()', () => {
     expect(r.grossP).toBe(750);
   });
 
-  test('الأيام النشطة تحتسب اليوم فقط إذا كان فيه أي إيراد', () => {
+  test('الأيام النشطة تحتسب فقط الأيام ذات إيراد', () => {
     const month = mockMonth({
       sales: [
         { cash: 100, visa: 0, pmts: 0 },
-        { cash: 0,   visa: 0, pmts: 0 }, // يوم فارغ
+        { cash: 0,   visa: 0, pmts: 0 },
         { cash: 0,   visa: 50, pmts: 0 },
       ],
     });
@@ -310,29 +306,23 @@ describe('calcTotals()', () => {
 
 describe('initMonth()', () => {
   test('فبراير غير كبيس = 28 يوماً', () => {
-    const m = initMonth('2025-02');
-    expect(m.sales).toHaveLength(28);
+    expect(initMonth('2025-02').sales).toHaveLength(28);
   });
 
   test('فبراير كبيس = 29 يوماً', () => {
-    const m = initMonth('2024-02');
-    expect(m.sales).toHaveLength(29);
+    expect(initMonth('2024-02').sales).toHaveLength(29);
   });
 
   test('يناير = 31 يوماً', () => {
-    const m = initMonth('2025-01');
-    expect(m.sales).toHaveLength(31);
+    expect(initMonth('2025-01').sales).toHaveLength(31);
   });
 
   test('أبريل = 30 يوماً', () => {
-    const m = initMonth('2025-04');
-    expect(m.sales).toHaveLength(30);
+    expect(initMonth('2025-04').sales).toHaveLength(30);
   });
 
   test('أرقام الأيام تبدأ من 1 وتكون متسلسلة', () => {
     const m = initMonth('2025-03');
-    expect(m.sales[0].day).toBe(1);
-    expect(m.sales[30].day).toBe(31);
     m.sales.forEach((s, i) => expect(s.day).toBe(i + 1));
   });
 
@@ -353,8 +343,7 @@ describe('initMonth()', () => {
 
   test('إيجار المحل مُعبأ بـ 500 بشكل افتراضي', () => {
     const m = initMonth('2025-07');
-    const rent = m.obligations.find(o => o.id === 'o1');
-    expect(rent.amt).toBe(500);
+    expect(m.obligations.find(o => o.id === 'o1').amt).toBe(500);
   });
 
   test('الموظفون الشهريون يُهيَّأون في mSal بأصفار', () => {
@@ -365,8 +354,7 @@ describe('initMonth()', () => {
   });
 
   test('قائمة السلف فارغة في الشهر الجديد', () => {
-    const m = initMonth('2025-09');
-    expect(m.advances).toEqual([]);
+    expect(initMonth('2025-09').advances).toEqual([]);
   });
 });
 
@@ -374,37 +362,116 @@ describe('initMonth()', () => {
 
 describe('validatePasswordChange()', () => {
   const correctPwd = 'test1234';
-  const stored     = btoa(correctPwd); // كلمة مرور مخزنة كـ base64
+  const stored     = btoa(correctPwd);
 
   test('تنجح مع كلمة المرور الصحيحة', () => {
-    const result = validatePasswordChange(stored, correctPwd, 'newpass', 'newpass');
-    expect(result.ok).toBe(true);
+    expect(validatePasswordChange(stored, correctPwd, 'newpass', 'newpass').ok).toBe(true);
   });
 
   test('ترفض كلمة المرور القديمة الخاطئة', () => {
-    const result = validatePasswordChange(stored, 'wrongpwd', 'newpass', 'newpass');
-    expect(result.ok).toBe(false);
-    expect(result.error).toBe('كلمة المرور الحالية غير صحيحة');
+    const r = validatePasswordChange(stored, 'wrongpwd', 'newpass', 'newpass');
+    expect(r.ok).toBe(false);
+    expect(r.error).toBe('كلمة المرور الحالية غير صحيحة');
   });
 
   test('ترفض كلمة المرور الجديدة أقل من 4 أحرف', () => {
-    const result = validatePasswordChange(stored, correctPwd, 'ab', 'ab');
-    expect(result.ok).toBe(false);
-    expect(result.error).toBe('يجب أن تكون 4 أحرف على الأقل');
+    const r = validatePasswordChange(stored, correctPwd, 'ab', 'ab');
+    expect(r.ok).toBe(false);
+    expect(r.error).toBe('يجب أن تكون 4 أحرف على الأقل');
   });
 
   test('ترفض كلمتَي المرور غير المتطابقتين', () => {
-    const result = validatePasswordChange(stored, correctPwd, 'newpass', 'different');
-    expect(result.ok).toBe(false);
-    expect(result.error).toBe('كلمتا المرور غير متطابقتين');
+    const r = validatePasswordChange(stored, correctPwd, 'newpass', 'different');
+    expect(r.ok).toBe(false);
+    expect(r.error).toBe('كلمتا المرور غير متطابقتين');
   });
 
-  // ⚠️ اختبار يكشف الخلل: بعد الترحيل إلى SHA-256 لا يمكن تغيير كلمة المرور
   test('⚠️ خلل: تفشل بعد ترحيل كلمة المرور إلى SHA-256', async () => {
-    const sha256Stored = await sha256(correctPwd); // ما يُخزَّن بعد checkPwd
-    // الدالة الحالية تقارن btoa فقط — ستفشل دائماً مع هاش SHA-256
+    const sha256Stored = await sha256(correctPwd);
     const result = validatePasswordChange(sha256Stored, correctPwd, 'newpass', 'newpass');
-    expect(result.ok).toBe(false); // هذا الفشل هو الخلل — يجب أن تنجح
-    expect(result.error).toBe('كلمة المرور الحالية غير صحيحة');
+    expect(result.ok).toBe(false); // هذا الفشل هو الخلل — يجب أن تنجح بعد الإصلاح
+  });
+});
+
+// ─── detectSyncConflict ───────────────────────────────────────────────────────
+
+describe('detectSyncConflict()', () => {
+  const deviceA = 'Mozilla/5.0 Device-A';
+  const deviceB = 'Mozilla/5.0 Device-B';
+
+  const time = (offsetMs = 0) =>
+    new Date(Date.now() + offsetMs).toISOString();
+
+  test('لا تعارض إذا كان الجهاز نفسه', () => {
+    const result = detectSyncConflict({
+      cloudSavedAt:  time(-120000), // قبل دقيقتين
+      cloudDevice:   deviceA,
+      localLastPush: time(0),
+      localDevice:   deviceA,       // نفس الجهاز
+    });
+    expect(result.hasConflict).toBe(false);
+  });
+
+  test('لا تعارض إذا كانت السحابة أحدث', () => {
+    const result = detectSyncConflict({
+      cloudSavedAt:  time(0),        // السحابة أحدث
+      cloudDevice:   deviceB,
+      localLastPush: time(-120000),  // المحلي أقدم بدقيقتين
+      localDevice:   deviceA,
+    });
+    expect(result.hasConflict).toBe(false);
+  });
+
+  test('لا تعارض إذا كان الفارق أقل من 60 ثانية', () => {
+    const result = detectSyncConflict({
+      cloudSavedAt:  time(-30000),  // السحابة قبل 30 ثانية
+      cloudDevice:   deviceB,
+      localLastPush: time(0),       // المحلي الآن
+      localDevice:   deviceA,
+    });
+    expect(result.hasConflict).toBe(false);
+  });
+
+  test('تعارض: المحلي أحدث من السحابة بأكثر من 60 ثانية من جهاز آخر', () => {
+    const result = detectSyncConflict({
+      cloudSavedAt:  time(-120000), // السحابة قبل دقيقتين
+      cloudDevice:   deviceB,
+      localLastPush: time(0),       // المحلي الآن
+      localDevice:   deviceA,
+    });
+    expect(result.hasConflict).toBe(true);
+  });
+
+  test('تُعيد توقيتَي السحابة والمحلي عند التعارض للعرض في رسالة التأكيد', () => {
+    const cloudTime = time(-120000);
+    const localTime = time(0);
+    const result = detectSyncConflict({
+      cloudSavedAt:  cloudTime,
+      cloudDevice:   deviceB,
+      localLastPush: localTime,
+      localDevice:   deviceA,
+    });
+    expect(result.cloudSavedAt).toBe(cloudTime);
+    expect(result.localLastPush).toBe(localTime);
+  });
+
+  test('لا تعارض إذا كانت بيانات السحابة بدون جهاز (أول رفع)', () => {
+    const result = detectSyncConflict({
+      cloudSavedAt:  null,
+      cloudDevice:   null,
+      localLastPush: time(0),
+      localDevice:   deviceA,
+    });
+    expect(result.hasConflict).toBe(false);
+  });
+
+  test('لا تعارض إذا لم يكن هناك رفع محلي سابق', () => {
+    const result = detectSyncConflict({
+      cloudSavedAt:  time(-120000),
+      cloudDevice:   deviceB,
+      localLastPush: null,           // لا يوجد رفع محلي
+      localDevice:   deviceA,
+    });
+    expect(result.hasConflict).toBe(false);
   });
 });

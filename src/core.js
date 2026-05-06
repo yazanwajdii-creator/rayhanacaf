@@ -155,6 +155,30 @@ function validatePasswordChange(stored, oldRaw, newPwd, confirmPwd) {
   return { ok: true };
 }
 
+/**
+ * يكشف إذا كانت البيانات المحلية أحدث من السحابة (تعارض محتمل).
+ * مستخرج من منطق supaSync('pull') في index.html الأسطر 10595–10602.
+ *
+ * @param {object} opts
+ * @param {string|null} opts.cloudSavedAt  - وقت آخر رفع على السحابة (ISO string)
+ * @param {string|null} opts.cloudDevice   - معرّف الجهاز الذي رفع للسحابة
+ * @param {string|null} opts.localLastPush - وقت آخر رفع محلي (ISO string)
+ * @param {string}      opts.localDevice   - معرّف الجهاز الحالي
+ * @returns {{ hasConflict: boolean, cloudSavedAt: string|null, localLastPush: string|null }}
+ */
+function detectSyncConflict({ cloudSavedAt, cloudDevice, localLastPush, localDevice }) {
+  if (!cloudDevice || !cloudSavedAt || !localLastPush) {
+    return { hasConflict: false, cloudSavedAt, localLastPush };
+  }
+  if (cloudDevice === localDevice) {
+    return { hasConflict: false, cloudSavedAt, localLastPush };
+  }
+  const localT  = new Date(localLastPush).getTime();
+  const remoteT = new Date(cloudSavedAt).getTime();
+  const hasConflict = localT > remoteT + 60000; // المحلي أحدث بأكثر من دقيقة
+  return { hasConflict, cloudSavedAt, localLastPush };
+}
+
 module.exports = {
   sha256,
   daysIn,
@@ -164,4 +188,5 @@ module.exports = {
   calcTotals,
   initMonth,
   validatePasswordChange,
+  detectSyncConflict,
 };
