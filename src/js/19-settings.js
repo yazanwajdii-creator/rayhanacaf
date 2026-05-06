@@ -64,16 +64,17 @@ function restoreBackup(date) {
   var backups = listBackups();
   var backup = backups.find(function(b) { return b.date === date; });
   if (!backup || !backup.data) { toast('❌ لم يتم العثور على النسخة'); return; }
-  if (!confirm('⚠️ سيتم استبدال البيانات الحالية ببيانات ' + date + '. متأكد؟')) return;
-  try {
-    safeLS.setItem(SK, backup.data);
-    loadStore();
-    renderAll();
-    cmo('moBackup');
-    toast('✅ تمت الاستعادة من نسخة ' + date);
-  } catch(e) {
-    toast('❌ فشل استعادة النسخة: ' + e.message);
-  }
+  rhConfirm('سيتم استبدال كل البيانات الحالية ببيانات نسخة '+date+'. متأكد؟',function(){
+    try {
+      safeLS.setItem(SK, backup.data);
+      loadStore();
+      renderAll();
+      cmo('moBackup');
+      toast('✅ تمت الاستعادة من نسخة ' + date);
+    } catch(e) {
+      toast('❌ فشل استعادة النسخة: ' + e.message);
+    }
+  },{icon:'⚠️',title:'استعادة نسخة',yesText:'استعادة',yesColor:'var(--gnd)',noText:'إلغاء'});
 }
 
 function showBackupManager() {

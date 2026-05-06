@@ -78,8 +78,7 @@ function invAdj(idx,dir){
   log('\u0645\u062e\u0632\u0648\u0646 \u2014 '+S.inventory[idx].name+' \u2192 '+S.inventory[idx].qty+' '+S.inventory[idx].unit);
 }
 function invDel(idx){
-  if(!confirm('\u062d\u0630\u0641 \u0627\u0644\u0635\u0646\u0641\u061f'))return;
-  S.inventory.splice(idx,1);renderInvList();saveAll();toast('\uD83D\uDDD1\uFE0F \u062d\u064f\u0630\u0641');
+  rhConfirm('\u062d\u0630\u0641 \u0627\u0644\u0635\u0646\u0641\u061f',function(){S.inventory.splice(idx,1);renderInvList();saveAll();toast('\uD83D\uDDD1\uFE0F \u062d\u064f\u0630\u0641');},{icon:'\uD83D\uDDD1\uFE0F',title:'\u062d\u0630\u0641 \u0635\u0646\u0641',yesText:'\u062d\u0630\u0641',noText:'\u0625\u0644\u063A\u0627\u0621'});
 }
 
 // ════════════════════════════════════════════════

@@ -2,8 +2,59 @@ function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");cle
 function toggleDark(){document.body.classList.toggle("dark");safeLS.setItem("rh_dark",document.body.classList.contains("dark")?"1":"0");}
 if(safeLS.getItem("rh_dark")==="1")document.body.classList.add("dark");
 function openMo(id){$(id).classList.add("open");document.body.style.overflow="hidden";}
-function cmo(id){$(id).classList.remove("open");document.body.style.overflow="";}
+function cmo(id){
+  var el=$(id);if(!el||!el.classList.contains('open'))return;
+  el.classList.add('closing');
+  setTimeout(function(){
+    if(el.classList.contains('closing')){el.classList.remove('open','closing');}
+    var anyOpen=document.querySelector('.mo-ov.open');
+    if(!anyOpen)document.body.style.overflow='';
+  },220);
+}
 function moOut(e,id){if(e.target===$(id))cmo(id);}
+
+/* CONFIRM MODAL */
+var _rhcCb=null;
+function rhConfirm(msg,onYes,opts){
+  opts=opts||{};
+  var old=document.getElementById('_rhcMo');if(old)old.remove();
+  _rhcCb=onYes||null;
+  var mo=document.createElement('div');
+  mo.id='_rhcMo';mo.className='mo-ov';mo.setAttribute('onclick',"moOut(event,'_rhcMo')");
+  mo.innerHTML='<div class="mo-sh" style="max-width:340px;padding:20px 18px 28px">'
+    +'<div class="mo-bar"></div>'
+    +'<div style="text-align:center;padding:8px 4px 20px">'
+    +'<div style="font-size:40px;margin-bottom:12px">'+(opts.icon||'⚠️')+'</div>'
+    +'<div style="font-size:15px;font-weight:800;color:var(--tx);margin-bottom:8px">'+(opts.title||'تأكيد')+'</div>'
+    +'<div style="font-size:13px;color:var(--tx3);line-height:1.7">'+String(msg||'')+'</div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<button class="btn btn-ghost" onclick="cmo(\'_rhcMo\')" style="padding:13px;font-size:14px;font-weight:600">'+(opts.noText||'إلغاء')+'</button>'
+    +'<button class="btn" onclick="_rhcDo()" style="padding:13px;font-size:14px;font-weight:700;background:'+(opts.yesColor||'var(--rd)')+';color:#fff;border:none">'+(opts.yesText||'تأكيد')+'</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(mo);
+  requestAnimationFrame(function(){openMo('_rhcMo');});
+}
+function _rhcDo(){
+  cmo('_rhcMo');
+  var cb=_rhcCb;_rhcCb=null;
+  if(typeof cb==='function')setTimeout(cb,240);
+}
+
+/* TOUCH RIPPLE */
+document.addEventListener('touchstart',function(e){
+  var btn=e.target.closest('.btn,.ntab,.obl-toggle,.att-d,.kpi-tile');
+  if(!btn)return;
+  var r=document.createElement('span');
+  r.className='touch-ripple';
+  var rect=btn.getBoundingClientRect();
+  var t=e.touches[0];
+  var size=Math.max(rect.width,rect.height)*2;
+  r.style.cssText='width:'+size+'px;height:'+size+'px;left:'+(t.clientX-rect.left-size/2)+'px;top:'+(t.clientY-rect.top-size/2)+'px;background:rgba(255,255,255,0.3)';
+  btn.appendChild(r);
+  setTimeout(function(){r.remove();},600);
+},{passive:true});
 ["click","touchstart","keydown","scroll"].forEach(e=>document.addEventListener(e,resetInact,{passive:true}));
 
 // حفظ عند الخروج — مسجّل منذ بداية تحميل الصفحة (لا ينتظر تسجيل الدخول)
@@ -49,7 +100,7 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 /* LOG */
 function log(d){try{const ls=JSON.parse(safeLS.getItem(LK)||"[]");ls.unshift({t:new Date().toLocaleString("ar-JO"),u:CRN||"نظام",r:CR||"sys",d});if(ls.length>500)ls.splice(500);safeLS.setItem(LK,JSON.stringify(ls));}catch(e){}}
 function renderLog(){const c=$("auditList");if(!c)return;try{const ls=JSON.parse(safeLS.getItem(LK)||"[]");if(!ls.length){c.innerHTML='<div class="alert al-i" style="margin:12px">لا توجد سجلات</div>';return;}c.innerHTML=ls.map(l=>`<div class="log-item"><span class="log-t">${l.t}</span><span class="log-u lu-${l.r==="manager"?"m":l.r==="accountant"?"a":"s"}">${l.u}</span><span style="flex:1">${l.d}</span></div>`).join("");}catch(e){}}
-function clearLog(){if(!confirm("مسح السجل؟"))return;safeLS.removeItem(LK);renderLog();toast("🗑️ تم المسح");}
+function clearLog(){rhConfirm("هل تريد مسح سجل العمليات كاملاً؟",function(){safeLS.removeItem(LK);renderLog();toast("🗑️ تم المسح");},{icon:'🗑️',title:'مسح السجل',yesText:'مسح',noText:'إلغاء'});}
 
 /* LOGIN SYSTEM */
 function applyRoles(){const m=CR==="manager";document.querySelectorAll(".del-btn").forEach(e=>{e.style.opacity=m?"1":"0.3";e.style.pointerEvents=m?"":"none";});}
@@ -95,9 +146,8 @@ function toggleLockMonth(){
   if(CR!=="manager"){toast("⚠️ صلاحية المدير مطلوبة");return;}
   if(!S.lockedMonths)S.lockedMonths=[];
   const k=S.activeKey,idx=S.lockedMonths.indexOf(k);
-  if(idx>-1){if(!confirm(`فتح الشهر ${k}؟`))return;S.lockedMonths.splice(idx,1);toast("🔓 تم فتح الشهر");}
-  else{if(!confirm(`قفل الشهر ${k}؟`))return;S.lockedMonths.push(k);toast("🔒 تم قفل الشهر");}
-  saveAll();updLkChips();renderRevTable();renderObligList();
+  if(idx>-1){rhConfirm(`فتح الشهر ${k}؟`,function(){S.lockedMonths.splice(idx,1);toast("🔓 تم فتح الشهر");saveAll();updLkChips();renderRevTable();renderObligList();},{icon:'🔓',title:'فتح الشهر',yesText:'فتح',yesColor:'var(--gnd)',noText:'إلغاء'});return;}
+  rhConfirm(`قفل الشهر ${k}؟`,function(){S.lockedMonths.push(k);toast("🔒 تم قفل الشهر");saveAll();updLkChips();renderRevTable();renderObligList();},{icon:'🔒',title:'قفل الشهر',yesText:'قفل',noText:'إلغاء'});
 }
 function updLkChips(){
   const lk=isLocked();

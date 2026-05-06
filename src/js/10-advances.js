@@ -33,5 +33,5 @@ function renderAdvLedger(){
   }).join("");
 }
 function updAdvStat(i,status){G().advances[i].status=status;renderAdv();renderAdvLedger();S.monthlyEmps.forEach(e=>{const pa=pendAdv(e.id);T(`ms_${e.id}_av`,n3(pa));const base=pf(`ms_${e.id}_b`),allow=pf(`ms_${e.id}_a`),ded=pf(`ms_${e.id}_d`);T(`ms_${e.id}_n`,n3(Math.max(0,base+allow-ded-pa)));});updateDash();saveAll();toast("✅ تم التحديث");}
-function delAdv(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(!confirm("حذف السلفة؟"))return;G().advances.splice(i,1);renderAdv();renderAdvLedger();initSalTables();updateDash();saveAll();toast("🗑️ تم الحذف");}
+function delAdv(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}rhConfirm("حذف السلفة؟",function(){G().advances.splice(i,1);renderAdv();renderAdvLedger();initSalTables();updateDash();saveAll();toast("🗑️ تم الحذف");},{icon:'🗑️',title:'حذف السلفة',yesText:'حذف',noText:'إلغاء'});}
 

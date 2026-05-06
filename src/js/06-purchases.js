@@ -136,7 +136,7 @@ function clearPurchFilter(){
   renderPurch();
 }
 
-function delPurch(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}if(!confirm("حذف المستند؟"))return;G().purchases.splice(i,1);renderPurch();renderSuppRpt();updateDash();saveAll();toast("🗑️ تم الحذف");}
+function delPurch(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}rhConfirm("حذف هذا المستند؟",function(){G().purchases.splice(i,1);renderPurch();renderSuppRpt();updateDash();saveAll();toast("🗑️ تم الحذف");},{icon:'🗑️',title:'حذف مستند',yesText:'حذف',noText:'إلغاء'});}
 
 function renderCatSum(){
   const c=$("catSum");if(!c)return;

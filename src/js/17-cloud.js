@@ -224,16 +224,17 @@ function toggleSupaAuto(){
 
 /* ── قطع الاتصال ── */
 function supaDisconnect(){
-  if(!confirm('قطع الاتصال بـ Supabase؟ البيانات ستبقى محلياً.'))return;
-  SUPA=null;
-  SUPA_AUTO=false;
-  if(SUPA_TIMER){clearInterval(SUPA_TIMER); SUPA_TIMER=null;}
-  _kRemove(SUPA_URL_KEY);
-  _kRemove(SUPA_KEY_KEY);
-  _kRemove('rh_supa_auto');
-  supaUpdateUI(false);
-  toast('⛔ تم قطع الاتصال');
-  log('قطع اتصال Supabase');
+  rhConfirm('قطع الاتصال بـ Supabase؟ البيانات ستبقى محلياً.',function(){
+    SUPA=null;
+    SUPA_AUTO=false;
+    if(SUPA_TIMER){clearInterval(SUPA_TIMER); SUPA_TIMER=null;}
+    _kRemove(SUPA_URL_KEY);
+    _kRemove(SUPA_KEY_KEY);
+    _kRemove('rh_supa_auto');
+    supaUpdateUI(false);
+    toast('⛔ تم قطع الاتصال');
+    log('قطع اتصال Supabase');
+  },{icon:'🔌',title:'قطع الاتصال',yesText:'قطع',noText:'إلغاء'});
 }
 
 function tbSyncRefresh(){

@@ -356,11 +356,10 @@ function importJSON(ev){
       return;
     }
     var monthCount=Object.keys(data.months).length;
-    if(!confirm('⚠️ سيتم استبدال البيانات الحالية ببيانات الملف.\n\nعدد الأشهر: '+monthCount+'\n\nهل أنت متأكد؟')){
-      return;
-    }
-    try{ _applyImportData(data); }
-    catch(err2){ toast('❌ خطأ أثناء الاستيراد: '+err2.message); }
+    rhConfirm('سيتم استبدال كل البيانات الحالية ببيانات الملف ('+monthCount+' أشهر). هل أنت متأكد؟',function(){
+      try{ _applyImportData(data); }
+      catch(err2){ toast('❌ خطأ أثناء الاستيراد: '+err2.message); }
+    },{icon:'⚠️',title:'استيراد بيانات',yesText:'استيراد',yesColor:'var(--gnd)',noText:'إلغاء'});
   };
   reader.readAsText(file,'utf-8');
 }
@@ -397,11 +396,12 @@ function _doPasteImport(){
   if(data.data&&data.data.months) data=data.data;
   if(!data.months){ toast('❌ لا توجد بيانات شهرية في النص'); return; }
   var monthCount=Object.keys(data.months).length;
-  if(!confirm('⚠️ سيتم استبدال البيانات الحالية.\n\nعدد الأشهر: '+monthCount+'\n\nهل أنت متأكد؟')) return;
-  var modal=document.getElementById('pasteImportModal');
-  if(modal) modal.remove();
-  try{ _applyImportData(data); }
-  catch(err2){ toast('❌ خطأ أثناء الاستيراد: '+err2.message); }
+  rhConfirm('سيتم استبدال كل البيانات الحالية ('+monthCount+' أشهر). هل أنت متأكد؟',function(){
+    var modal=document.getElementById('pasteImportModal');
+    if(modal) modal.remove();
+    try{ _applyImportData(data); }
+    catch(err2){ toast('❌ خطأ أثناء الاستيراد: '+err2.message); }
+  },{icon:'⚠️',title:'استيراد بيانات',yesText:'استيراد',yesColor:'var(--gnd)',noText:'إلغاء'});
 }
 
 function exportExcel(){

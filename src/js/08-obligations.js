@@ -105,4 +105,4 @@ function saveOblig(){
   renderObligList();updateDash();calcCash();updateRpt();cmo("moOblig");saveAll();toast("✅ تم الحفظ");
 }
 
-function delOblig(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}if(!confirm(`حذف "${G().obligations[i].name}"؟`))return;G().obligations.splice(i,1);renderObligList();updateDash();calcCash();updateRpt();saveAll();toast("🗑️ تم الحذف");}
+function delOblig(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}var nm=G().obligations[i]&&G().obligations[i].name;rhConfirm('حذف "'+nm+'"؟',function(){G().obligations.splice(i,1);renderObligList();updateDash();calcCash();updateRpt();saveAll();toast("🗑️ تم الحذف");},{icon:'🗑️',title:'حذف التزام',yesText:'حذف',noText:'إلغاء'});}
