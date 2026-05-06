@@ -1,95 +1,95 @@
-# Test Coverage Analysis — Rayhana Café App
+# تحليل تغطية الاختبارات — تطبيق ريحانة كافيه
 
-## Summary
+## ملخص
 
-The codebase has **0% test coverage**. No test files, no test frameworks, and no test-related configuration exist anywhere in the project. Every line of business logic, security code, and data-sync logic runs completely unverified.
+تغطية الاختبارات في المشروع **0%**. لا توجد أي ملفات اختبار، ولا أُطر اختبار، ولا أي إعداد متعلق بالاختبارات في أي مكان في المشروع. كل سطر من منطق الأعمال وكود الأمان ومزامنة البيانات يعمل دون أي تحقق.
 
 ---
 
-## Current State
+## الوضع الحالي
 
-| Metric | Value |
+| المقياس | القيمة |
 |---|---|
-| Test files | 0 |
-| Source lines (JS in `index.html`) | ~10,835 |
-| Source lines (Java `MainActivity.java`) | ~137 |
-| Functions identified | ~150+ |
-| Functions with tests | 0 |
-| Testing frameworks configured | None |
-| CI test step | None (build-only GitHub Action) |
+| ملفات الاختبار | 0 |
+| أسطر الكود (JS في `index.html`) | ~10,835 |
+| أسطر الكود (Java في `MainActivity.java`) | ~137 |
+| الدوال المُحددة | ~150+ |
+| الدوال المغطاة باختبارات | 0 |
+| أُطر الاختبار المُهيأة | لا يوجد |
+| خطوة الاختبار في CI | لا يوجد (GitHub Action للبناء فقط) |
 
 ---
 
-## Priority Areas for New Tests
+## المجالات ذات الأولوية لإضافة الاختبارات
 
-Ranked by risk (bug impact × likelihood).
+مرتبة حسب الخطورة (تأثير الخطأ × احتمالية حدوثه).
 
 ---
 
-### 1. Authentication & Password Logic — CRITICAL
+### 1. المصادقة ومنطق كلمة المرور — حرج
 
-**Files:** `index.html` lines 3630–3728
+**الملفات:** `index.html` الأسطر 3630–3728
 
-**Why it matters:** A bug here locks every user out or lets anyone in.
+**لماذا يهم:** أي خطأ هنا يُقفل الجميع خارج التطبيق أو يسمح لأي شخص بالدخول.
 
-**Known bug (confirmed by code reading):** `changePwd()` and `checkPwd()` are out of sync on how they store/read the password hash.
+**خطأ موثق (مؤكد بقراءة الكود):** الدالتان `changePwd()` و`checkPwd()` غير متزامنتين في طريقة تخزين وقراءة هاش كلمة المرور.
 
-- `checkPwd()` (line 3642) compares against a **SHA-256** hash and silently migrates legacy base64 passwords to SHA-256 on first use.
-- `changePwd()` (line 3719) validates the *old* password using `btoa(old) !== stored` — this will **always fail** after migration, because `btoa` produces base64 but the stored value is now SHA-256.
-- `changePwd()` (line 3722) then stores the *new* password as `btoa(nw)` — plain base64 — undoing the migration.
+- `checkPwd()` (السطر 3642) تقارن مع هاش **SHA-256** وتُرحّل كلمات المرور القديمة المُشفرة بـ base64 إلى SHA-256 تلقائياً عند أول تسجيل دخول.
+- `changePwd()` (السطر 3719) تتحقق من كلمة المرور *القديمة* باستخدام `btoa(old) !== stored` — وهذا **سيفشل دائماً** بعد الترحيل، لأن `btoa` تُنتج base64 بينما القيمة المخزنة أصبحت SHA-256.
+- `changePwd()` (السطر 3722) تخزن كلمة المرور *الجديدة* كـ `btoa(nw)` — base64 عادي — مما يتراجع عن الترحيل.
 
-**Effect:** Once a user logs in for the first time after the SHA-256 migration, they can never change their password. The change-password form will always show "كلمة المرور الحالية غير صحيحة".
+**الأثر:** بمجرد تسجيل المستخدم للدخول للمرة الأولى بعد ترحيل SHA-256، لن يتمكن أبداً من تغيير كلمته السرية. سيُظهر نموذج تغيير كلمة المرور دائماً "كلمة المرور الحالية غير صحيحة".
 
-**Tests to write:**
+**الاختبارات المطلوبة:**
 
 ```js
-// sha256() — pure async function, easy to test
-test('sha256 applies salt before hashing', async () => {
+// sha256() — دالة async نقية، سهلة الاختبار
+test('sha256 تُطبق الـ salt قبل الهشنة', async () => {
   const h1 = await sha256('abc');
   const h2 = await sha256('abc');
-  expect(h1).toBe(h2);               // deterministic
-  expect(h1).toHaveLength(64);       // valid hex SHA-256
+  expect(h1).toBe(h2);               // نفس الإدخال = نفس النتيجة
+  expect(h1).toHaveLength(64);       // هاش SHA-256 صحيح بتنسيق hex
   expect(h1).not.toBe(await sha256('xyz'));
 });
 
-// checkPwd() — mock localStorage and DOM
-test('checkPwd accepts correct SHA-256 password', async () => { /* ... */ });
-test('checkPwd migrates base64 password to SHA-256 on login', async () => { /* ... */ });
-test('checkPwd rejects wrong password', async () => { /* ... */ });
+// checkPwd() — محاكاة localStorage والـ DOM
+test('checkPwd تقبل كلمة المرور الصحيحة بهاش SHA-256', async () => { /* ... */ });
+test('checkPwd تُرحّل كلمة المرور من base64 إلى SHA-256 عند الدخول', async () => { /* ... */ });
+test('checkPwd ترفض كلمة المرور الخاطئة', async () => { /* ... */ });
 
-// changePwd() — should use SHA-256 for both read and write
-test('changePwd validates old password correctly after SHA-256 migration', async () => { /* ... */ });
-test('changePwd stores new password as SHA-256, not base64', async () => { /* ... */ });
+// changePwd() — يجب استخدام SHA-256 للقراءة والكتابة معاً
+test('changePwd تتحقق من كلمة المرور القديمة بشكل صحيح بعد ترحيل SHA-256', async () => { /* ... */ });
+test('changePwd تخزن كلمة المرور الجديدة بهاش SHA-256 وليس base64', async () => { /* ... */ });
 ```
 
 ---
 
-### 2. Financial Calculation Engine — CRITICAL
+### 2. محرك الحسابات المالية — حرج
 
-**Files:** `index.html` lines 4093–4213 (`totals()`, `calcRevTots()`)
+**الملفات:** `index.html` الأسطر 4093–4213 (`totals()`، `calcRevTots()`)
 
-**Why it matters:** Incorrect profit/expense calculations produce wrong financial reports. The code has already had two breaking fixes ("V24-2 FIX", "V24-3 FIX") with comments about critical accounting errors — tests would have caught these regressions.
+**لماذا يهم:** حسابات الربح والمصروفات الخاطئة تُنتج تقارير مالية مغلوطة. الكود احتوى بالفعل على إصلاحَين عاجلَين ("V24-2 FIX"، "V24-3 FIX") مع تعليقات عن أخطاء محاسبية حرجة — الاختبارات كانت ستمنع هذا التراجع.
 
-**Key formulas to verify:**
+**المعادلات الأساسية للتحقق منها:**
 
-- `netSales = cash + visa` (not including `pmts`)
-- `totalExp = bycat.total + oblPaid + mSalPaid` (only *paid* obligations and salaries)
+- `netSales = cash + visa` (لا تشمل `pmts`)
+- `totalExp = bycat.total + oblPaid + mSalPaid` (الالتزامات والرواتب *المدفوعة* فقط)
 - `profit = netSales - totalExp`
 - `margin = profit / netSales * 100`
-- Net salary per employee: `max(0, base + allow - ded - pendingAdvances)`
+- الراتب الصافي للموظف: `max(0, base + allow - ded - pendingAdvances)`
 
-**Tests to write:**
+**الاختبارات المطلوبة:**
 
 ```js
-// totals() — pure calculation given a month data object
+// totals() — حساب نقي بناءً على كائن بيانات الشهر
 describe('totals()', () => {
-  test('netSales excludes pmts (daily wage payments)', () => {
+  test('netSales لا تشمل pmts (مدفوعات الأجور اليومية)', () => {
     const month = mockMonth({ sales: [{ cash: 100, visa: 50, pmts: 20 }] });
     const r = totals(month);
-    expect(r.netSales).toBe(150);  // not 170
+    expect(r.netSales).toBe(150);  // وليس 170
   });
 
-  test('only paid obligations count toward expenses', () => {
+  test('فقط الالتزامات المدفوعة تُحتسب ضمن المصروفات', () => {
     const month = mockMonth({
       obligations: [
         { amt: 500, paid: true },
@@ -97,54 +97,54 @@ describe('totals()', () => {
       ]
     });
     const r = totals(month);
-    expect(r.oblPaid).toBe(500);   // 1000 must not appear
+    expect(r.oblPaid).toBe(500);   // 1000 يجب ألا تظهر
   });
 
-  test('unpaid salaries do not reduce profit', () => { /* ... */ });
+  test('الرواتب غير المدفوعة لا تُخفض الربح', () => { /* ... */ });
 
-  test('profit margin is zero when netSales is zero (no division by zero)', () => { /* ... */ });
+  test('هامش الربح صفر عندما netSales تساوي صفر (لا قسمة على صفر)', () => { /* ... */ });
 
-  test('pending advances reduce employee net salary', () => { /* ... */ });
+  test('السلف المعلقة تُخفض الراتب الصافي للموظف', () => { /* ... */ });
 });
 ```
 
 ---
 
-### 3. Data Initialization — HIGH
+### 3. تهيئة البيانات — عالي
 
-**Files:** `index.html` lines 3789–3808 (`getMonth()`)
+**الملفات:** `index.html` الأسطر 3789–3808 (`getMonth()`)
 
-**Why it matters:** This is the data factory for every month. A bug here corrupts all financial data, salary tables, and obligation lists for new months.
+**لماذا يهم:** هذه هي المصنع الذي يبني بيانات كل شهر. أي خطأ هنا يُفسد جميع البيانات المالية وجداول الرواتب وقوائم الالتزامات للأشهر الجديدة.
 
-**Tests to write:**
+**الاختبارات المطلوبة:**
 
 ```js
 describe('getMonth()', () => {
-  test('creates correct number of days for a 28-day month (Feb non-leap)', () => {
+  test('ينشئ عدد الأيام الصحيح لشهر 28 يوماً (فبراير غير كبيس)', () => {
     const m = getMonth('2025-02');
     expect(m.sales).toHaveLength(28);
   });
 
-  test('creates correct number of days for a 31-day month', () => {
+  test('ينشئ عدد الأيام الصحيح لشهر 31 يوماً', () => {
     const m = getMonth('2025-01');
     expect(m.sales).toHaveLength(31);
   });
 
-  test('leap year February has 29 days', () => {
+  test('فبراير في السنة الكبيسة يحتوي على 29 يوماً', () => {
     const m = getMonth('2024-02');
     expect(m.sales).toHaveLength(29);
   });
 
-  test('each day entry has cash, visa, pmts initialized to 0', () => { /* ... */ });
+  test('كل إدخال يومي تكون قيم cash و visa و pmts مهيأة بالصفر', () => { /* ... */ });
 
-  test('returns same object on repeated calls (no re-initialization)', () => {
+  test('يُعيد نفس الكائن عند الاستدعاء المتكرر (لا إعادة تهيئة)', () => {
     const m1 = getMonth('2025-03');
     m1.sales[0].cash = 999;
     const m2 = getMonth('2025-03');
     expect(m2.sales[0].cash).toBe(999);
   });
 
-  test('new month has default obligations pre-populated', () => {
+  test('الشهر الجديد يحتوي على الالتزامات الافتراضية مُعبأة مسبقاً', () => {
     const m = getMonth('2025-06');
     expect(m.obligations.length).toBeGreaterThan(0);
     expect(m.obligations[0].name).toBeTruthy();
@@ -155,31 +155,31 @@ describe('getMonth()', () => {
 
 ---
 
-### 4. Supabase Sync Conflict Detection — HIGH
+### 4. كشف تعارض مزامنة Supabase — عالي
 
-**Files:** `index.html` lines 10546–10630 (`supaSync()`)
+**الملفات:** `index.html` الأسطر 10546–10630 (`supaSync()`)
 
-**Why it matters:** The conflict detection logic (lines 10593–10602) uses timestamp comparisons to warn when local data is newer than cloud data. An off-by-one in the 60-second threshold or a timezone issue silently swallows data from another device.
+**لماذا يهم:** منطق كشف التعارض (الأسطر 10593–10602) يستخدم مقارنة الطوابع الزمنية للتحذير عندما تكون البيانات المحلية أحدث من السحابة. خطأ بسيط في عتبة الـ 60 ثانية أو مشكلة في المنطقة الزمنية قد يُفقد بيانات جهاز آخر بصمت.
 
-**Tests to write:**
+**الاختبارات المطلوبة:**
 
 ```js
-describe('supaSync conflict detection', () => {
-  test('warns when local push is more than 60s newer than cloud', () => { /* mock toast */ });
-  test('does not warn when timestamps differ by less than 60s', () => { /* ... */ });
-  test('does not warn when device is the same', () => { /* ... */ });
-  test('pull merges cloud months into local state without overwriting', () => { /* ... */ });
-  test('pull throws when Supabase returns non-PGRST116 error', () => { /* ... */ });
+describe('كشف تعارض supaSync', () => {
+  test('يُحذّر عندما الرفع المحلي أحدث من السحابة بأكثر من 60 ثانية', () => { /* محاكاة toast */ });
+  test('لا يُحذّر عندما يكون فارق الوقت أقل من 60 ثانية', () => { /* ... */ });
+  test('لا يُحذّر عندما يكون الجهاز نفسه', () => { /* ... */ });
+  test('السحب يدمج أشهر السحابة في الحالة المحلية دون تجاوزها', () => { /* ... */ });
+  test('السحب يُلقي خطأ عند إرجاع Supabase لخطأ غير PGRST116', () => { /* ... */ });
 });
 ```
 
 ---
 
-### 5. Pending Advances Calculation — MEDIUM
+### 5. حساب السلف المعلقة — متوسط
 
-**Files:** `index.html` line 4640 (`pendAdv()`)
+**الملفات:** `index.html` السطر 4640 (`pendAdv()`)
 
-**Why it matters:** Advances incorrectly deducted from salary cause employees to be underpaid. This feeds directly into `totals()` and every salary display.
+**لماذا يهم:** السلف المخصومة بشكل خاطئ من الراتب تُؤدي إلى نقص في دفع الموظفين. هذه الدالة تُغذّي `totals()` وكل عرض للرواتب.
 
 ```js
 const pendAdv = empId =>
@@ -188,25 +188,25 @@ const pendAdv = empId =>
     .reduce((s, a) => s + (a.amt || 0), 0);
 ```
 
-**Tests to write:**
+**الاختبارات المطلوبة:**
 
 ```js
 describe('pendAdv()', () => {
-  test('sums only pending and partially-paid advances', () => { /* ... */ });
-  test('excludes fully-settled advances', () => { /* ... */ });
-  test('excludes advances for other employees', () => { /* ... */ });
-  test('returns 0 when employee has no advances', () => { /* ... */ });
-  test('handles missing amt field gracefully', () => { /* ... */ });
+  test('تجمع السلف المعلقة والمسددة جزئياً فقط', () => { /* ... */ });
+  test('تستثني السلف المسددة بالكامل', () => { /* ... */ });
+  test('تستثني سلف الموظفين الآخرين', () => { /* ... */ });
+  test('تُعيد 0 عندما لا يوجد للموظف سلف', () => { /* ... */ });
+  test('تتعامل بشكل صحيح مع حقل amt المفقود', () => { /* ... */ });
 });
 ```
 
 ---
 
-### 6. HTML Escape Utility — MEDIUM
+### 6. دالة تهريب HTML — متوسط
 
-**Files:** `index.html` line 3812 (`esc()`)
+**الملفات:** `index.html` السطر 3812 (`esc()`)
 
-**Why it matters:** `esc()` is used throughout the rendering layer to prevent XSS. A missed character (e.g., single quote) could allow stored XSS via supplier names, employee names, or notes.
+**لماذا يهم:** تُستخدم `esc()` في كل طبقة العرض للحماية من XSS. حرف واحد مفقود (مثل علامة الاقتباس المفردة) قد يسمح بهجوم XSS مخزّن عبر أسماء الموردين أو الموظفين أو الملاحظات.
 
 ```js
 function esc(s) {
@@ -215,16 +215,16 @@ function esc(s) {
 }
 ```
 
-**Tests to write:**
+**الاختبارات المطلوبة:**
 
 ```js
 describe('esc()', () => {
-  test('escapes &', () => expect(esc('a & b')).toBe('a &amp; b'));
-  test('escapes <', () => expect(esc('<script>')).toBe('&lt;script&gt;'));
-  test('escapes "', () => expect(esc('"hello"')).toBe('&quot;hello&quot;'));
-  test('handles null/undefined', () => expect(esc(null)).toBe(''));
-  test('does NOT escape single quotes — document this known gap', () => {
-    // Single quotes are unescaped; callers must not use esc() in JS event handlers
+  test('تُهرّب &', () => expect(esc('a & b')).toBe('a &amp; b'));
+  test('تُهرّب <', () => expect(esc('<script>')).toBe('&lt;script&gt;'));
+  test('تُهرّب "', () => expect(esc('"hello"')).toBe('&quot;hello&quot;'));
+  test('تتعامل مع null/undefined', () => expect(esc(null)).toBe(''));
+  test('لا تُهرّب علامة الاقتباس المفردة — توثيق هذه الثغرة المعروفة', () => {
+    // علامات الاقتباس المفردة لا تُهرَّب؛ يجب ألا يُستخدم esc() في معالجات أحداث JS
     expect(esc("it's")).toBe("it's");
   });
 });
@@ -232,24 +232,24 @@ describe('esc()', () => {
 
 ---
 
-### 7. `daysIn()` Utility — MEDIUM
+### 7. دالة `daysIn()` المساعدة — متوسط
 
-**Files:** `index.html` line 3786
+**الملفات:** `index.html` السطر 3786
 
-**Why it matters:** Wrong day count = missing rows in the sales table or out-of-bounds access. This is the root of `getMonth()`.
+**لماذا يهم:** عدد الأيام الخاطئ = صفوف مفقودة في جدول المبيعات أو وصول خارج الحدود. هذه هي جذر `getMonth()`.
 
 ```js
 const daysIn = k => { const [y, m] = k.split('-').map(Number); return new Date(y, m, 0).getDate(); };
 ```
 
-**Tests to write:**
+**الاختبارات المطلوبة:**
 
 ```js
 describe('daysIn()', () => {
   test.each([
     ['2025-01', 31], ['2025-02', 28], ['2024-02', 29],
     ['2025-04', 30], ['2025-12', 31],
-  ])('%s has %d days', (key, expected) => {
+  ])('%s يحتوي على %d يوماً', (key, expected) => {
     expect(daysIn(key)).toBe(expected);
   });
 });
@@ -257,48 +257,48 @@ describe('daysIn()', () => {
 
 ---
 
-### 8. Number Formatting — LOW
+### 8. تنسيق الأرقام — منخفض
 
-**Files:** `index.html` line 3766 (`n3()`)
+**الملفات:** `index.html` السطر 3766 (`n3()`)
 
-**Why it matters:** `n3()` formats all monetary values. A wrong decimal means financial reports show incorrect amounts.
+**لماذا يهم:** تُنسّق `n3()` جميع القيم النقدية. خانة عشرية خاطئة تعني أن التقارير المالية تعرض مبالغ غير صحيحة.
 
 ```js
 const n3 = v => (parseFloat(v) || 0).toFixed(3);
 ```
 
-**Tests to write:**
+**الاختبارات المطلوبة:**
 
 ```js
 describe('n3()', () => {
-  test('formats to 3 decimal places', () => expect(n3(1.5)).toBe('1.500'));
-  test('returns "0.000" for null/undefined/NaN', () => {
+  test('تُنسّق إلى 3 منازل عشرية', () => expect(n3(1.5)).toBe('1.500'));
+  test('تُعيد "0.000" لـ null/undefined/NaN', () => {
     expect(n3(null)).toBe('0.000');
     expect(n3(undefined)).toBe('0.000');
     expect(n3('abc')).toBe('0.000');
   });
-  test('handles string numbers', () => expect(n3('12.5')).toBe('12.500'));
+  test('تتعامل مع الأرقام المُمرَّرة كنصوص', () => expect(n3('12.5')).toBe('12.500'));
 });
 ```
 
 ---
 
-## Recommended Test Setup
+## إعداد الاختبارات الموصى به
 
-### Step 1: Extract pure functions into a testable module
+### الخطوة 1: استخراج الدوال النقية في وحدة قابلة للاختبار
 
-The biggest obstacle to testing is that all logic lives inside a single HTML file with DOM dependencies woven throughout. The pure functions listed above (`sha256`, `daysIn`, `n3`, `esc`, `pendAdv`, `totals` logic) have no inherent DOM dependency and can be extracted into a plain `.js` module.
+أكبر عائق أمام الاختبار هو أن كل المنطق موجود داخل ملف HTML واحد مع اعتماديات DOM متشابكة في كل مكان. الدوال النقية المذكورة أعلاه (`sha256`، `daysIn`، `n3`، `esc`، `pendAdv`، منطق `totals`) لا تعتمد على DOM وتستطيع أن تُستخرج في وحدة `.js` عادية.
 
-**Approach:** Create `src/core.js` exporting just the pure functions. Import it in `index.html` via `<script src="src/core.js">`. Test `src/core.js` with Jest.
+**المقاربة:** إنشاء ملف `src/core.js` يُصدّر الدوال النقية فقط، واستيراده في `index.html` عبر `<script src="src/core.js">`. اختبار `src/core.js` باستخدام Jest.
 
-### Step 2: Install Jest
+### الخطوة 2: تثبيت Jest
 
 ```bash
 npm init -y
 npm install --save-dev jest
 ```
 
-Add to `package.json`:
+إضافة إلى `package.json`:
 ```json
 {
   "scripts": {
@@ -313,9 +313,9 @@ Add to `package.json`:
 }
 ```
 
-### Step 3: Add tests to CI
+### الخطوة 3: إضافة الاختبارات إلى CI
 
-In `.github/workflows/build-android.yml`, add a test job that runs before the build:
+في `.github/workflows/build-android.yml`، إضافة خطوة اختبار تسبق البناء:
 
 ```yaml
 jobs:
@@ -329,20 +329,20 @@ jobs:
       - run: npm test
   build:
     needs: test
-    # ... existing build steps
+    # ... خطوات البناء الحالية
 ```
 
 ---
 
-## Prioritized Backlog
+## قائمة الأولويات
 
-| # | Area | Risk | Effort | Tests Needed |
+| # | المجال | الخطورة | الجهد | الاختبارات المطلوبة |
 |---|---|---|---|---|
-| 1 | `changePwd()` / `checkPwd()` SHA-256 mismatch bug | Critical | Low | 5 |
-| 2 | `totals()` financial formulas | Critical | Medium | 8 |
-| 3 | `getMonth()` data initialization | High | Low | 6 |
-| 4 | `supaSync()` conflict detection | High | Medium | 5 |
-| 5 | `pendAdv()` advance deduction | Medium | Low | 5 |
-| 6 | `esc()` XSS escaping | Medium | Low | 5 |
-| 7 | `daysIn()` calendar math | Medium | Low | 5 |
-| 8 | `n3()` number formatting | Low | Low | 4 |
+| 1 | خطأ عدم التزامن في SHA-256 بين `changePwd()` و`checkPwd()` | حرج | منخفض | 5 |
+| 2 | المعادلات المالية في `totals()` | حرج | متوسط | 8 |
+| 3 | تهيئة البيانات في `getMonth()` | عالي | منخفض | 6 |
+| 4 | كشف التعارض في `supaSync()` | عالي | متوسط | 5 |
+| 5 | خصم السلف في `pendAdv()` | متوسط | منخفض | 5 |
+| 6 | تهريب XSS في `esc()` | متوسط | منخفض | 5 |
+| 7 | الحسابات التقويمية في `daysIn()` | متوسط | منخفض | 5 |
+| 8 | تنسيق الأرقام في `n3()` | منخفض | منخفض | 4 |
