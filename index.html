@@ -2638,6 +2638,7 @@ body.dark .ss-card{background:var(--surf)}
         </div>
       </div>
       <div class="card"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">📊</span>المصاريف حسب الفئة</div></div><div class="card-body" id="catSum"></div></div>
+      <div class="card"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">📦</span>تحليل الأصناف المشتراة</div></div><div class="card-body" id="itemsRpt"></div></div>
     </div>
 
     <!-- SUPPLIERS -->
@@ -4557,7 +4558,7 @@ function renderPurch(){
       sum.innerHTML=chips;
     } else {sum.innerHTML="";}
   }
-  renderCatSum();
+  renderCatSum();renderItemsRpt();
 }
 function editPurch(i){
   var p=G().purchases[i];
@@ -4614,7 +4615,7 @@ function savePurch(){
     toast("✅ تم التسجيل");
     log("مشتريات — "+sup.name+" — "+n3(amt)+" JD");
   }
-  renderPurch();renderSuppRpt();renderCatSum();updateDash();
+  renderPurch();renderSuppRpt();renderCatSum();renderItemsRpt();updateDash();
   closePurchModal();
   saveAll();
 }
@@ -4744,6 +4745,106 @@ function renderCatSum(){
       </div>
     </div>`;
   });
+  html+='</div>';
+  c.innerHTML=html;
+}
+
+function renderItemsRpt(){
+  const c=$("itemsRpt");if(!c)return;
+  const purchases=G().purchases;
+  // تجميع كل بنود الفواتير
+  const itemMap={};
+  purchases.forEach(function(p){
+    if(!p.items||!p.items.length)return;
+    p.items.forEach(function(it){
+      if(!it.name||!it.name.trim())return;
+      const k=it.name.trim();
+      if(!itemMap[k])itemMap[k]=[];
+      itemMap[k].push({date:p.date,unitPrice:it.unitPrice||0,qty:it.qty||0,total:it.total||0,unit:it.unit||'',sup:p.sName||'',inv:p.inv||''});
+    });
+  });
+  const keys=Object.keys(itemMap);
+  if(!keys.length){
+    c.innerHTML='<div class="alert al-i" style="margin:8px 0">لا توجد بنود فواتير مفصلة — فعّل بنود الفاتورة عند إضافة مشتريات</div>';return;
+  }
+  // بناء ملخص لكل صنف
+  const summary=keys.map(function(name){
+    const entries=itemMap[name];
+    const sorted=[].concat(entries).sort(function(a,b){return a.date<b.date?-1:1;});
+    const totalQty=entries.reduce(function(s,e){return s+e.qty;},0);
+    const totalSpend=entries.reduce(function(s,e){return s+e.total;},0);
+    const validPrices=sorted.map(function(e){return e.unitPrice;}).filter(function(p){return p>0;});
+    const uniquePrices=[...new Set(validPrices)];
+    const minP=validPrices.length?Math.min.apply(null,validPrices):0;
+    const maxP=validPrices.length?Math.max.apply(null,validPrices):0;
+    const firstP=validPrices[0]||0;
+    const lastP=validPrices[validPrices.length-1]||0;
+    const pctChg=firstP>0?((lastP-firstP)/firstP*100):0;
+    const avgPrice=totalQty>0?totalSpend/totalQty:0;
+    return{name,unit:sorted[0].unit||'',totalQty,totalSpend,count:entries.length,avgPrice,
+      firstP,lastP,minP,maxP,pctChg,hasPriceChange:uniquePrices.length>1,history:sorted};
+  });
+
+  // ── القسم 1: أكثر الأصناف استهلاكاً ──
+  const topSpend=[].concat(summary).sort(function(a,b){return b.totalSpend-a.totalSpend;}).slice(0,10);
+  let html='<div style="margin-bottom:12px">';
+  html+='<div style="font-size:12px;font-weight:700;color:var(--tx3);margin-bottom:8px;letter-spacing:.3px">🔝 أكثر الأصناف استهلاكاً</div>';
+  html+='<div class="tbl-wrap"><table style="font-size:11.5px"><thead><tr><th style="text-align:right">الصنف</th><th>الكمية</th><th>متوسط السعر</th><th>إجمالي الشهر</th><th>مرات الشراء</th></tr></thead><tbody>';
+  topSpend.forEach(function(s){
+    html+='<tr>'+
+      '<td style="font-weight:600;text-align:right">'+esc(s.name)+'</td>'+
+      '<td class="num">'+n3(s.totalQty)+(s.unit?' <span style="color:var(--tx3);font-size:10px">'+esc(s.unit)+'</span>':'')+'</td>'+
+      '<td class="num">'+n3(s.avgPrice)+' JD</td>'+
+      '<td class="td-y num">'+n3(s.totalSpend)+' JD</td>'+
+      '<td style="text-align:center;color:var(--tx3)">'+s.count+'×</td>'+
+    '</tr>';
+  });
+  html+='</tbody></table></div></div>';
+
+  // ── القسم 2: تغيرات الأسعار ──
+  const changers=[].concat(summary).filter(function(s){return s.hasPriceChange;}).sort(function(a,b){return Math.abs(b.pctChg)-Math.abs(a.pctChg);});
+  html+='<div style="border-top:1px solid var(--br);padding-top:12px">';
+  html+='<div style="font-size:12px;font-weight:700;color:var(--tx3);margin-bottom:8px;letter-spacing:.3px">💹 الأصناف التي تغيّر سعرها</div>';
+  if(!changers.length){
+    html+='<div style="color:var(--tx3);font-size:12px;padding:8px;background:var(--surf2);border-radius:8px;text-align:center">✅ لا تغيرات في الأسعار هذا الشهر</div>';
+  }else{
+    html+='<div style="display:flex;flex-direction:column;gap:6px">';
+    changers.forEach(function(s){
+      const up=s.lastP>=s.firstP;
+      const clr=up?'var(--rd)':'var(--gn)';
+      const ico=up?'📈':'📉';
+      const uid='prch_'+s.name.replace(/\s+/g,'_');
+      html+='<div style="border:1px solid var(--br);border-radius:8px;overflow:hidden">'+
+        '<div onclick="var x=document.getElementById(\''+uid+'\');x.style.display=x.style.display===\'none\'?\'block\':\'none\'" style="display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;background:var(--surf2)">'+
+          '<span style="font-size:13px">'+ico+'</span>'+
+          '<span style="font-weight:700;font-size:12.5px;flex:1">'+esc(s.name)+'</span>'+
+          '<span style="font-family:monospace;font-size:12px">'+n3(s.firstP)+' ← <b style="color:'+clr+'">'+n3(s.lastP)+'</b> JD</span>'+
+          '<span style="font-size:11px;font-weight:700;color:'+clr+';background:'+clr+'22;border-radius:10px;padding:2px 7px">'+
+            (up?'+':'')+s.pctChg.toFixed(1)+'%'+
+          '</span>'+
+          '<span style="color:var(--tx3);font-size:11px">▾</span>'+
+        '</div>'+
+        '<div id="'+uid+'" style="display:none;padding:8px 12px">'+
+          '<div style="font-size:10.5px;color:var(--tx3);margin-bottom:6px">الأدنى: <b>'+n3(s.minP)+'</b> JD &nbsp;|&nbsp; الأعلى: <b>'+n3(s.maxP)+'</b> JD &nbsp;|&nbsp; الفرق: <b style="color:'+clr+'">'+(s.maxP-s.minP).toFixed(3)+'</b> JD</div>'+
+          '<table style="width:100%;font-size:11px;border-collapse:collapse">'+
+            '<thead><tr style="color:var(--tx3)"><th style="padding:3px 4px;text-align:right">التاريخ</th><th style="padding:3px 4px">المورد</th><th style="padding:3px 4px">الكمية</th><th style="padding:3px 4px">سعر الوحدة</th><th style="padding:3px 4px">الإجمالي</th></tr></thead>'+
+            '<tbody>'+s.history.map(function(h,idx){
+              var isChange=idx>0&&h.unitPrice!==s.history[idx-1].unitPrice;
+              var rowClr=isChange?(h.unitPrice>s.history[idx-1].unitPrice?'rgba(239,68,68,.08)':'rgba(16,185,129,.08)'):'';
+              return'<tr style="border-top:1px solid var(--br);background:'+rowClr+'">'+
+                '<td style="padding:3px 4px;color:var(--tx3)">'+h.date+'</td>'+
+                '<td style="padding:3px 4px;font-weight:500">'+esc(h.sup)+'</td>'+
+                '<td style="padding:3px 4px;text-align:center;font-family:monospace">'+n3(h.qty)+(h.unit?' '+esc(h.unit):'')+'</td>'+
+                '<td style="padding:3px 4px;text-align:center;font-family:monospace;font-weight:600'+(isChange?';color:'+clr:'')+'">'+n3(h.unitPrice)+' JD'+(isChange?(h.unitPrice>s.history[idx-1].unitPrice?' ↑':' ↓'):'')+'</td>'+
+                '<td style="padding:3px 4px;font-family:monospace">'+n3(h.total)+' JD</td>'+
+              '</tr>';
+            }).join('')+
+          '</tbody></table>'+
+        '</div>'+
+      '</div>';
+    });
+    html+='</div>';
+  }
   html+='</div>';
   c.innerHTML=html;
 }
@@ -5117,7 +5218,7 @@ function updateRpt(){
 }
 
 /* RENDER ALL */
-function renderAll(){calcRevTots();renderPurch();renderSuppList();renderSuppRpt();renderCatSum();renderObligList();renderAdv();renderAdvLedger();loadCashFields();calcCash();updateDash();updateRpt();updLkChips();}
+function renderAll(){calcRevTots();renderPurch();renderSuppList();renderSuppRpt();renderCatSum();renderItemsRpt();renderObligList();renderAdv();renderAdvLedger();loadCashFields();calcCash();updateDash();updateRpt();updLkChips();}
 /* نسخة مُدمجة: تجمع الاستدعاءات المتتالية في 60ms في استدعاء واحد */
 var _renderAllTimer=null;
 function renderAllDebounced(){
