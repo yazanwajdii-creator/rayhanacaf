@@ -3373,6 +3373,49 @@ create policy "allow_all" on rh_store
   </div>
 </div>
 
+<!-- MENU ITEM MODAL -->
+<div class="mo-ov" id="moMenu" onclick="moOut(event,'moMenu')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moMenu')">×</button>
+  <div class="mo-title">🍽️ منتج القائمة</div>
+  <input type="hidden" id="menuEditIdx" value="-1">
+  <div class="fg"><label>اسم المنتج</label><input type="text" class="fi" id="menuItemName" placeholder="مثال: قهوة عربية، كابتشينو..."></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="fg"><label>الفئة</label><input type="text" class="fi" id="menuItemCat" placeholder="مشروبات، حلويات..."></div>
+    <div class="fg"><label>سعر البيع (JD)</label><input type="number" class="fi" id="menuItemPrice" placeholder="0.000" step="0.001" min="0"></div>
+  </div>
+  <div class="fg">
+    <label style="display:flex;justify-content:space-between;align-items:center">
+      <span>🧾 الوصفة / المكوّنات (اختياري)</span>
+      <span id="menuRecipeCostLabel" style="font-family:monospace;font-size:12px;color:var(--primary);font-weight:700"></span>
+    </label>
+    <div id="menuRecipeList" style="margin-top:5px"></div>
+  </div>
+  <button class="btn btn-p" style="width:100%;margin-top:8px" onclick="saveMenuItem()">💾 حفظ المنتج</button>
+</div>
+</div>
+
+<!-- WASTE ENTRY MODAL -->
+<div class="mo-ov" id="moWaste" onclick="moOut(event,'moWaste')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moWaste')">×</button>
+  <div class="mo-title">🗑️ تسجيل هدر / تلف</div>
+  <div class="fg"><label>الصنف</label><input type="text" class="fi" id="wasteItemName" list="catalogDatalist" placeholder="اسم الصنف المتلف..."></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="fg"><label>الكمية</label><input type="number" class="fi" id="wasteQty" placeholder="0" step="0.01" min="0"></div>
+    <div class="fg"><label>الوحدة</label><input type="text" class="fi" id="wasteUnit" placeholder="كغ، لتر، علبة..."></div>
+  </div>
+  <div class="fg"><label>السبب</label>
+    <select class="fs" id="wasteReason">
+      <option value="انتهاء الصلاحية">انتهاء الصلاحية</option>
+      <option value="تلف أو كسر">تلف أو كسر</option>
+      <option value="خطأ في التحضير">خطأ في التحضير</option>
+      <option value="إرجاع للمورد">إرجاع للمورد</option>
+      <option value="أخرى">أخرى</option>
+    </select>
+  </div>
+  <button class="btn btn-p" style="width:100%;margin-top:4px;background:linear-gradient(135deg,#DC2626,#B91C1C)" onclick="addWaste()">🗑️ تسجيل الهدر</button>
+</div>
+</div>
+
 <!-- MODALS -->
 <div class="mo-ov" id="moInv" onclick="moOut(event,'moInv')">
 <div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moInv')">×</button>
@@ -4835,6 +4878,7 @@ function savePurch(){
   renderPurch();renderSuppRpt();renderCatSum();renderItemsRpt();updateDash();
   closePurchModal();
   saveAll();
+  invLinkPurch(validItems);
 }
 
 function closePurchModal(){
@@ -5680,7 +5724,7 @@ function updateRpt(){
 }
 
 /* RENDER ALL */
-function renderAll(){calcRevTots();renderPurch();renderSuppList();renderSuppRpt();renderCatSum();renderItemsRpt();renderObligList();renderAdv();renderAdvLedger();loadCashFields();calcCash();updateDash();updateRpt();updLkChips();rebuildCatalogDatalist();}
+function renderAll(){calcRevTots();renderPurch();renderSuppList();renderSuppRpt();renderCatSum();renderItemsRpt();renderObligList();renderAdv();renderAdvLedger();loadCashFields();calcCash();updateDash();updateRpt();updLkChips();rebuildCatalogDatalist();renderMenuItems();renderShifts();renderWasteLog();renderBudget();loadBudgetInputs();updateShiftBtn();}
 /* نسخة مُدمجة: تجمع الاستدعاءات المتتالية في 60ms في استدعاء واحد */
 var _renderAllTimer=null;
 function renderAllDebounced(){
@@ -5883,6 +5927,8 @@ function saveAll(){
       inventory:S.inventory||[],
       itemCatalog:S.itemCatalog||{},
       purchaseTemplates:S.purchaseTemplates||[],
+      menuItems:S.menuItems||[],
+      budgets:S.budgets||{},
       savedAt:new Date().toISOString()
     });
     safeLS.setItem(SK, data);
@@ -5922,6 +5968,8 @@ function loadStore(){
       if(sv.inventory&&sv.inventory.length)S.inventory=sv.inventory;
       if(sv.itemCatalog&&Object.keys(sv.itemCatalog).length)S.itemCatalog=sv.itemCatalog;
       if(sv.purchaseTemplates&&sv.purchaseTemplates.length)S.purchaseTemplates=sv.purchaseTemplates;
+      if(sv.menuItems&&sv.menuItems.length)S.menuItems=sv.menuItems;
+      if(sv.budgets&&Object.keys(sv.budgets).length)S.budgets=sv.budgets;
     }
     if(!S.months[S.activeKey])getMonth(S.activeKey);
     if(!S.months[_ck])getMonth(_ck);
@@ -6607,6 +6655,282 @@ function invAdj(idx,dir){
 function invDel(idx){
   if(!confirm('\u062d\u0630\u0641 \u0627\u0644\u0635\u0646\u0641\u061f'))return;
   S.inventory.splice(idx,1);renderInvList();saveAll();toast('\uD83D\uDDD1\uFE0F \u062d\u064f\u0630\u0641');
+}
+
+// ════════════════════════════════════════════════
+// MENU & FOOD COST MODULE
+// ════════════════════════════════════════════════
+function calcRecipeCost(recipe){if(!recipe||!recipe.length)return 0;return recipe.reduce(function(sum,ing){var inv=(S.inventory||[]).find(function(i){return i.id===ing.inventoryId;});var price=inv?(inv.price||0):(ing.price||0);return sum+price*(ing.qty||0);},0);}
+function calcFoodCostPct(recipe,sp){if(!sp||sp<=0)return null;var c=calcRecipeCost(recipe);if(!c)return null;return c/sp*100;}
+function fcClass(p){if(p===null)return'fc-none';if(p<25)return'fc-good';if(p<35)return'fc-warn';return'fc-bad';}
+
+function renderMenuItems(){
+  var c=document.getElementById('menuList');if(!c)return;
+  var items=S.menuItems||[];
+  renderMenuSummary();
+  if(!items.length){c.innerHTML='<div class="alert al-i">أضف منتجات القائمة لحساب تكلفة الغذاء والربحية تلقائياً.</div>';return;}
+  var sorted=items.slice().map(function(it,i){return{item:it,idx:i,fc:calcFoodCostPct(it.recipe,it.sellingPrice)||0};}).sort(function(a,b){return b.fc-a.fc;});
+  c.innerHTML=sorted.map(function(s){
+    var item=s.item,idx=s.idx;
+    var cost=calcRecipeCost(item.recipe);
+    var pct=calcFoodCostPct(item.recipe,item.sellingPrice);
+    var fcTxt=pct!==null?pct.toFixed(0)+'%':'—';
+    var fcCls=fcClass(pct);
+    var margin=item.sellingPrice>0?item.sellingPrice-cost:0;
+    var rec=(item.recipe||[]).map(function(r){return r.name+' '+r.qty+' '+r.unit;}).join(' · ');
+    return '<div class="menu-card">'+
+      '<div class="menu-fc-badge '+fcCls+'">'+fcTxt+'<div style="font-size:9px;font-weight:500;margin-top:1px">تكلفة</div></div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div class="menu-item-name">'+esc(item.name)+'</div>'+
+        '<div class="menu-item-cat">'+esc(item.category||'—')+(item.active===false?' · <span style="color:var(--tx4)">غير نشط</span>':'')+'</div>'+
+        (rec?'<div class="menu-item-recipe">🧾 '+esc(rec)+'</div>':'')+
+      '</div>'+
+      '<div style="text-align:left;flex-shrink:0">'+
+        '<div class="menu-sell-price">'+n3(item.sellingPrice||0)+' JD</div>'+
+        (cost>0?'<div class="menu-cost-line">تكلفة: '+n3(cost)+'</div>':'')+
+        (margin>0?'<div class="menu-cost-line" style="color:var(--gn)">هامش: '+n3(margin)+'</div>':'')+
+        '<div style="display:flex;gap:3px;margin-top:5px">'+
+          '<button onclick="openMenuEdit('+idx+')" style="font-size:11px;padding:3px 7px;border-radius:5px;border:1px solid var(--br);background:var(--surf);cursor:pointer;color:var(--tx2)">✏️</button>'+
+          '<button onclick="menuItemToggle('+idx+')" style="font-size:11px;padding:3px 7px;border-radius:5px;border:1px solid var(--br);background:var(--surf);cursor:pointer">'+(item.active===false?'▶':'⏸')+'</button>'+
+          '<button onclick="menuItemDel('+idx+')" style="font-size:11px;padding:3px 7px;border-radius:5px;border:1px solid rgba(220,38,38,.3);background:rgba(220,38,38,.06);cursor:pointer;color:var(--rd)">×</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function renderMenuSummary(){
+  var sumEl=document.getElementById('menuSummary');if(!sumEl)return;
+  var items=(S.menuItems||[]).filter(function(i){return i.active!==false;});
+  if(!items.length){sumEl.innerHTML='';return;}
+  var fcVals=items.map(function(i){return calcFoodCostPct(i.recipe,i.sellingPrice);}).filter(function(v){return v!==null;});
+  var avgFC=fcVals.length?fcVals.reduce(function(a,b){return a+b;},0)/fcVals.length:null;
+  var margins=items.map(function(i){return{name:i.name,m:i.sellingPrice>0?(i.sellingPrice-calcRecipeCost(i.recipe))/i.sellingPrice*100:0};}).sort(function(a,b){return b.m-a.m;});
+  sumEl.innerHTML='<div class="menu-sum-grid">'+
+    '<div class="menu-sum-box"><div class="menu-sum-val" style="color:'+(avgFC===null?'var(--tx3)':avgFC<25?'var(--gn)':avgFC<35?'var(--yw)':'var(--rd)')+'">'+(avgFC!==null?avgFC.toFixed(1)+'%':'—')+'</div><div class="menu-sum-lbl">متوسط تكلفة الغذاء</div></div>'+
+    '<div class="menu-sum-box"><div class="menu-sum-val" style="color:var(--gn)">'+(margins.length?margins[0].m.toFixed(0)+'%':'—')+'</div><div class="menu-sum-lbl">أعلى هامش<br><small>'+esc(margins.length?margins[0].name:'')+'</small></div></div>'+
+    '<div class="menu-sum-box"><div class="menu-sum-val" style="color:var(--rd)">'+(margins.length?margins[margins.length-1].m.toFixed(0)+'%':'—')+'</div><div class="menu-sum-lbl">أدنى هامش<br><small>'+esc(margins.length?margins[margins.length-1].name:'')+'</small></div></div>'+
+  '</div>';
+}
+
+var _menuRecipeRows=[];
+function openMenuEdit(idx){
+  _menuRecipeRows=[];
+  var item=idx>=0?(S.menuItems||[])[idx]:null;
+  document.getElementById('menuEditIdx').value=idx;
+  document.getElementById('menuItemName').value=item?item.name:'';
+  document.getElementById('menuItemCat').value=item?(item.category||''):'';
+  document.getElementById('menuItemPrice').value=item?(item.sellingPrice||''):'';
+  _menuRecipeRows=item?(item.recipe||[]).map(function(r){return Object.assign({},r);}):[];
+  renderRecipeRows();
+  openMo('moMenu');
+}
+function renderRecipeRows(){
+  var c=document.getElementById('menuRecipeList');if(!c)return;
+  c.innerHTML=_menuRecipeRows.map(function(row,i){
+    var selOpts='<option value="">— مكوّن —</option>'+(S.inventory||[]).map(function(inv){return '<option value="'+esc(inv.id)+'"'+(inv.id===row.inventoryId?' selected':'')+'>'+esc(inv.name)+' ('+esc(inv.unit)+')</option>';}).join('');
+    return '<div class="mri-row">'+
+      '<select style="flex:2" onchange="menuRIChg('+i+',\'inv\',this.value)">'+selOpts+'</select>'+
+      '<input type="number" placeholder="الكمية" step="0.001" min="0" value="'+(row.qty||'')+'" oninput="menuRIChg('+i+',\'qty\',this.value)" style="flex:1;max-width:70px">'+
+      '<input type="text" placeholder="وحدة" value="'+esc(row.unit||'')+'" oninput="menuRIChg('+i+',\'unit\',this.value)" style="flex:1;max-width:55px">'+
+      '<button class="mri-del" onclick="menuRIDel('+i+')">×</button>'+
+    '</div>';
+  }).join('')+'<button class="btn btn-ghost btn-sm" style="margin-top:4px;width:100%;font-size:12px" onclick="menuRIAdd()">➕ إضافة مكوّن</button>';
+  var costLbl=document.getElementById('menuRecipeCostLabel');
+  if(costLbl){var price=parseFloat(document.getElementById('menuItemPrice').value)||0;var cost=calcRecipeCost(_menuRecipeRows);costLbl.textContent=cost>0?'تكلفة: '+n3(cost)+' JD'+(price>0?' ('+((cost/price*100).toFixed(0))+'%)':''):'—';}
+}
+function menuRIAdd(){_menuRecipeRows.push({inventoryId:'',name:'',qty:0,unit:''});renderRecipeRows();}
+function menuRIDel(i){_menuRecipeRows.splice(i,1);renderRecipeRows();}
+function menuRIChg(i,field,val){
+  if(field==='inv'){var inv=(S.inventory||[]).find(function(it){return it.id===val;});_menuRecipeRows[i].inventoryId=val;_menuRecipeRows[i].name=inv?inv.name:'';_menuRecipeRows[i].unit=inv?inv.unit:'';}
+  else{_menuRecipeRows[i][field]=field==='qty'?parseFloat(val)||0:val;}
+  renderRecipeRows();
+}
+function saveMenuItem(){
+  if(!S.menuItems)S.menuItems=[];
+  var name=document.getElementById('menuItemName').value.trim();
+  var cat=document.getElementById('menuItemCat').value.trim();
+  var price=parseFloat(document.getElementById('menuItemPrice').value)||0;
+  if(!name){toast('⚠️ أدخل اسم المنتج');return;}
+  if(!price){toast('⚠️ أدخل سعر البيع');return;}
+  var recipe=_menuRecipeRows.filter(function(r){return r.inventoryId&&r.qty>0;});
+  var ei=parseInt(document.getElementById('menuEditIdx').value);
+  if(ei>=0&&(S.menuItems||[])[ei]){
+    S.menuItems[ei]=Object.assign(S.menuItems[ei],{name:name,category:cat,sellingPrice:price,recipe:recipe});
+  }else{
+    S.menuItems.push({id:'mi'+Date.now(),name:name,category:cat,sellingPrice:price,recipe:recipe,active:true});
+  }
+  cmo('moMenu');renderMenuItems();saveAll();toast('✅ تم حفظ المنتج');
+}
+function menuItemDel(idx){if(!confirm('حذف المنتج؟'))return;(S.menuItems||[]).splice(idx,1);renderMenuItems();saveAll();toast('🗑️ تم الحذف');}
+function menuItemToggle(idx){var item=(S.menuItems||[])[idx];if(!item)return;item.active=item.active===false?true:false;renderMenuItems();saveAll();}
+
+// ════════════════════════════════════════════════
+// SHIFT CASH MANAGEMENT
+// ════════════════════════════════════════════════
+function renderShifts(){
+  var c=document.getElementById('shiftList');if(!c)return;
+  var shifts=G().shifts||[];
+  var openShift=shifts.find(function(s){return s.status==='open';});
+  var banner=document.getElementById('shiftActiveBanner');
+  if(openShift&&banner){banner.style.display='flex';var sub=document.getElementById('shiftOpenTime');if(sub)sub.textContent=openShift.openTime+' — فتح بـ '+n3(openShift.openingCash)+' JD';}
+  else if(banner){banner.style.display='none';}
+  updateShiftBtn();
+  var closed=shifts.filter(function(s){return s.status==='closed';}).slice(-10).reverse();
+  if(!closed.length){c.innerHTML='<div class="alert al-i">لا يوجد سجل ورديات مغلقة</div>';return;}
+  c.innerHTML=closed.map(function(s){
+    var disc=s.discrepancy||0;
+    var dcls=disc>0?'s-disc-ok':disc<0?'s-disc-bad':'s-disc-na';
+    var dtxt=disc===0?'متوازن ✅':(disc>0?'فائض +':' عجز ')+n3(Math.abs(disc))+' JD';
+    var origIdx=shifts.indexOf(s);
+    return '<div class="shift-history-item">'+
+      '<div class="shift-hist-row">'+
+        '<div class="shift-hist-date">📅 '+esc(s.date||'—')+(s.openTime?' | '+esc(s.openTime)+'–'+esc(s.closeTime||'؟'):'')+'</div>'+
+        '<div class="shift-hist-disc '+dcls+'">'+dtxt+'</div>'+
+        '<button onclick="delShift('+origIdx+')" style="padding:2px 7px;border-radius:5px;border:1px solid var(--br);background:none;cursor:pointer;color:var(--tx3);font-size:11px">×</button>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:7px;font-size:11px;font-family:monospace">'+
+        '<div><div style="color:var(--tx3)">افتتاح</div><div style="font-weight:700">'+n3(s.openingCash)+' JD</div></div>'+
+        '<div><div style="color:var(--tx3)">متوقع</div><div style="font-weight:700">'+n3(s.expectedCash||0)+' JD</div></div>'+
+        '<div><div style="color:var(--tx3)">فعلي</div><div style="font-weight:700">'+n3(s.closingCash||0)+' JD</div></div>'+
+      '</div>'+
+      (s.notes?'<div style="font-size:11px;color:var(--tx3);margin-top:5px;padding-top:5px;border-top:1px solid var(--surf2)">💬 '+esc(s.notes)+'</div>':'')+
+    '</div>';
+  }).join('');
+}
+function openShiftDialog(){
+  var shifts=G().shifts;if(!shifts)shifts=G().shifts=[];
+  var openShift=shifts.find(function(s){return s.status==='open';});
+  if(openShift){
+    var closing=prompt('أدخل الرصيد الفعلي في الصندوق الآن (JD):','');
+    if(closing===null||closing==='')return;
+    closing=parseFloat(closing)||0;
+    var t=totals();
+    var expected=+(openShift.openingCash+t.rev-t.purch).toFixed(3);
+    openShift.closingCash=closing;
+    openShift.expectedCash=expected;
+    openShift.discrepancy=+((closing-expected).toFixed(3));
+    openShift.closeTime=new Date().toLocaleTimeString('ar-JO',{hour:'2-digit',minute:'2-digit'});
+    openShift.status='closed';
+    renderShifts();saveAll();
+    var dm=openShift.discrepancy===0?'✅ الصندوق متوازن':openShift.discrepancy>0?'💰 فائض '+n3(Math.abs(openShift.discrepancy))+' JD':'⚠️ عجز '+n3(Math.abs(openShift.discrepancy))+' JD';
+    toast('🔒 تم إغلاق الوردية — '+dm);
+  }else{
+    var opening=prompt('رصيد الصندوق عند بداية الوردية (JD):','0');
+    if(opening===null)return;
+    opening=parseFloat(opening)||0;
+    var today=S.activeKey+'-'+new Date().getDate();
+    shifts.push({id:'sh'+Date.now(),date:today,openTime:new Date().toLocaleTimeString('ar-JO',{hour:'2-digit',minute:'2-digit'}),openingCash:opening,status:'open'});
+    renderShifts();saveAll();toast('▶ تم فتح الوردية بـ '+n3(opening)+' JD');
+  }
+}
+function delShift(idx){
+  if(!confirm('حذف هذه الوردية؟'))return;
+  (G().shifts||[]).splice(idx,1);renderShifts();saveAll();toast('🗑️ تم الحذف');
+}
+function updateShiftBtn(){
+  var btn=document.getElementById('shiftBtn');if(!btn)return;
+  var openShift=(G().shifts||[]).find(function(s){return s.status==='open';});
+  if(openShift){btn.textContent='⏹ إغلاق الوردية';btn.style.background='linear-gradient(135deg,#DC2626,#B91C1C)';}
+  else{btn.textContent='▶ فتح وردية';btn.style.background='linear-gradient(135deg,#059669,#047857)';}
+}
+
+// ════════════════════════════════════════════════
+// BUDGET vs ACTUAL MODULE
+// ════════════════════════════════════════════════
+function saveBudget(){
+  if(!S.budgets)S.budgets={};
+  var k=S.activeKey;
+  S.budgets[k]={
+    revenue:parseFloat(document.getElementById('budgetRev').value)||0,
+    cogs:parseFloat(document.getElementById('budgetCOGS').value)||0,
+    salaries:parseFloat(document.getElementById('budgetSal').value)||0,
+    overhead:parseFloat(document.getElementById('budgetOH').value)||0
+  };
+  saveAll();renderBudget();toast('✅ تم حفظ الميزانية');
+}
+function loadBudgetInputs(){
+  var budget=(S.budgets||{})[S.activeKey]||{};
+  var map={budgetRev:'revenue',budgetCOGS:'cogs',budgetSal:'salaries',budgetOH:'overhead'};
+  Object.keys(map).forEach(function(id){var el=document.getElementById(id);if(el)el.value=budget[map[id]]||'';});
+}
+function renderBudget(){
+  var c=document.getElementById('budgetResult');if(!c)return;
+  var t=totals();
+  var budget=(S.budgets||{})[S.activeKey]||{};
+  if(!budget.revenue&&!budget.cogs&&!budget.salaries&&!budget.overhead){c.innerHTML='<div class="alert al-i">أدخل أرقام الميزانية أعلاه واضغط حفظ لمتابعة الأداء الشهري.</div>';return;}
+  var items=[
+    {lbl:'💰 الإيراد',bgt:budget.revenue||0,act:t.rev,invert:false},
+    {lbl:'🛒 تكلفة البضاعة',bgt:budget.cogs||0,act:t.purch,invert:true},
+    {lbl:'💼 الرواتب',bgt:budget.salaries||0,act:t.sal,invert:true},
+    {lbl:'⚙️ المصاريف العامة',bgt:budget.overhead||0,act:t.obl+t.adv,invert:true}
+  ];
+  c.innerHTML=items.filter(function(i){return i.bgt>0;}).map(function(item){
+    var pct=item.bgt>0?Math.min(130,item.act/item.bgt*100):0;
+    var clr=item.invert?(pct>=110?'#DC2626':pct>=80?'#D97706':'#059669'):(pct>=100?'#059669':pct>=70?'#D97706':'#DC2626');
+    var vr=item.act-item.bgt;
+    var vrTxt=(vr>=0?'+':'')+n3(vr)+' JD';
+    return '<div class="budget-bar-item">'+
+      '<div class="budget-bar-lbl-row"><span class="budget-bar-lbl">'+item.lbl+'</span><span class="budget-bar-pct" style="color:'+clr+'">'+pct.toFixed(0)+'%</span></div>'+
+      '<div class="budget-progress-track"><div class="budget-progress-fill" style="width:'+Math.min(100,pct)+'%;background:'+clr+'"></div></div>'+
+      '<div class="budget-nums-row"><span>ميزانية: '+n3(item.bgt)+'</span><span>فعلي: '+n3(item.act)+'</span><span style="color:'+clr+'">'+vrTxt+'</span></div>'+
+    '</div>';
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
+// WASTE LOG
+// ════════════════════════════════════════════════
+function renderWasteLog(){
+  var c=document.getElementById('wasteLogList');if(!c)return;
+  var wlog=G().wasteLog||[];
+  var totCost=wlog.reduce(function(s,w){return s+(w.cost||0);},0);
+  var te=document.getElementById('wasteTotalCost');if(te)te.textContent=n3(totCost)+' JD';
+  if(!wlog.length){c.innerHTML='<div class="alert al-i">لا توجد سجلات هدر هذا الشهر</div>';return;}
+  c.innerHTML=wlog.slice().reverse().map(function(w,i){
+    var origIdx=wlog.length-1-i;
+    return '<div class="waste-item">'+
+      '<div class="waste-name">'+esc(w.itemName)+'</div>'+
+      '<div class="waste-qty">−'+w.qty+' '+esc(w.unit||'')+'</div>'+
+      (w.cost?'<div style="font-family:monospace;font-size:11px;color:var(--tx3)">'+n3(w.cost)+'</div>':'')+
+      '<div style="font-size:11px;color:var(--tx3)">'+esc(w.reason||'')+'</div>'+
+      '<button onclick="delWaste('+origIdx+')" style="padding:2px 6px;border-radius:4px;border:1px solid var(--br);background:none;cursor:pointer;color:var(--tx3);font-size:11px">×</button>'+
+    '</div>';
+  }).join('');
+}
+function addWaste(){
+  var name=document.getElementById('wasteItemName').value.trim();
+  var qty=parseFloat(document.getElementById('wasteQty').value)||0;
+  var unit=document.getElementById('wasteUnit').value.trim();
+  var reason=document.getElementById('wasteReason').value;
+  if(!name||qty<=0){toast('⚠️ أدخل الصنف والكمية');return;}
+  var inv=(S.inventory||[]).find(function(i){return i.name.trim()===name;});
+  var cost=inv&&inv.price?+((inv.price*qty).toFixed(3)):0;
+  if(!G().wasteLog)G().wasteLog=[];
+  G().wasteLog.push({id:'wl'+Date.now(),date:new Date().toLocaleDateString('ar-JO'),itemName:name,qty:qty,unit:unit||(inv?inv.unit:''),reason:reason,cost:cost});
+  if(inv&&inv.qty>0&&confirm('خصم الكمية من المخزون؟')){
+    inv.qty=Math.max(0,+((inv.qty-qty).toFixed(3)));renderInvList();
+  }
+  cmo('moWaste');
+  ['wasteItemName','wasteQty','wasteUnit'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  renderWasteLog();saveAll();toast('✅ تم تسجيل الهدر');
+}
+function delWaste(idx){if(!confirm('حذف؟'))return;(G().wasteLog||[]).splice(idx,1);renderWasteLog();saveAll();}
+
+// Purchase -> Inventory auto-link
+function invLinkPurch(items){
+  if(!items||!items.length||!S.inventory||!S.inventory.length)return;
+  var matched=items.filter(function(item){return S.inventory.some(function(inv){return inv.name.trim()===item.name.trim();});});
+  if(!matched.length)return;
+  if(!confirm('تطابق '+matched.length+' بند مع المخزون.\nتحديث الكميات تلقائياً؟'))return;
+  matched.forEach(function(item){
+    var inv=S.inventory.find(function(i){return i.name.trim()===item.name.trim();});
+    if(!inv)return;
+    inv.qty=+((inv.qty||0)+(item.qty||1)).toFixed(3);
+    if(item.price)inv.price=item.price;
+  });
+  renderInvList();saveAll();
+  toast('📦 تم تحديث المخزون: '+matched.map(function(i){return i.name;}).join('، '));
 }
 
 // ════════════════════════════════════════════════
