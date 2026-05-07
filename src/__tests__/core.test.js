@@ -4,6 +4,7 @@ const {
   n3,
   esc,
   calcPendAdv,
+  calcDailyTotal,
   calcTotals,
   initMonth,
   validatePasswordChange,
@@ -184,6 +185,51 @@ describe('calcPendAdv()', () => {
   test('تتعامل مع حقل amt مفقود', () => {
     const adv = [{ empId: 'e1', status: 'مستحقة' }];
     expect(calcPendAdv(adv, 'e1')).toBe(0);
+  });
+});
+
+// ─── calcDailyTotal ───────────────────────────────────────────────────────────
+
+describe('calcDailyTotal()', () => {
+  test('يستخدم الأجر الأساسي لجميع الأيام عند غياب الأجر المخصص', () => {
+    const w = { rate: 10, att: [1, 2, 3] };
+    expect(calcDailyTotal(w)).toBe(30);
+  });
+
+  test('يستخدم الأجر المخصص لليوم المحدد', () => {
+    const w = { rate: 10, att: [1, 2, 3], rateOverrides: { 2: 15 } };
+    expect(calcDailyTotal(w)).toBe(35); // 10 + 15 + 10
+  });
+
+  test('يستخدم أجر مخصص لأكثر من يوم', () => {
+    const w = { rate: 10, att: [1, 2, 3, 4], rateOverrides: { 1: 20, 3: 15 } };
+    expect(calcDailyTotal(w)).toBe(55); // 20 + 10 + 15 + 10
+  });
+
+  test('يُعيد 0 لقائمة حضور فارغة', () => {
+    const w = { rate: 10, att: [] };
+    expect(calcDailyTotal(w)).toBe(0);
+  });
+
+  test('يتعامل مع w فارغ تماماً', () => {
+    expect(calcDailyTotal({})).toBe(0);
+  });
+
+  test('أجر مخصص = 0 لا يُلغى — يعني دفع صفر لذلك اليوم', () => {
+    const w = { rate: 10, att: [1, 2], rateOverrides: { 1: 0 } };
+    expect(calcDailyTotal(w)).toBe(10); // 0 + 10
+  });
+
+  test('calcTotals يُجمّع أجور اليوميين مع الأجر المخصص', () => {
+    const month = {
+      sales: [], purchases: [], obligations: [], mSal: {}, advances: [], cashflow: {},
+      dWages: {
+        emp1: { rate: 10, att: [1, 2, 3], rateOverrides: { 2: 20 } },
+      },
+    };
+    const dailyEmps = [{ id: 'emp1' }];
+    const t = calcTotals(month, [], dailyEmps);
+    expect(t.dwTotal).toBe(40); // 10 + 20 + 10
   });
 });
 

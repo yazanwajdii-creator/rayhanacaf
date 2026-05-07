@@ -30,6 +30,17 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+/**
+ * يحسب إجمالي أجر موظفة يومية مع مراعاة الأجر المخصص لكل يوم.
+ * rateOverrides: {day: rate} — إذا غاب اليوم يُستخدم الأجر الأساسي.
+ */
+function calcDailyTotal(w) {
+  const att = w.att || [];
+  const overrides = w.rateOverrides || {};
+  const base = w.rate || 0;
+  return att.reduce((sum, day) => sum + (overrides[day] !== undefined ? overrides[day] : base), 0);
+}
+
 // ─── منطق الأعمال (نقي — يقبل البيانات كمعاملات بدلاً من الحالة العامة) ─────
 
 /**
@@ -79,7 +90,7 @@ function calcTotals(monthData, monthlyEmps = [], dailyEmps = []) {
   let dwTotal = 0;
   dailyEmps.forEach(e => {
     const w = d.dWages[e.id] || {};
-    dwTotal += (w.rate || 0) * (w.att || []).length;
+    dwTotal += calcDailyTotal(w);
   });
 
   const dailyWagesPaid = pmts;
@@ -185,6 +196,7 @@ module.exports = {
   n3,
   esc,
   calcPendAdv,
+  calcDailyTotal,
   calcTotals,
   initMonth,
   validatePasswordChange,
