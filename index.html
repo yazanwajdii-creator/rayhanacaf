@@ -225,6 +225,27 @@ tfoot td{background:linear-gradient(135deg,#1A0E0A,#0F172A)!important;color:#fff
 .att-d:active{transform:scale(.88)}
 .att-d.here{background:var(--gn);border-color:var(--gn);color:#fff;box-shadow:0 1px 5px rgba(16,185,129,.3)}
 .att-d.here.rate-ovr{background:linear-gradient(135deg,#0ea05a 55%,#f59e0b 100%);border-color:#d97706;box-shadow:0 1px 6px rgba(245,158,11,.45)}
+/* ── خريطة الإيراد اليومية (Heatmap) ── */
+.hm-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:4px 0 8px}
+.hm-cell{aspect-ratio:1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;cursor:pointer;transition:transform .12s}
+.hm-cell:active{transform:scale(.82)}
+.hm-0{background:var(--surf2);color:var(--tx4)}
+.hm-1{background:#fef3c7;color:#92400e}
+.hm-2{background:#fde68a;color:#78350f}
+.hm-3{background:#fbbf24;color:#451a03}
+.hm-4{background:#f59e0b;color:#fff}
+.hm-5{background:#d97706;color:#fff}
+.hm-6{background:#b45309;color:#fff}
+.hm-today{outline:2.5px solid var(--gn);outline-offset:1px}
+.hm-future{opacity:.35}
+/* ── كتالوج الأصناف (picker) ── */
+.cat-pick-drop{position:absolute;z-index:3000;background:var(--surf);border:1.5px solid var(--sap);border-radius:10px;box-shadow:var(--sh2);max-height:220px;overflow-y:auto;width:240px;left:0;top:38px}
+.cat-pick-row{padding:8px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--br);display:flex;justify-content:space-between;align-items:center;gap:6px}
+.cat-pick-row:last-child{border-bottom:none}
+.cat-pick-row:active{background:var(--ywl)}
+.cat-pick-name{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-pick-meta{color:var(--tx3);font-size:10.5px;text-align:left;white-space:nowrap}
+.cat-pick-price{color:var(--primary);font-family:monospace;font-size:11px;font-weight:700}
 .att-foot{display:flex;justify-content:space-between;align-items:center;margin-top:9px;padding:9px 12px;background:var(--ywl);border-radius:8px;border:1px solid var(--ywb)}
 
 /* ══ REPORT PRO DESIGN ══ */
@@ -2222,6 +2243,11 @@ body.dark .ss-card{background:var(--surf)}
         <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">📈</span>منحنى الإيرادات اليومية</div><div id="lk-dash"></div></div>
         <div class="card-body"><div class="ch-lg"><canvas id="chLine"></canvas></div></div>
       </div>
+      <!-- خريطة الشهر / Heatmap -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-y">📅</span>خريطة الشهر</div><span id="hmLegend" style="font-size:11px;color:var(--tx3)"></span></div>
+        <div class="card-body" id="revHeatmap" style="padding-bottom:10px"></div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:12px">
         <div class="card"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-y">🍩</span>توزيع التكاليف</div></div><div class="card-body"><div class="ch"><canvas id="chPie"></canvas></div></div></div>
         <div class="card"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">📊</span>أعلى الموردين</div></div><div class="card-body"><div class="ch"><canvas id="chSD"></canvas></div></div></div>
@@ -3290,8 +3316,17 @@ create policy "allow_all" on rh_store
       <span>📋 بنود الفاتورة <small style="color:var(--tx3)">(اختياري)</small></span>
       <span id="itemsCalcTotal" style="font-family:'IBM Plex Mono',monospace;color:var(--primary);font-weight:700;font-size:13px"></span>
     </label>
+    <!-- أزرار سرعة الإدخال -->
+    <div style="display:flex;gap:4px;margin-bottom:6px">
+      <button type="button" class="btn btn-ghost btn-sm" style="flex:1;font-size:11px" onclick="openTemplateSelect()">📋 تحميل قالب</button>
+      <button type="button" class="btn btn-ghost btn-sm" style="flex:1;font-size:11px" onclick="saveAsTemplate()">💾 حفظ كقالب</button>
+    </div>
+    <datalist id="catalogDatalist"></datalist>
     <div id="itemsList" style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px"></div>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="addItemRow()" style="width:100%;font-size:12px">➕ إضافة بند</button>
+    <div style="display:flex;gap:4px">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="addItemRow()" style="flex:1;font-size:12px">➕ بند جديد</button>
+      <button type="button" class="btn btn-p btn-sm" onclick="openCatalogPicker(-1)" style="flex:1;font-size:12px">⚡ من الكتالوج</button>
+    </div>
   </div>
 
   <div class="fg"><label>المبلغ الإجمالي (JD)</label><input type="number" class="fi" id="pAmt" step="0.001" min="0" placeholder="0.000"></div>
@@ -3838,7 +3873,9 @@ let S={activeKey:_ck,months:{},lockedMonths:[],
     {id:'s10',name:'مياه أفا',cat:'مشروبات ومواد القهوة',note:'مياه معدنية'}
   ],
   monthlyEmps:[{id:'hani',name:'هاني'},{id:'sidra',name:'سدرة'},{id:'aya',name:'آية'}],
-  dailyEmps:[{id:'tharaa',name:'ثراء'},{id:'enaa',name:'عيناء'},{id:'waad',name:'وعد'}]
+  dailyEmps:[{id:'tharaa',name:'ثراء'},{id:'enaa',name:'عيناء'},{id:'waad',name:'وعد'}],
+  itemCatalog:{},
+  purchaseTemplates:[]
 };
 
 const PL={'2026-02':{
@@ -4455,6 +4492,7 @@ function updateDash(){
     try { updateDailyInsights(); } catch(e) {}
     try { updateQuickInsights(); } catch(e) {}
     try { updateComparisons(); } catch(e) {}
+    try { renderHeatmap(); } catch(e) {}
   }, 50);
 }
 function genInsights(t,d,active,avg,maxD,days){
@@ -4674,7 +4712,10 @@ function savePurch(){
   var editIdx=hiddenIdx?parseInt(hiddenIdx.value):-1;
   var validItems=_itemRows.filter(Boolean).filter(function(r){return r.name&&(parseFloat(r.qty)>0||parseFloat(r.unitPrice)>0);});
   var newRec={date:date,sId:sId,sName:sup.name,cat:cat,desc:desc,amt:amt,inv:inv,buyer:buyer};
-  if(validItems.length>0)newRec.items=validItems.map(function(r){return{name:r.name,qty:parseFloat(r.qty)||0,unit:r.unit||'',unitPrice:parseFloat(r.unitPrice)||0,total:parseFloat(r.total)||0};});
+  if(validItems.length>0){
+    newRec.items=validItems.map(function(r){return{name:r.name,qty:parseFloat(r.qty)||0,unit:r.unit||'',unitPrice:parseFloat(r.unitPrice)||0,total:parseFloat(r.total)||0};});
+    updateItemCatalog(newRec.items, date); // يُحدّث الكتالوج تلقائياً
+  }
   if(editIdx>=0&&editIdx<G().purchases.length){
     // تعديل
     G().purchases[editIdx]=newRec;
@@ -4713,9 +4754,9 @@ function addItemRow(item){
   if(!container)return;
   var div=document.createElement('div');
   div.dataset.idx=idx;
-  div.style.cssText='display:grid;grid-template-columns:1fr 58px 58px 80px 62px 28px;gap:3px;align-items:center;background:var(--surf2);border-radius:7px;padding:5px 6px;border:1px solid var(--br)';
+  div.style.cssText='display:grid;grid-template-columns:1fr 55px 55px 78px 60px 26px;gap:3px;align-items:center;background:var(--surf2);border-radius:7px;padding:5px 6px;border:1px solid var(--br)';
   div.innerHTML=
-    '<input type="text" class="fi" style="font-size:11.5px;padding:5px 7px;height:30px" placeholder="اسم الصنف" value="'+esc(item.name||'')+'" oninput="_iUpd('+idx+',\'name\',this.value)">'+
+    '<input type="text" list="catalogDatalist" class="fi" style="font-size:11.5px;padding:5px 7px;height:30px" placeholder="اسم الصنف" value="'+esc(item.name||'')+'" oninput="_iUpd('+idx+',\'name\',this.value)" onchange="_iChg('+idx+',this.value)">'+
     '<input type="number" class="fi" style="font-size:11.5px;padding:5px 4px;height:30px;text-align:center" placeholder="كمية" value="'+(item.qty||'')+'" step="0.001" min="0" oninput="_iUpd('+idx+',\'qty\',this.value)">'+
     '<input type="text" class="fi" style="font-size:11.5px;padding:5px 4px;height:30px;text-align:center" placeholder="وحدة" value="'+esc(item.unit||'كيلو')+'" oninput="_iUpd('+idx+',\'unit\',this.value)">'+
     '<input type="number" class="fi" style="font-size:11.5px;padding:5px 4px;height:30px;text-align:center" placeholder="سعر" value="'+(item.unitPrice||'')+'" step="0.001" min="0" oninput="_iUpd('+idx+',\'unitPrice\',this.value)">'+
@@ -4723,6 +4764,7 @@ function addItemRow(item){
     '<button type="button" onclick="_iDel('+idx+')" style="background:var(--rd);border:none;border-radius:5px;color:#fff;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1;padding:0">×</button>';
   container.appendChild(div);
   recalcItems();
+  rebuildCatalogDatalist();
 }
 
 function _iUpd(idx,field,val){
@@ -4737,6 +4779,10 @@ function _iUpd(idx,field,val){
   recalcItems();
 }
 
+// onchange على اسم الصنف: يملأ الوحدة والسعر من الكتالوج إذا عُرف الصنف
+function _iChg(idx, val) {
+  if (val && val.trim()) _autoFillFromCatalog(idx, val);
+}
 function _iDel(idx){
   _itemRows[idx]=null;
   var container=document.getElementById('itemsList');
@@ -4918,6 +4964,246 @@ function renderItemsRpt(){
   }
   html+='</div>';
   c.innerHTML=html;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   كتالوج الأصناف — تسريع إدخال الفواتير
+══════════════════════════════════════════════════════════════════ */
+
+// يُحدّث الكتالوج بعد كل حفظ فاتورة
+function updateItemCatalog(items, date) {
+  if (!S.itemCatalog) S.itemCatalog = {};
+  (items || []).forEach(function(it) {
+    if (!it || !it.name || !it.name.trim()) return;
+    var k = it.name.trim();
+    var prev = S.itemCatalog[k] || {count: 0};
+    S.itemCatalog[k] = {
+      unit: it.unit || prev.unit || '',
+      lastPrice: (parseFloat(it.unitPrice) > 0) ? parseFloat(it.unitPrice) : (prev.lastPrice || 0),
+      lastDate: date || prev.lastDate || '',
+      count: (prev.count || 0) + 1,
+    };
+  });
+  rebuildCatalogDatalist();
+}
+
+// يُعيد بناء datalist للـ autocomplete
+function rebuildCatalogDatalist() {
+  var dl = document.getElementById('catalogDatalist');
+  if (!dl) return;
+  var names = Object.keys(S.itemCatalog || {}).sort(function(a, b) {
+    return (S.itemCatalog[b].count || 0) - (S.itemCatalog[a].count || 0);
+  });
+  dl.innerHTML = names.map(function(n) { return '<option value="' + esc(n) + '">'; }).join('');
+}
+
+// picker لاختيار صنف من الكتالوج — targetRowIdx: رقم الصف (-1 = إضافة جديد)
+var _catPickerTarget = -1;
+function openCatalogPicker(targetRowIdx) {
+  _catPickerTarget = targetRowIdx;
+  var cat = S.itemCatalog || {};
+  var names = Object.keys(cat).sort(function(a, b) {
+    return (cat[b].count || 0) - (cat[a].count || 0);
+  });
+  if (!names.length) {
+    toast('ℹ️ الكتالوج فارغ — سيُبنى تلقائياً من فواتيرك التفصيلية');
+    if (targetRowIdx === -1) addItemRow();
+    return;
+  }
+  var html = '<div style="padding:8px 12px;border-bottom:1px solid var(--br);font-size:11px;color:var(--tx3);font-weight:600">اختر صنفاً (الأكثر استخداماً أولاً)</div>';
+  html += names.map(function(name) {
+    var d = cat[name];
+    return '<div class="cat-pick-row" onclick="pickCatalogItem(\'' + esc(name.replace(/'/g, "\\'")) + '\')">' +
+      '<span class="cat-pick-name">' + esc(name) + '</span>' +
+      '<span class="cat-pick-meta">' +
+        (d.unit ? '<span style="color:var(--tx3)">' + esc(d.unit) + '</span> ' : '') +
+        (d.lastPrice > 0 ? '<span class="cat-pick-price">' + n3(d.lastPrice) + ' JD</span>' : '') +
+      '</span>' +
+    '</div>';
+  }).join('');
+  // عرض كـ bottom-sheet بسيط
+  var existing = document.getElementById('catPickerPanel');
+  if (existing) existing.remove();
+  var panel = document.createElement('div');
+  panel.id = 'catPickerPanel';
+  panel.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:4000;background:var(--surf);border-radius:16px 16px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.2);max-height:70vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,0)';
+  panel.innerHTML =
+    '<div style="text-align:center;padding:10px"><div style="width:40px;height:4px;background:var(--br);border-radius:2px;margin:0 auto 8px"></div>' +
+    '<div style="font-size:13px;font-weight:700">⚡ كتالوج الأصناف</div></div>' + html;
+  document.body.appendChild(panel);
+  // إغلاق عند الضغط خارجه
+  setTimeout(function() {
+    document.addEventListener('pointerdown', _closeCatPickerOutside);
+  }, 100);
+}
+function _closeCatPickerOutside(e) {
+  var p = document.getElementById('catPickerPanel');
+  if (p && !p.contains(e.target)) { closeCatalogPicker(); }
+}
+function closeCatalogPicker() {
+  var p = document.getElementById('catPickerPanel');
+  if (p) p.remove();
+  document.removeEventListener('pointerdown', _closeCatPickerOutside);
+}
+function pickCatalogItem(name) {
+  var d = (S.itemCatalog || {})[name];
+  if (!d) { closeCatalogPicker(); return; }
+  var item = { name: name, qty: '', unit: d.unit || '', unitPrice: d.lastPrice || '', total: 0 };
+  closeCatalogPicker();
+  addItemRow(item);
+  // التركيز على خانة الكمية في الصف الجديد
+  setTimeout(function() {
+    var rows = document.querySelectorAll('#itemsList [data-idx]');
+    if (rows.length) {
+      var lastRow = rows[rows.length - 1];
+      var qtyInput = lastRow.querySelectorAll('input')[1];
+      if (qtyInput) qtyInput.focus();
+    }
+  }, 80);
+}
+
+// Auto-fill من الكتالوج عند كتابة اسم صنف معروف
+function _autoFillFromCatalog(idx, name) {
+  var cat = (S.itemCatalog || {})[name.trim()];
+  if (!cat) return;
+  var container = document.getElementById('itemsList');
+  if (!container) return;
+  var rowDiv = container.querySelector('[data-idx="' + idx + '"]');
+  if (!rowDiv) return;
+  var inputs = rowDiv.querySelectorAll('input');
+  var unitInput = inputs[2], priceInput = inputs[3];
+  if (unitInput && !unitInput.value && cat.unit) {
+    unitInput.value = cat.unit;
+    _itemRows[idx].unit = cat.unit;
+  }
+  if (priceInput && !priceInput.value && cat.lastPrice > 0) {
+    priceInput.value = cat.lastPrice;
+    _itemRows[idx].unitPrice = cat.lastPrice;
+    // إعادة حساب الإجمالي إذا كانت الكمية موجودة
+    var q = parseFloat(_itemRows[idx].qty) || 0;
+    if (q > 0) {
+      _itemRows[idx].total = q * cat.lastPrice;
+      var totEl = document.getElementById('itot_' + idx);
+      if (totEl) totEl.textContent = n3(_itemRows[idx].total);
+    }
+    recalcItems();
+  }
+}
+
+/* ══ قوالب الفواتير ══ */
+function saveAsTemplate() {
+  var active = _itemRows.filter(Boolean).filter(function(r) { return r.name && r.name.trim(); });
+  if (!active.length) { toast('⚠️ لا توجد بنود لحفظها كقالب'); return; }
+  var name = prompt('اسم القالب (مثال: طلب السكر الأسبوعي):', '');
+  if (!name || !name.trim()) return;
+  if (!S.purchaseTemplates) S.purchaseTemplates = [];
+  S.purchaseTemplates.push({
+    id: 't' + Date.now(),
+    name: name.trim(),
+    suppId: document.getElementById('pSupp') ? document.getElementById('pSupp').value : '',
+    suppName: document.getElementById('pSupp') ? (document.getElementById('pSupp').selectedOptions[0] || {}).text || '' : '',
+    cat: document.getElementById('pCat') ? document.getElementById('pCat').value : 'COGS',
+    items: active.map(function(r) { return Object.assign({}, r); }),
+  });
+  saveAll();
+  toast('✅ تم حفظ القالب "' + name.trim() + '"');
+}
+function openTemplateSelect() {
+  var tmpl = S.purchaseTemplates || [];
+  if (!tmpl.length) { toast('ℹ️ لا توجد قوالب محفوظة بعد — استخدم "حفظ كقالب" لحفظ فاتورة متكررة'); return; }
+  var html = tmpl.map(function(t, i) {
+    return '<div class="cat-pick-row" style="align-items:flex-start;flex-direction:column;gap:2px">' +
+      '<div style="display:flex;align-items:center;width:100%;gap:8px">' +
+        '<span class="cat-pick-name" onclick="loadTemplate(' + i + ')">' + esc(t.name) + '</span>' +
+        '<button onclick="deleteTemplate(' + i + ')" style="background:var(--rd);border:none;border-radius:4px;color:#fff;padding:2px 6px;font-size:10px;cursor:pointer;white-space:nowrap">حذف</button>' +
+      '</div>' +
+      '<span style="font-size:10.5px;color:var(--tx3)">' + t.items.length + ' بند' + (t.suppName ? ' • ' + esc(t.suppName) : '') + '</span>' +
+    '</div>';
+  }).join('');
+  var existing = document.getElementById('tmplPickerPanel');
+  if (existing) existing.remove();
+  var panel = document.createElement('div');
+  panel.id = 'tmplPickerPanel';
+  panel.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:4000;background:var(--surf);border-radius:16px 16px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.2);max-height:70vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,0)';
+  panel.innerHTML =
+    '<div style="text-align:center;padding:10px"><div style="width:40px;height:4px;background:var(--br);border-radius:2px;margin:0 auto 8px"></div>' +
+    '<div style="font-size:13px;font-weight:700">📋 قوالب الفواتير</div>' +
+    '<div style="font-size:11px;color:var(--tx3);margin-top:2px">اضغط على القالب لتحميل بنوده</div></div>' + html;
+  document.body.appendChild(panel);
+  setTimeout(function() { document.addEventListener('pointerdown', _closeTmplPickerOutside); }, 100);
+}
+function _closeTmplPickerOutside(e) {
+  var p = document.getElementById('tmplPickerPanel');
+  if (p && !p.contains(e.target)) {
+    p.remove();
+    document.removeEventListener('pointerdown', _closeTmplPickerOutside);
+  }
+}
+function loadTemplate(idx) {
+  var t = (S.purchaseTemplates || [])[idx];
+  if (!t) return;
+  var panel = document.getElementById('tmplPickerPanel');
+  if (panel) { panel.remove(); document.removeEventListener('pointerdown', _closeTmplPickerOutside); }
+  // اسأل: استبدال أم إضافة؟
+  var existing = _itemRows.filter(Boolean).filter(function(r){return r.name&&r.name.trim();});
+  var mode = existing.length ? confirm('هل تريد استبدال البنود الحالية بالقالب؟\n(إلغاء = إضافة القالب فوق البنود الحالية)') : true;
+  if (mode) { clearItemRows(); }
+  t.items.forEach(function(item) { addItemRow(Object.assign({}, item)); });
+  toast('✅ تم تحميل قالب "' + t.name + '"');
+}
+function deleteTemplate(idx) {
+  if (!confirm('حذف هذا القالب؟')) return;
+  (S.purchaseTemplates || []).splice(idx, 1);
+  saveAll();
+  // إعادة رسم لوحة القوالب
+  var p = document.getElementById('tmplPickerPanel');
+  if (p) { p.remove(); document.removeEventListener('pointerdown', _closeTmplPickerOutside); }
+  openTemplateSelect();
+}
+
+/* ══ Dashboard Heatmap — خريطة الشهر ══ */
+function renderHeatmap() {
+  var c = document.getElementById('revHeatmap');
+  if (!c) return;
+  var d = G();
+  var days = d.sales.length;
+  var vals = d.sales.map(function(s) { return (s.cash || 0) + (s.visa || 0); });
+  var maxVal = Math.max.apply(null, vals) || 1;
+  var today = new Date();
+  var ym = S.activeKey.split('-');
+  var isCurrentMonth = parseInt(ym[0]) === today.getFullYear() && parseInt(ym[1]) === (today.getMonth() + 1);
+  var todayDay = isCurrentMonth ? today.getDate() : -1;
+  // أيام الأسبوع: نحسب من اليوم الأول من الشهر
+  var firstDow = new Date(parseInt(ym[0]), parseInt(ym[1]) - 1, 1).getDay(); // 0=Sun
+  var DAY_LABELS = ['أح', 'إث', 'ثل', 'أر', 'خم', 'جم', 'سب'];
+  var html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px">' +
+    DAY_LABELS.map(function(l) { return '<div style="text-align:center;font-size:9px;color:var(--tx3);font-weight:600;padding:2px 0">' + l + '</div>'; }).join('') +
+    '</div><div class="hm-grid">';
+  // خلايا فارغة قبل اليوم الأول
+  for (var e = 0; e < firstDow; e++) html += '<div></div>';
+  for (var i = 0; i < days; i++) {
+    var day = i + 1;
+    var rev = vals[i];
+    var lvl = rev <= 0 ? 0 : rev < maxVal * 0.17 ? 1 : rev < maxVal * 0.34 ? 2 : rev < maxVal * 0.51 ? 3 : rev < maxVal * 0.68 ? 4 : rev < maxVal * 0.85 ? 5 : 6;
+    var isFuture = isCurrentMonth && day > todayDay;
+    var cls = 'hm-cell hm-' + lvl + (day === todayDay ? ' hm-today' : '') + (isFuture ? ' hm-future' : '');
+    html += '<div class="' + cls + '" onclick="hmDayClick(' + day + ')" title="' + day + ' — ' + n3(rev) + ' JD">' + day + '</div>';
+  }
+  html += '</div>';
+  // شريط الأسطورة
+  var legend = document.getElementById('hmLegend');
+  if (legend) {
+    var active = vals.filter(function(v){return v>0;}).length;
+    legend.textContent = active + ' يوم نشط • أعلى: ' + n3(maxVal) + ' JD';
+  }
+  c.innerHTML = html;
+}
+function hmDayClick(day) {
+  // انتقل إلى الإدخال السريع لذلك اليوم
+  var qeDayEl = document.getElementById('qeDay');
+  if (qeDayEl) { QE_DAY = day; qeRender(); }
+  pg('qe', document.querySelectorAll('.ntab')[0]);
+  setTimeout(function() { try { qeRender(); } catch(e) {} }, 100);
 }
 
 /* SUPPLIERS */
@@ -5289,7 +5575,7 @@ function updateRpt(){
 }
 
 /* RENDER ALL */
-function renderAll(){calcRevTots();renderPurch();renderSuppList();renderSuppRpt();renderCatSum();renderItemsRpt();renderObligList();renderAdv();renderAdvLedger();loadCashFields();calcCash();updateDash();updateRpt();updLkChips();}
+function renderAll(){calcRevTots();renderPurch();renderSuppList();renderSuppRpt();renderCatSum();renderItemsRpt();renderObligList();renderAdv();renderAdvLedger();loadCashFields();calcCash();updateDash();updateRpt();updLkChips();rebuildCatalogDatalist();}
 /* نسخة مُدمجة: تجمع الاستدعاءات المتتالية في 60ms في استدعاء واحد */
 var _renderAllTimer=null;
 function renderAllDebounced(){
@@ -5490,6 +5776,8 @@ function saveAll(){
       monthlyEmps:S.monthlyEmps,
       targets:S.targets||{},
       inventory:S.inventory||[],
+      itemCatalog:S.itemCatalog||{},
+      purchaseTemplates:S.purchaseTemplates||[],
       savedAt:new Date().toISOString()
     });
     safeLS.setItem(SK, data);
@@ -5527,6 +5815,8 @@ function loadStore(){
       if(sv.monthlyEmps&&sv.monthlyEmps.length)S.monthlyEmps=sv.monthlyEmps;
       if(sv.targets&&Object.keys(sv.targets).length)S.targets=sv.targets;
       if(sv.inventory&&sv.inventory.length)S.inventory=sv.inventory;
+      if(sv.itemCatalog&&Object.keys(sv.itemCatalog).length)S.itemCatalog=sv.itemCatalog;
+      if(sv.purchaseTemplates&&sv.purchaseTemplates.length)S.purchaseTemplates=sv.purchaseTemplates;
     }
     if(!S.months[S.activeKey])getMonth(S.activeKey);
     if(!S.months[_ck])getMonth(_ck);
