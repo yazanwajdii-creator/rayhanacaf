@@ -1778,6 +1778,50 @@ body.dark .ss-card{background:var(--surf)}
 .mt-arrow.open{transform:rotate(180deg)}
 .month-table-wrap{overflow:hidden;transition:max-height .35s ease;max-height:0}
 .month-table-wrap.open{max-height:3000px}
+/* ═══ MENU MODULE ═══ */
+.menu-grid{display:grid;gap:8px}
+.menu-card{background:var(--surf);border:1px solid var(--br);border-radius:var(--rm);padding:12px 14px;display:flex;gap:10px;align-items:flex-start;transition:var(--trans)}
+.menu-card:hover{box-shadow:var(--sh1);border-color:var(--br2)}
+.menu-fc-badge{width:46px;height:46px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;text-align:center;line-height:1.15}
+.fc-good{background:var(--gnl);color:var(--gnd)}.fc-warn{background:var(--ywl);color:var(--ywd)}.fc-bad{background:var(--rdl);color:var(--rdd)}.fc-none{background:var(--surf2);color:var(--tx4)}
+.menu-item-name{font-size:13.5px;font-weight:700;color:var(--tx)}
+.menu-item-cat{font-size:11px;color:var(--tx3);margin-top:2px}
+.menu-item-recipe{font-size:11px;color:var(--tx3);margin-top:3px;line-height:1.55}
+.menu-sell-price{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--primary);text-align:left}
+.menu-cost-line{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx3);margin-top:2px;text-align:left}
+.menu-sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.menu-sum-box{background:var(--surf);border:1px solid var(--br);border-radius:var(--rm);padding:10px;text-align:center}
+.menu-sum-val{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:800}
+.menu-sum-lbl{font-size:10px;color:var(--tx3);margin-top:2px;line-height:1.4}
+.mri-row{display:flex;gap:5px;align-items:center;margin-bottom:5px}
+.mri-row input,.mri-row select{padding:5px 8px;border-radius:6px;border:1px solid var(--br);background:var(--surf);color:var(--tx);font-size:12px;font-family:'IBM Plex Sans Arabic',sans-serif;outline:none}
+.mri-row input:focus,.mri-row select:focus{border-color:var(--primary)}
+.mri-del{width:24px;height:26px;border-radius:5px;border:none;background:var(--rdl);color:var(--rd);cursor:pointer;font-size:13px;flex-shrink:0}
+/* ═══ SHIFT MODULE ═══ */
+.shift-active-banner{background:linear-gradient(135deg,#065F46,#047857);border-radius:var(--rm);padding:12px 14px;color:#fff;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.shift-active-ico{font-size:26px;flex-shrink:0}
+.shift-active-title{font-size:13px;font-weight:700}
+.shift-active-sub{font-size:11.5px;opacity:.8;margin-top:2px}
+.shift-history-item{background:var(--surf);border:1px solid var(--br);border-radius:var(--rm);padding:11px 13px;margin-bottom:7px}
+.shift-hist-row{display:flex;align-items:center;gap:8px}
+.shift-hist-date{font-size:12px;font-weight:600;flex:1}
+.shift-hist-disc{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px}
+.s-disc-ok{color:var(--gn)}.s-disc-bad{color:var(--rd)}.s-disc-na{color:var(--tx3)}
+/* ═══ BUDGET MODULE ═══ */
+.budget-input-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.budget-bar-item{padding:9px 0;border-bottom:1px solid var(--surf2)}
+.budget-bar-item:last-child{border-bottom:none;padding-bottom:0}
+.budget-bar-lbl-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.budget-bar-lbl{font-size:12.5px;font-weight:600;flex:1}
+.budget-bar-pct{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;min-width:36px;text-align:left}
+.budget-progress-track{height:7px;background:var(--surf2);border-radius:4px;overflow:hidden;margin-bottom:3px}
+.budget-progress-fill{height:100%;border-radius:4px;transition:width .4s ease}
+.budget-nums-row{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tx3);font-family:'IBM Plex Mono',monospace}
+/* ═══ WASTE LOG ═══ */
+.waste-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--surf2);font-size:12px}
+.waste-item:last-child{border-bottom:none}
+.waste-name{font-weight:600;flex:1;color:var(--tx)}
+.waste-qty{font-family:'IBM Plex Mono',monospace;color:var(--rd);font-weight:700}
 </style>
 </head>
 <body>
@@ -2021,6 +2065,10 @@ body.dark .ss-card{background:var(--surf)}
       <button class="ntab" onclick="pg('rpt',this)">📈 التقارير</button>
       <button class="ntab" onclick="pg('cloud',this)" id="cloudTab">☁️ السحابة</button>
       <button class="ntab" onclick="pg('audit',this)">📝 سجل التعديلات</button>
+      <button class="ntab" onclick="pg('inv',this)">📦 المخزون</button>
+      <button class="ntab" onclick="pg('menu',this)">🍽️ المنيو</button>
+      <button class="ntab" onclick="pg('annual',this)">📅 السنوي</button>
+      <button class="ntab" onclick="pg('ai',this)">🤖 المستشار</button>
     </div>
   </div>
 
@@ -2783,6 +2831,36 @@ body.dark .ss-card{background:var(--surf)}
           <button class="btn btn-p btn-full" onclick="calcCash();toast('✅ تم حفظ الصندوق')">💾 حفظ</button>
         </div>
       </div>
+      <!-- SHIFT MANAGEMENT -->
+      <div class="card" style="margin-top:10px">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-ico ct-g">🔄</span>الوردية اليومية</div>
+          <button id="shiftBtn" onclick="openShiftDialog()" class="btn btn-sm" style="background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;font-size:12px;padding:6px 12px">▶ فتح وردية</button>
+        </div>
+        <div class="card-body" style="padding:11px">
+          <div class="shift-active-banner" id="shiftActiveBanner" style="display:none">
+            <div class="shift-active-ico">⏱</div>
+            <div><div class="shift-active-title">وردية مفتوحة</div><div class="shift-active-sub" id="shiftOpenTime">—</div></div>
+          </div>
+          <div id="shiftList"><div class="alert al-i">لا يوجد سجل ورديات</div></div>
+        </div>
+      </div>
+      <!-- BUDGET vs ACTUAL -->
+      <div class="card" style="margin-top:10px">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-ico ct-b">📊</span>الميزانية مقابل الفعلي</div>
+          <button class="btn btn-p btn-sm" onclick="saveBudget()">💾 حفظ</button>
+        </div>
+        <div class="card-body" style="padding:11px">
+          <div class="budget-input-grid">
+            <div class="fg" style="margin:0"><label style="font-size:11px">🎯 هدف الإيراد (JD)</label><input type="number" class="fi" id="budgetRev" placeholder="0" step="10" min="0" oninput="renderBudget()"></div>
+            <div class="fg" style="margin:0"><label style="font-size:11px">🛒 ميزانية المشتريات</label><input type="number" class="fi" id="budgetCOGS" placeholder="0" step="10" min="0" oninput="renderBudget()"></div>
+            <div class="fg" style="margin:0"><label style="font-size:11px">💼 ميزانية الرواتب</label><input type="number" class="fi" id="budgetSal" placeholder="0" step="10" min="0" oninput="renderBudget()"></div>
+            <div class="fg" style="margin:0"><label style="font-size:11px">⚙️ مصاريف عامة</label><input type="number" class="fi" id="budgetOH" placeholder="0" step="10" min="0" oninput="renderBudget()"></div>
+          </div>
+          <div id="budgetResult"></div>
+        </div>
+      </div>
     </div>
 
     <!-- REPORTS -->
@@ -3192,6 +3270,33 @@ create policy "allow_all" on rh_store
             <div class="target-vals"><span id="targetCurrent">محقق: — JD</span><span id="targetRemain">— JD متبقي</span></div>
           </div>
           <div id="invList"><div class="alert al-i">لم تُضَف أصناف بعد. اضغط + لإضافة مخزون.</div></div>
+          <div style="margin-top:14px;border-top:1px solid var(--br);padding-top:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:13px;font-weight:700">🗑️ الهدر والتلف</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:11px;color:var(--rd)">تكلفة: <strong id="wasteTotalCost">0.000 JD</strong></span>
+                <button class="btn btn-sm" style="background:rgba(220,38,38,.1);color:var(--rd);border:1px solid rgba(220,38,38,.25);font-size:11px;padding:4px 10px" onclick="openMo('moWaste')">+ تسجيل</button>
+              </div>
+            </div>
+            <div id="wasteLogList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MENU & FOOD COST -->
+    <div id="menu" class="pg">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-ico ct-p">🍽️</span>قائمة المنتجات والتكلفة</div>
+          <button class="btn btn-p btn-sm" onclick="openMenuEdit(-1)">➕ منتج جديد</button>
+        </div>
+        <div class="card-body" style="padding:11px">
+          <div id="menuSummary"></div>
+          <div style="font-size:11.5px;color:var(--tx3);background:var(--primary-bg);border-radius:8px;padding:8px 11px;margin-bottom:10px;line-height:1.6">
+            💡 <strong>معيار تكلفة الغذاء:</strong> مشروبات &lt; 25% ✅ · طعام &lt; 35% ✅ · أعلى من ذلك ⚠️ — ربط الوصفة بالمخزون يحسب التكلفة تلقائياً
+          </div>
+          <div id="menuList"></div>
         </div>
       </div>
     </div>
