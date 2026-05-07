@@ -8,7 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
-<title>ريحانة V24-3 PRO</title>
+<link rel="manifest" href="./manifest.json">
+<title>ريحانة V25 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -3370,6 +3371,76 @@ var safeLS = (function() {
   }
 }());
 
+// ══════════════════════════════════════════════════════════════════
+// INDEXEDDB — طبقة التخزين الدائمة (تحمي من مسح localStorage)
+// ══════════════════════════════════════════════════════════════════
+var _idb = null;
+function _idbOpen() {
+  return new Promise(function(resolve, reject) {
+    if (_idb) { resolve(_idb); return; }
+    var req = indexedDB.open('rayhanacafe', 2);
+    req.onupgradeneeded = function(e) {
+      var db = e.target.result;
+      if (!db.objectStoreNames.contains('store')) db.createObjectStore('store');
+    };
+    req.onsuccess = function(e) { _idb = e.target.result; resolve(_idb); };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+}
+function idbSet(key, val) {
+  return _idbOpen().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction('store', 'readwrite');
+      var req = tx.objectStore('store').put(val, key);
+      req.onsuccess = function() { resolve(); };
+      req.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+function idbGet(key) {
+  return _idbOpen().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction('store', 'readonly');
+      var req = tx.objectStore('store').get(key);
+      req.onsuccess = function() { resolve(req.result !== undefined ? req.result : null); };
+      req.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+// يُشغَّل عند بدء التطبيق: يعيد البيانات من IDB إذا كان localStorage فارغاً
+function idbRecoverIfNeeded() {
+  try {
+    if (safeLS.getItem(SK)) {
+      // localStorage سليم — نحدّث IDB ليظل متزامناً
+      idbSet(SK, safeLS.getItem(SK)).catch(function(){});
+      return;
+    }
+    // localStorage مسوح! ننقذ من IDB
+    idbGet(SK).then(function(saved) {
+      if (!saved) return;
+      safeLS.setItem(SK, saved);
+      try { loadStore(); renderAll(); } catch(e) {}
+      toast('♻️ تم استعادة بيانات ريحانة من النسخة الاحتياطية الآمنة!');
+      console.log('[IDB] ✅ Data recovered from IndexedDB');
+    }).catch(function(e) { console.warn('[IDB] Recovery failed:', e); });
+  } catch(e) { console.warn('[IDB] init error:', e); }
+}
+// يطلب من المتصفح/أندرويد عدم مسح البيانات تلقائياً أبداً
+function requestPersistentStorage() {
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().then(function(granted) {
+      console.log('[Storage] Persistent:', granted ? '✅' : '⚠️ not granted — data may be evicted');
+    });
+  }
+  if (navigator.storage && navigator.storage.estimate) {
+    navigator.storage.estimate().then(function(est) {
+      var usedMB = ((est.usage||0)/1048576).toFixed(1);
+      var quotaMB = ((est.quota||0)/1048576).toFixed(0);
+      console.log('[Storage] Used: '+usedMB+'MB / '+quotaMB+'MB available');
+    });
+  }
+}
+
 // ═══════════════════════════════════════════
 // QUICK ENTRY — Single Day Revenue
 // ═══════════════════════════════════════════
@@ -5424,6 +5495,9 @@ function saveAll(){
     safeLS.setItem(SK, data);
     lastSaveTime = Date.now();
     pendingSave = false;
+
+    // IDB backup — async, silent — يحفظ نسخة دائمة لا تُمسح تلقائياً
+    idbSet(SK, data).catch(function(e){ console.warn('[IDB] save error:', e); });
 
     // إظهار مؤشر الحفظ
     showSaveIndicator('saved');
@@ -8503,6 +8577,17 @@ function createSparkline(containerId, data) {
 
 // تحديث عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
+  // ── IDB: استعادة البيانات إذا فُقدت + طلب التخزين الدائم ──
+  try { idbRecoverIfNeeded(); } catch(e) {}
+  try { requestPersistentStorage(); } catch(e) {}
+  // ── Service Worker ──
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(function(reg) {
+      console.log('[SW] registered, scope:', reg.scope);
+    }).catch(function(e) {
+      console.log('[SW] registration skipped:', e.message);
+    });
+  }
   setTimeout(function() {
     try { updateHealthCardNew(); } catch(e) {}
     try { updateBreakevenCardNew(); } catch(e) {}

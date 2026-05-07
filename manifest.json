@@ -1,0 +1,39 @@
+{
+  "name": "ريحانة كافيه",
+  "short_name": "ريحانة",
+  "description": "نظام إدارة كافيه ريحانة — مالية · رواتب · مشتريات · تقارير",
+  "start_url": "./index.html",
+  "id": "rayhanacafe-v25",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#FDF8F0",
+  "theme_color": "#C8920F",
+  "dir": "rtl",
+  "lang": "ar",
+  "orientation": "portrait-primary",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "إدخال يومي",
+      "short_name": "يومي",
+      "description": "إدخال إيراد اليوم",
+      "url": "./index.html#qe",
+      "icons": [{ "src": "./icon.svg", "sizes": "any" }]
+    }
+  ]
+}
