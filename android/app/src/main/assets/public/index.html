@@ -1952,6 +1952,7 @@ body.dark .ss-card{background:var(--surf)}
       <div class="shortcut-row"><span class="shortcut-desc">التقارير</span><span class="shortcut-key"><kbd>4</kbd></span></div>
       <div class="shortcut-row"><span class="shortcut-desc">الوضع الليلي</span><span class="shortcut-key"><kbd>D</kbd></span></div>
       <div class="shortcut-row"><span class="shortcut-desc">بحث</span><span class="shortcut-key"><kbd>/</kbd></span></div>
+      <div class="shortcut-row"><span class="shortcut-desc">عرض الاختصارات</span><span class="shortcut-key"><kbd>?</kbd></span></div>
       <div class="shortcut-row"><span class="shortcut-desc">إغلاق</span><span class="shortcut-key"><kbd>Esc</kbd></span></div>
       <div style="text-align:center;margin-top:16px"><button class="btn btn-ghost" onclick="hideShortcuts()">إغلاق</button></div>
     </div>
@@ -8010,7 +8011,7 @@ document.addEventListener('keydown', function(e) {
     if (e.key === '1' && tabs[0]) { tabs[0].click(); }
     if (e.key === '2' && tabs[1]) { tabs[1].click(); }
     if (e.key === '3' && tabs[2]) { tabs[2].click(); }
-    if (e.key === '4' && tabs[3]) { tabs[3].click(); }
+    if (e.key === '4' && tabs[8]) { tabs[8].click(); }
   }
   
   // D للوضع الليلي
