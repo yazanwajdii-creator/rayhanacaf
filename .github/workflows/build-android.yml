@@ -15,91 +15,64 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Sync index.html to Android assets
+      - name: Sync index.html to assets
         run: cp index.html android/app/src/main/assets/public/index.html
 
-      - name: Accept Android SDK licenses
-        run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
-
-      - name: Install required SDK components
+      - name: Install Android SDK 34
         run: |
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
-            "build-tools;34.0.0" \
-            "platforms;android-34" \
-            "platform-tools" || true
-
-      - name: Make gradlew executable
-        run: chmod +x android/gradlew
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34"
 
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
+          path: ~/.gradle
           key: gradle-${{ hashFiles('android/**/*.gradle*') }}
-          restore-keys: gradle-
 
-      - name: Copy keystore
-        run: cp android/keystore/rayhanacafe.keystore android/app/rayhanacafe.keystore
-
-      - name: Build release APK
+      - name: Build APK
         run: |
+          chmod +x android/gradlew
           cd android
-          ./gradlew assembleRelease --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon
         env:
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
-          KEYSTORE_PATH: rayhanacafe.keystore
-          KEYSTORE_PASS: rayhanacafe123
-          KEY_ALIAS: rayhanacafe
-          KEY_PASS: rayhanacafe123
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
 
-      - name: Rename and prepare APK
-        run: |
-          VERSION=$(grep versionName android/app/build.gradle | grep -o '"[^"]*"' | tr -d '"')
-          cp android/app/build/outputs/apk/release/app-release.apk rayhanacafe-v${VERSION}.apk
-          echo "APK_FILE=rayhanacafe-v${VERSION}.apk" >> $GITHUB_ENV
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-
-      - name: Upload as artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rayhanacafe-apk-v${{ env.VERSION }}
-          path: rayhanacafe-*.apk
+          name: rayhanacafe-v26
+          path: android/app/build/outputs/apk/release/*.apk
           retention-days: 90
 
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ env.VERSION }}-${{ github.run_number }}
-          name: "📱 ريحانة كافيه v${{ env.VERSION }}"
-          files: ${{ env.APK_FILE }}
+          tag_name: v26.${{ github.run_number }}
+          name: "📱 ريحانة كافيه v26.${{ github.run_number }}"
+          files: android/app/build/outputs/apk/release/*.apk
           body: |
-            ## 📱 تطبيق ريحانة كافيه للأندرويد
+            ## 📱 ريحانة كافيه — الإصدار 26
 
-            ### ✨ المميزات:
+            ### ✨ المميزات الجديدة:
             - 📸 صور الفواتير (كاميرا + معرض)
-            - ⚖️ الرواتب وفق قانون العمل الأردني
-            - 📊 تحليل الموردين مع مقارنة الشهر السابق
-            - 🗑️ إدارة مالية وإدارية فقط (بدون منيو)
+            - ⚖️ كشف الرواتب — قانون العمل الأردني (26 يوم · OT 125%/150%)
+            - 📊 تحليل الموردين مع مقارنة الشهر السابق ▲▼
+            - 🗑️ إدارة مالية وإدارية (بدون منيو)
 
-            ### 📥 التثبيت:
-            1. حمّل ملف `${{ env.APK_FILE }}`
-            2. الإعدادات ← الأمان ← السماح بمصادر غير معروفة
+            ### 📥 خطوات التثبيت:
+            1. حمّل ملف `app-release.apk`
+            2. الإعدادات ← الأمان ← **تثبيت تطبيقات غير معروفة** ✓
             3. افتح الملف وثبّته
 
-            > Android 8.0+ مطلوب
-          draft: false
-          prerelease: false
+            > المتطلبات: Android 7.0 (API 24) أو أحدث
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
