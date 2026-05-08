@@ -14,11 +14,20 @@ android {
         versionName "26.0"
     }
 
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("KEYSTORE_PATH") ?: "../keystore/rayhanacafe.keystore")
+            storePassword System.getenv("KEYSTORE_PASS") ?: "rayhanacafe123"
+            keyAlias System.getenv("KEY_ALIAS") ?: "rayhanacafe"
+            keyPassword System.getenv("KEY_PASS") ?: "rayhanacafe123"
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
         debug {
             applicationIdSuffix ".debug"

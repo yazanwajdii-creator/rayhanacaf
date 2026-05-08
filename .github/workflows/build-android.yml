@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main, claude/implement-todo-item-q6IWC]
+    branches: [main, claude/analyze-test-coverage-5Gq5x]
     paths:
       - 'index.html'
       - 'android/**'
@@ -31,10 +31,14 @@ jobs:
       - name: Download gradle-wrapper.jar
         run: |
           mkdir -p android/gradle/wrapper
-          curl -sL "https://github.com/gradle/gradle/raw/v8.2.0/gradle/wrapper/gradle-wrapper.jar" \
+          curl -sL "https://github.com/nicholasbair/gradle-wrapper-jar/raw/main/gradle-wrapper.jar" \
             -o android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || \
-          wget -q "https://services.gradle.org/distributions/gradle-8.2-wrapper.jar" \
-            -O android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
+          curl -sL "https://raw.githubusercontent.com/nicholasbair/gradle-wrapper-jar/main/gradle-wrapper.jar" \
+            -o android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
+          # Fallback: build wrapper jar manually
+          if [ ! -s android/gradle/wrapper/gradle-wrapper.jar ]; then
+            gradle wrapper --gradle-version=8.2 --project-dir android
+          fi
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -45,34 +49,57 @@ jobs:
           key: gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: gradle-
 
-      - name: Build debug APK
+      - name: Copy keystore for build
+        run: cp android/keystore/rayhanacafe.keystore android/app/rayhanacafe.keystore
+
+      - name: Build release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon
         env:
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          KEYSTORE_PATH: rayhanacafe.keystore
+          KEYSTORE_PASS: rayhanacafe123
+          KEY_ALIAS: rayhanacafe
+          KEY_PASS: rayhanacafe123
+
+      - name: Rename APK
+        run: |
+          VERSION=$(grep versionName android/app/build.gradle | grep -o '"[^"]*"' | tr -d '"')
+          cp android/app/build/outputs/apk/release/app-release.apk \
+             rayhanacafe-v${VERSION}.apk || \
+          cp android/app/build/outputs/apk/release/*.apk rayhanacafe-release.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rayhana-cafe-debug
-          path: android/app/build/outputs/apk/debug/*.apk
-          retention-days: 30
+          name: rayhanacafe-apk
+          path: rayhanacafe-*.apk
+          retention-days: 90
 
-      - name: Create Release on tag
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/claude/analyze-test-coverage-5Gq5x'
         uses: softprops/action-gh-release@v2
         with:
-          files: android/app/build/outputs/apk/debug/*.apk
-          name: ريحانة كافيه ${{ github.ref_name }}
+          tag_name: v${{ github.run_number }}
+          name: ريحانة كافيه — إصدار ${{ github.run_number }}
+          files: rayhanacafe-*.apk
           body: |
-            ## تطبيق ريحانة كافيه للأندرويد
+            ## 📱 تطبيق ريحانة كافيه للأندرويد
 
-            ### التثبيت:
-            1. حمّل ملف `app-debug.apk`
-            2. افتح الملف على جهازك
-            3. اسمح بتثبيت التطبيقات من مصادر غير معروفة إذا طُلب منك
+            ### ✨ ما الجديد في هذا الإصدار:
+            - صور الفواتير: التقاط بالكاميرا أو المعرض
+            - كشف الرواتب وفق قانون العمل الأردني (26 يوم، OT 125%/150%)
+            - تحليل الموردين المتقدم مع مقارنة الشهر السابق
+            - حذف المنيو (إدارة مالية وإدارية فقط)
 
-            ### المتطلبات:
-            - Android 7.0 (API 24) أو أحدث
+            ### 📥 التثبيت:
+            1. حمّل ملف `rayhanacafe-v*.apk`
+            2. على هاتفك: **الإعدادات ← الأمان ← السماح بمصادر غير معروفة**
+            3. افتح ملف الـ APK وثبّته
+
+            ### 📋 المتطلبات:
+            - Android 8.0 (API 26) أو أحدث
+          draft: false
+          prerelease: false
