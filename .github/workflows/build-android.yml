@@ -9,6 +9,9 @@ on:
       - '.github/workflows/build-android.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,17 +31,8 @@ jobs:
       - name: Sync latest index.html into Android assets
         run: cp index.html android/app/src/main/assets/public/index.html
 
-      - name: Download gradle-wrapper.jar
-        run: |
-          mkdir -p android/gradle/wrapper
-          curl -sL "https://github.com/nicholasbair/gradle-wrapper-jar/raw/main/gradle-wrapper.jar" \
-            -o android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || \
-          curl -sL "https://raw.githubusercontent.com/nicholasbair/gradle-wrapper-jar/main/gradle-wrapper.jar" \
-            -o android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
-          # Fallback: build wrapper jar manually
-          if [ ! -s android/gradle/wrapper/gradle-wrapper.jar ]; then
-            gradle wrapper --gradle-version=8.2 --project-dir android
-          fi
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -49,13 +43,12 @@ jobs:
           key: gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: gradle-
 
-      - name: Copy keystore for build
+      - name: Copy keystore
         run: cp android/keystore/rayhanacafe.keystore android/app/rayhanacafe.keystore
 
       - name: Build release APK
         run: |
           cd android
-          chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
         env:
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
@@ -68,10 +61,10 @@ jobs:
         run: |
           VERSION=$(grep versionName android/app/build.gradle | grep -o '"[^"]*"' | tr -d '"')
           cp android/app/build/outputs/apk/release/app-release.apk \
-             rayhanacafe-v${VERSION}.apk || \
-          cp android/app/build/outputs/apk/release/*.apk rayhanacafe-release.apk
+             rayhanacafe-v${VERSION}.apk
+          echo "APK_NAME=rayhanacafe-v${VERSION}.apk" >> $GITHUB_ENV
 
-      - name: Upload APK artifact
+      - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
         with:
           name: rayhanacafe-apk
@@ -79,27 +72,28 @@ jobs:
           retention-days: 90
 
       - name: Create GitHub Release
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/claude/analyze-test-coverage-5Gq5x'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          name: ريحانة كافيه — إصدار ${{ github.run_number }}
+          tag_name: v26-build-${{ github.run_number }}
+          name: "ريحانة كافيه v26 — إصدار ${{ github.run_number }}"
           files: rayhanacafe-*.apk
           body: |
-            ## 📱 تطبيق ريحانة كافيه للأندرويد
+            ## 📱 تطبيق ريحانة كافيه للأندرويد — الإصدار 26
 
-            ### ✨ ما الجديد في هذا الإصدار:
-            - صور الفواتير: التقاط بالكاميرا أو المعرض
-            - كشف الرواتب وفق قانون العمل الأردني (26 يوم، OT 125%/150%)
-            - تحليل الموردين المتقدم مع مقارنة الشهر السابق
-            - حذف المنيو (إدارة مالية وإدارية فقط)
+            ### ✨ المميزات:
+            - 📸 صور الفواتير: التقاط بالكاميرا أو المعرض
+            - ⚖️ كشف الرواتب وفق قانون العمل الأردني (26 يوم · OT 125%/150%)
+            - 📊 تحليل الموردين المتقدم مع مقارنة الشهر السابق ▲▼
+            - 🗑️ حذف المنيو (إدارة مالية وإدارية فقط)
 
-            ### 📥 التثبيت:
-            1. حمّل ملف `rayhanacafe-v*.apk`
-            2. على هاتفك: **الإعدادات ← الأمان ← السماح بمصادر غير معروفة**
-            3. افتح ملف الـ APK وثبّته
+            ### 📥 خطوات التثبيت:
+            1. حمّل ملف `${{ env.APK_NAME }}`
+            2. **الإعدادات ← الأمان ← السماح بمصادر غير معروفة** ✓
+            3. افتح ملف APK وثبّته
 
             ### 📋 المتطلبات:
             - Android 8.0 (API 26) أو أحدث
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
