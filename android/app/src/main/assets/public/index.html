@@ -1878,7 +1878,7 @@ body.dark .ss-card{background:var(--surf)}
       </button>
       <div id="pwd-err" style="color:#B91C1C;font-size:12px;margin-top:10px;min-height:18px;text-align:center;font-weight:600"></div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v25</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v26</div>
   </div>
 </div>
 
@@ -3695,7 +3695,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v25-2';
+      const CACHE_NAME = 'rayhana-v26';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -3767,7 +3767,7 @@ var DEFAULT_PWD = '1234';
 var PWD_KEY = 'rh_mgr_pwd';
 
 async function sha256(str){
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str+'__rh_v25__'));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str+'__rh_v26__'));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
@@ -5872,7 +5872,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v25',
+    version:'v26',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -5885,7 +5885,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v25_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v26_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
@@ -11585,7 +11585,7 @@ var SUPA_TIMER = null;     // auto-sync interval
 var SUPA_URL_KEY = 'rh_supa_url';
 var SUPA_KEY_KEY = 'rh_supa_key';
 var SUPA_TABLE   = 'rh_store';
-var SUPA_ROW     = 'rayhana_cafe_v25';
+var SUPA_ROW     = 'rayhana_cafe_v26';
 
 /* ── إنشاء الاتصال ── */
 function supaInit(){
