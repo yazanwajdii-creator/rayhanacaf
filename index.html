@@ -2066,7 +2066,6 @@ body.dark .ss-card{background:var(--surf)}
       <button class="ntab" onclick="pg('cloud',this)" id="cloudTab">☁️ السحابة</button>
       <button class="ntab" onclick="pg('audit',this)">📝 سجل التعديلات</button>
       <button class="ntab" onclick="pg('inv',this)">📦 المخزون</button>
-      <button class="ntab" onclick="pg('menu',this)">🍽️ المنيو</button>
       <button class="ntab" onclick="pg('annual',this)">📅 السنوي</button>
       <button class="ntab" onclick="pg('ai',this)">🤖 المستشار</button>
     </div>
@@ -2765,6 +2764,17 @@ body.dark .ss-card{background:var(--surf)}
           <button class="btn btn-p btn-full" onclick="calcSal();toast('✅ تم حفظ الرواتب')">💾 حفظ الرواتب</button>
         </div>
       </div>
+      <!-- JORDANIAN LABOR LAW SALARY CALCULATOR -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-ico ct-g">⚖️</span>كشف الرواتب — قانون العمل الأردني</div>
+          <div style="font-size:10.5px;color:var(--tx3);text-align:left">26 يوم · 8 ساعات · بدون ضمان</div>
+        </div>
+        <div class="card-body" style="padding:11px">
+          <div class="alert al-ok" style="margin-bottom:10px">✅ الحسابات وفق قانون العمل الأردني: خصم الغياب بالأجر اليومي · عمل إضافي 125% · عطل رسمية 150%</div>
+          <div id="salLawBody"></div>
+        </div>
+      </div>
       <div class="card">
         <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">👷</span>أجور العاملات اليومية — جدول الحضور</div></div>
         <div class="card-body">
@@ -3284,23 +3294,6 @@ create policy "allow_all" on rh_store
       </div>
     </div>
 
-    <!-- MENU & FOOD COST -->
-    <div id="menu" class="pg">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title"><span class="ct-ico ct-p">🍽️</span>قائمة المنتجات والتكلفة</div>
-          <button class="btn btn-p btn-sm" onclick="openMenuEdit(-1)">➕ منتج جديد</button>
-        </div>
-        <div class="card-body" style="padding:11px">
-          <div id="menuSummary"></div>
-          <div style="font-size:11.5px;color:var(--tx3);background:var(--primary-bg);border-radius:8px;padding:8px 11px;margin-bottom:10px;line-height:1.6">
-            💡 <strong>معيار تكلفة الغذاء:</strong> مشروبات &lt; 25% ✅ · طعام &lt; 35% ✅ · أعلى من ذلك ⚠️ — ربط الوصفة بالمخزون يحسب التكلفة تلقائياً
-          </div>
-          <div id="menuList"></div>
-        </div>
-      </div>
-    </div>
-
     <!-- ANNUAL -->
     <div id="annual" class="pg">
       <div class="card">
@@ -3371,27 +3364,6 @@ create policy "allow_all" on rh_store
     </div>
 
   </div>
-</div>
-
-<!-- MENU ITEM MODAL -->
-<div class="mo-ov" id="moMenu" onclick="moOut(event,'moMenu')">
-<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moMenu')">×</button>
-  <div class="mo-title">🍽️ منتج القائمة</div>
-  <input type="hidden" id="menuEditIdx" value="-1">
-  <div class="fg"><label>اسم المنتج</label><input type="text" class="fi" id="menuItemName" placeholder="مثال: قهوة عربية، كابتشينو..."></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-    <div class="fg"><label>الفئة</label><input type="text" class="fi" id="menuItemCat" placeholder="مشروبات، حلويات..."></div>
-    <div class="fg"><label>سعر البيع (JD)</label><input type="number" class="fi" id="menuItemPrice" placeholder="0.000" step="0.001" min="0"></div>
-  </div>
-  <div class="fg">
-    <label style="display:flex;justify-content:space-between;align-items:center">
-      <span>🧾 الوصفة / المكوّنات (اختياري)</span>
-      <span id="menuRecipeCostLabel" style="font-family:monospace;font-size:12px;color:var(--primary);font-weight:700"></span>
-    </label>
-    <div id="menuRecipeList" style="margin-top:5px"></div>
-  </div>
-  <button class="btn btn-p" style="width:100%;margin-top:8px" onclick="saveMenuItem()">💾 حفظ المنتج</button>
-</div>
 </div>
 
 <!-- WASTE ENTRY MODAL -->
@@ -5363,13 +5335,108 @@ function saveSupp(){const n=$("sName").value.trim(),c=$("sCat").value,nt=$("sNot
 function delSupp(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(!confirm(`حذف "${S.suppliers[i].name}"؟`))return;S.suppliers.splice(i,1);buildPurchSupp();renderSuppList();renderSuppRpt();saveAll();toast("🗑️ تم الحذف");}
 function renderSuppRpt(){
   const c=$("suppRpt");if(!c)return;
-  const sm={};G().purchases.forEach(p=>{if(!sm[p.sName])sm[p.sName]={t:0,n:0};sm[p.sName].t+=p.amt;sm[p.sName].n++;});
-  const ents=Object.entries(sm).sort((a,b)=>b[1].t-a[1].t);
-  if(!ents.length){c.innerHTML='<div class="alert al-i">لا توجد مشتريات</div>';return;}
-  const grand=ents.reduce((s,[,v])=>s+v.t,0);
-  c.innerHTML=`<div class="tbl-wrap"><table><thead><tr><th>المورد</th><th>عمليات</th><th>الإجمالي</th><th>النسبة</th></tr></thead><tbody>${ents.map(([nm,v])=>{const p=(v.t/grand*100).toFixed(1);return`<tr><td style="text-align:right;font-weight:600">${nm}</td><td>${v.n}</td><td class="td-y num">${n3(v.t)}</td><td><div class="prog"><div class="prog-f" style="width:${p}%"></div></div>${p}%</td></tr>`;}).join("")}</tbody><tfoot><tr><td>الإجمالي</td><td>${ents.reduce((s,[,v])=>s+v.n,0)}</td><td>${n3(grand)}</td><td>100%</td></tr></tfoot></table></div>`;
+  const purc=G().purchases||[];
+  if(!purc.length){c.innerHTML='<div class="alert al-i">لا توجد مشتريات هذا الشهر</div>';return;}
+
+  // بيانات الشهر الحالي
+  const sm={};
+  purc.forEach(function(p){
+    var k=p.sName||'غير محدد';
+    if(!sm[k])sm[k]={t:0,n:0,lastDate:'',items:[],cats:{}};
+    sm[k].t+=p.amt;sm[k].n++;
+    if(p.date>sm[k].lastDate)sm[k].lastDate=p.date;
+    if(p.cat)sm[k].cats[p.cat]=(sm[k].cats[p.cat]||0)+p.amt;
+    (p.items||[]).forEach(function(it){if(it.name)sm[k].items.push(it);});
+  });
+
+  // بيانات الشهر السابق
+  var prevKey=getPrevMonthKey();
+  var prevPurc=(S.months[prevKey]&&S.months[prevKey].purchases)||[];
+  var pm={};
+  prevPurc.forEach(function(p){var k=p.sName||'غير محدد';if(!pm[k])pm[k]={t:0,n:0};pm[k].t+=p.amt;pm[k].n++;});
+
+  var grand=Object.values(sm).reduce(function(s,v){return s+v.t;},0);
+  var ents=Object.entries(sm).sort(function(a,b){return b[1].t-a[1].t;});
+
+  // كروت الموردين المفصّلة
+  var html='<div style="margin-bottom:10px">';
+
+  // ملخص المستوى الأعلى
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">';
+  html+='<div style="background:var(--surf);border:1px solid var(--br);border-radius:var(--rm);padding:10px;text-align:center"><div style="font-family:monospace;font-size:18px;font-weight:800;color:var(--rd)">'+n3(grand)+'</div><div style="font-size:10px;color:var(--tx3);margin-top:2px">إجمالي المشتريات</div></div>';
+  html+='<div style="background:var(--surf);border:1px solid var(--br);border-radius:var(--rm);padding:10px;text-align:center"><div style="font-family:monospace;font-size:18px;font-weight:800">'+ents.length+'</div><div style="font-size:10px;color:var(--tx3);margin-top:2px">موردون فاعلون</div></div>';
+  var avgInv=purc.length?grand/purc.length:0;
+  html+='<div style="background:var(--surf);border:1px solid var(--br);border-radius:var(--rm);padding:10px;text-align:center"><div style="font-family:monospace;font-size:18px;font-weight:800">'+n3(avgInv)+'</div><div style="font-size:10px;color:var(--tx3);margin-top:2px">متوسط الفاتورة</div></div>';
+  html+='</div>';
+
+  // كروت الموردين
+  ents.forEach(function(entry,idx){
+    var nm=entry[0],v=entry[1];
+    var pct=(v.t/grand*100).toFixed(1);
+    var prev=pm[nm]||{t:0,n:0};
+    var chg=prev.t>0?((v.t-prev.t)/prev.t*100):null;
+    var chgTxt=chg===null?'جديد':(chg>=0?'▲ +':'▼ ')+Math.abs(chg).toFixed(0)+'%';
+    var chgClr=chg===null?'var(--tx3)':chg>0?'var(--rd)':'var(--gn)';
+    var avgThis=v.n?v.t/v.n:0;
+    var suppInfo=S.suppliers.find(function(s){return s.name===nm;})||{};
+    var catBadge=suppInfo.cat?'<span style="font-size:10px;background:var(--primary-bg);color:var(--primary);padding:2px 6px;border-radius:10px;font-weight:600">'+esc(suppInfo.cat)+'</span>':'';;
+    // أبرز الأصناف
+    var topItems={};
+    v.items.forEach(function(it){if(!topItems[it.name])topItems[it.name]=0;topItems[it.name]+=(it.qty||1);});
+    var topItemsList=Object.entries(topItems).sort(function(a,b){return b[1]-a[1];}).slice(0,3).map(function(e){return esc(e[0]);}).join(' · ');
+
+    var rank=idx===0?'🥇 ':idx===1?'🥈 ':idx===2?'🥉 ':'';
+    html+='<div style="background:var(--surf);border:1px solid var(--br);border-radius:var(--rm);padding:12px 14px;margin-bottom:8px">';
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+    html+='<div style="font-size:18px;flex-shrink:0">'+rank+'</div>';
+    html+='<div style="flex:1"><div style="font-size:13.5px;font-weight:700">'+esc(nm)+'</div>';
+    html+='<div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">'+catBadge;
+    if(v.lastDate)html+='<span style="font-size:10px;color:var(--tx3)">آخر طلب: '+esc(v.lastDate)+'</span>';
+    html+='</div></div>';
+    html+='<div style="text-align:left"><div style="font-family:monospace;font-size:15px;font-weight:800;color:var(--rd)">'+n3(v.t)+' JD</div>';
+    html+='<div style="font-size:11px;font-weight:700;color:'+chgClr+'">'+chgTxt+'</div></div>';
+    html+='</div>';
+    // شريط التقدم
+    html+='<div style="height:5px;background:var(--surf2);border-radius:3px;margin-bottom:8px;overflow:hidden"><div style="height:100%;border-radius:3px;background:var(--primary);width:'+pct+'%"></div></div>';
+    // تفاصيل
+    html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px">';
+    html+='<div><span style="color:var(--tx3)">عدد الفواتير</span><br><strong>'+v.n+'</strong></div>';
+    html+='<div><span style="color:var(--tx3)">متوسط الفاتورة</span><br><strong>'+n3(avgThis)+' JD</strong></div>';
+    html+='<div><span style="color:var(--tx3)">النسبة من الإجمالي</span><br><strong>'+pct+'%</strong></div>';
+    html+='</div>';
+    if(topItemsList)html+='<div style="font-size:11px;color:var(--tx3);margin-top:7px;padding-top:7px;border-top:1px solid var(--surf2)">📦 '+topItemsList+'</div>';
+    // مقارنة الشهر السابق
+    if(prev.t>0)html+='<div style="font-size:11px;color:var(--tx3);margin-top:4px">الشهر السابق: '+n3(prev.t)+' JD ('+prev.n+' فاتورة)</div>';
+    html+='</div>';
+  });
+
+  // تحليل الفئات
+  var catTotals={};
+  purc.forEach(function(p){var cat=p.cat||'OTHER';catTotals[cat]=(catTotals[cat]||0)+p.amt;});
+  var catEntries=Object.entries(catTotals).sort(function(a,b){return b[1]-a[1];});
+  if(catEntries.length>1){
+    html+='<div style="background:var(--surf);border:1px solid var(--br);border-radius:var(--rm);padding:12px 14px;margin-top:4px">';
+    html+='<div style="font-size:12px;font-weight:700;margin-bottom:8px">📊 توزيع المصروفات بالفئة</div>';
+    catEntries.forEach(function(ce){
+      var catLbls={COGS:'تكلفة البضاعة',OPS:'تشغيلية',ADM:'إدارية',MKT:'تسويقية',OTHER:'أخرى'};
+      var catPct=(ce[1]/grand*100).toFixed(1);
+      var catClr=ce[0]==='COGS'?'#DC2626':ce[0]==='OPS'?'#D97706':'#0070F2';
+      html+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--surf2)">';
+      html+='<div style="font-size:12px;font-weight:600;flex:1">'+esc(catLbls[ce[0]]||ce[0])+'</div>';
+      html+='<div style="flex:2;height:6px;background:var(--surf2);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+catClr+';width:'+catPct+'%"></div></div>';
+      html+='<div style="font-family:monospace;font-size:11px;min-width:50px;text-align:left">'+catPct+'%</div>';
+      html+='<div style="font-family:monospace;font-size:11px;color:var(--tx3)">'+n3(ce[1])+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+
+  html+='</div>';
+  c.innerHTML=html;
+
+  // الرسم البياني
   const ctx=$("chSupp");if(!ctx)return;if(CH.su)CH.su.destroy();
-  if(ents.length)CH.su=new Chart(ctx,{type:"bar",data:{labels:ents.map(([n])=>n),datasets:[{data:ents.map(([,v])=>v.t),backgroundColor:"#0070F2",borderRadius:5,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"rgba(15,6,4,.9)",callbacks:{label:c=>`${n3(c.raw)} JD`}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+" JD",font:{family:"IBM Plex Mono",size:10}},grid:{color:"rgba(0,0,0,.05)"}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+  if(ents.length)CH.su=new Chart(ctx,{type:"bar",data:{labels:ents.map(function(e){return e[0];}),datasets:[{data:ents.map(function(e){return e[1].t;}),backgroundColor:ents.map(function(e,i){return i===0?"#DC2626":i===1?"#D97706":i===2?"#059669":"#0070F2";}),borderRadius:6,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"rgba(15,6,4,.92)",callbacks:{label:function(c){return n3(c.raw)+" JD";}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+" JD"},font:{family:"IBM Plex Mono",size:10}},grid:{color:"rgba(0,0,0,.05)"}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
 }
 
 /* OBLIGATIONS — تحديث فوري */
@@ -5724,7 +5791,7 @@ function updateRpt(){
 }
 
 /* RENDER ALL */
-function renderAll(){calcRevTots();renderPurch();renderSuppList();renderSuppRpt();renderCatSum();renderItemsRpt();renderObligList();renderAdv();renderAdvLedger();loadCashFields();calcCash();updateDash();updateRpt();updLkChips();rebuildCatalogDatalist();renderMenuItems();renderShifts();renderWasteLog();renderBudget();loadBudgetInputs();updateShiftBtn();}
+function renderAll(){calcRevTots();renderPurch();renderSuppList();renderSuppRpt();renderCatSum();renderItemsRpt();renderObligList();renderAdv();renderAdvLedger();loadCashFields();calcCash();updateDash();updateRpt();updLkChips();rebuildCatalogDatalist();renderShifts();renderWasteLog();renderBudget();loadBudgetInputs();updateShiftBtn();renderSalLaw();}
 /* نسخة مُدمجة: تجمع الاستدعاءات المتتالية في 60ms في استدعاء واحد */
 var _renderAllTimer=null;
 function renderAllDebounced(){
@@ -5927,8 +5994,7 @@ function saveAll(){
       inventory:S.inventory||[],
       itemCatalog:S.itemCatalog||{},
       purchaseTemplates:S.purchaseTemplates||[],
-      menuItems:S.menuItems||[],
-      budgets:S.budgets||{},
+            budgets:S.budgets||{},
       savedAt:new Date().toISOString()
     });
     safeLS.setItem(SK, data);
@@ -5968,7 +6034,6 @@ function loadStore(){
       if(sv.inventory&&sv.inventory.length)S.inventory=sv.inventory;
       if(sv.itemCatalog&&Object.keys(sv.itemCatalog).length)S.itemCatalog=sv.itemCatalog;
       if(sv.purchaseTemplates&&sv.purchaseTemplates.length)S.purchaseTemplates=sv.purchaseTemplates;
-      if(sv.menuItems&&sv.menuItems.length)S.menuItems=sv.menuItems;
       if(sv.budgets&&Object.keys(sv.budgets).length)S.budgets=sv.budgets;
     }
     if(!S.months[S.activeKey])getMonth(S.activeKey);
@@ -6658,114 +6723,74 @@ function invDel(idx){
 }
 
 // ════════════════════════════════════════════════
-// MENU & FOOD COST MODULE
 // ════════════════════════════════════════════════
-function calcRecipeCost(recipe){if(!recipe||!recipe.length)return 0;return recipe.reduce(function(sum,ing){var inv=(S.inventory||[]).find(function(i){return i.id===ing.inventoryId;});var price=inv?(inv.price||0):(ing.price||0);return sum+price*(ing.qty||0);},0);}
-function calcFoodCostPct(recipe,sp){if(!sp||sp<=0)return null;var c=calcRecipeCost(recipe);if(!c)return null;return c/sp*100;}
-function fcClass(p){if(p===null)return'fc-none';if(p<25)return'fc-good';if(p<35)return'fc-warn';return'fc-bad';}
-
-function renderMenuItems(){
-  var c=document.getElementById('menuList');if(!c)return;
-  var items=S.menuItems||[];
-  renderMenuSummary();
-  if(!items.length){c.innerHTML='<div class="alert al-i">أضف منتجات القائمة لحساب تكلفة الغذاء والربحية تلقائياً.</div>';return;}
-  var sorted=items.slice().map(function(it,i){return{item:it,idx:i,fc:calcFoodCostPct(it.recipe,it.sellingPrice)||0};}).sort(function(a,b){return b.fc-a.fc;});
-  c.innerHTML=sorted.map(function(s){
-    var item=s.item,idx=s.idx;
-    var cost=calcRecipeCost(item.recipe);
-    var pct=calcFoodCostPct(item.recipe,item.sellingPrice);
-    var fcTxt=pct!==null?pct.toFixed(0)+'%':'—';
-    var fcCls=fcClass(pct);
-    var margin=item.sellingPrice>0?item.sellingPrice-cost:0;
-    var rec=(item.recipe||[]).map(function(r){return r.name+' '+r.qty+' '+r.unit;}).join(' · ');
-    return '<div class="menu-card">'+
-      '<div class="menu-fc-badge '+fcCls+'">'+fcTxt+'<div style="font-size:9px;font-weight:500;margin-top:1px">تكلفة</div></div>'+
-      '<div style="flex:1;min-width:0">'+
-        '<div class="menu-item-name">'+esc(item.name)+'</div>'+
-        '<div class="menu-item-cat">'+esc(item.category||'—')+(item.active===false?' · <span style="color:var(--tx4)">غير نشط</span>':'')+'</div>'+
-        (rec?'<div class="menu-item-recipe">🧾 '+esc(rec)+'</div>':'')+
-      '</div>'+
-      '<div style="text-align:left;flex-shrink:0">'+
-        '<div class="menu-sell-price">'+n3(item.sellingPrice||0)+' JD</div>'+
-        (cost>0?'<div class="menu-cost-line">تكلفة: '+n3(cost)+'</div>':'')+
-        (margin>0?'<div class="menu-cost-line" style="color:var(--gn)">هامش: '+n3(margin)+'</div>':'')+
-        '<div style="display:flex;gap:3px;margin-top:5px">'+
-          '<button onclick="openMenuEdit('+idx+')" style="font-size:11px;padding:3px 7px;border-radius:5px;border:1px solid var(--br);background:var(--surf);cursor:pointer;color:var(--tx2)">✏️</button>'+
-          '<button onclick="menuItemToggle('+idx+')" style="font-size:11px;padding:3px 7px;border-radius:5px;border:1px solid var(--br);background:var(--surf);cursor:pointer">'+(item.active===false?'▶':'⏸')+'</button>'+
-          '<button onclick="menuItemDel('+idx+')" style="font-size:11px;padding:3px 7px;border-radius:5px;border:1px solid rgba(220,38,38,.3);background:rgba(220,38,38,.06);cursor:pointer;color:var(--rd)">×</button>'+
-        '</div>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-}
-
-function renderMenuSummary(){
-  var sumEl=document.getElementById('menuSummary');if(!sumEl)return;
-  var items=(S.menuItems||[]).filter(function(i){return i.active!==false;});
-  if(!items.length){sumEl.innerHTML='';return;}
-  var fcVals=items.map(function(i){return calcFoodCostPct(i.recipe,i.sellingPrice);}).filter(function(v){return v!==null;});
-  var avgFC=fcVals.length?fcVals.reduce(function(a,b){return a+b;},0)/fcVals.length:null;
-  var margins=items.map(function(i){return{name:i.name,m:i.sellingPrice>0?(i.sellingPrice-calcRecipeCost(i.recipe))/i.sellingPrice*100:0};}).sort(function(a,b){return b.m-a.m;});
-  sumEl.innerHTML='<div class="menu-sum-grid">'+
-    '<div class="menu-sum-box"><div class="menu-sum-val" style="color:'+(avgFC===null?'var(--tx3)':avgFC<25?'var(--gn)':avgFC<35?'var(--yw)':'var(--rd)')+'">'+(avgFC!==null?avgFC.toFixed(1)+'%':'—')+'</div><div class="menu-sum-lbl">متوسط تكلفة الغذاء</div></div>'+
-    '<div class="menu-sum-box"><div class="menu-sum-val" style="color:var(--gn)">'+(margins.length?margins[0].m.toFixed(0)+'%':'—')+'</div><div class="menu-sum-lbl">أعلى هامش<br><small>'+esc(margins.length?margins[0].name:'')+'</small></div></div>'+
-    '<div class="menu-sum-box"><div class="menu-sum-val" style="color:var(--rd)">'+(margins.length?margins[margins.length-1].m.toFixed(0)+'%':'—')+'</div><div class="menu-sum-lbl">أدنى هامش<br><small>'+esc(margins.length?margins[margins.length-1].name:'')+'</small></div></div>'+
-  '</div>';
-}
-
-var _menuRecipeRows=[];
-function openMenuEdit(idx){
-  _menuRecipeRows=[];
-  var item=idx>=0?(S.menuItems||[])[idx]:null;
-  document.getElementById('menuEditIdx').value=idx;
-  document.getElementById('menuItemName').value=item?item.name:'';
-  document.getElementById('menuItemCat').value=item?(item.category||''):'';
-  document.getElementById('menuItemPrice').value=item?(item.sellingPrice||''):'';
-  _menuRecipeRows=item?(item.recipe||[]).map(function(r){return Object.assign({},r);}):[];
-  renderRecipeRows();
-  openMo('moMenu');
-}
-function renderRecipeRows(){
-  var c=document.getElementById('menuRecipeList');if(!c)return;
-  c.innerHTML=_menuRecipeRows.map(function(row,i){
-    var selOpts='<option value="">— مكوّن —</option>'+(S.inventory||[]).map(function(inv){return '<option value="'+esc(inv.id)+'"'+(inv.id===row.inventoryId?' selected':'')+'>'+esc(inv.name)+' ('+esc(inv.unit)+')</option>';}).join('');
-    return '<div class="mri-row">'+
-      '<select style="flex:2" onchange="menuRIChg('+i+',\'inv\',this.value)">'+selOpts+'</select>'+
-      '<input type="number" placeholder="الكمية" step="0.001" min="0" value="'+(row.qty||'')+'" oninput="menuRIChg('+i+',\'qty\',this.value)" style="flex:1;max-width:70px">'+
-      '<input type="text" placeholder="وحدة" value="'+esc(row.unit||'')+'" oninput="menuRIChg('+i+',\'unit\',this.value)" style="flex:1;max-width:55px">'+
-      '<button class="mri-del" onclick="menuRIDel('+i+')">×</button>'+
-    '</div>';
-  }).join('')+'<button class="btn btn-ghost btn-sm" style="margin-top:4px;width:100%;font-size:12px" onclick="menuRIAdd()">➕ إضافة مكوّن</button>';
-  var costLbl=document.getElementById('menuRecipeCostLabel');
-  if(costLbl){var price=parseFloat(document.getElementById('menuItemPrice').value)||0;var cost=calcRecipeCost(_menuRecipeRows);costLbl.textContent=cost>0?'تكلفة: '+n3(cost)+' JD'+(price>0?' ('+((cost/price*100).toFixed(0))+'%)':''):'—';}
-}
-function menuRIAdd(){_menuRecipeRows.push({inventoryId:'',name:'',qty:0,unit:''});renderRecipeRows();}
-function menuRIDel(i){_menuRecipeRows.splice(i,1);renderRecipeRows();}
-function menuRIChg(i,field,val){
-  if(field==='inv'){var inv=(S.inventory||[]).find(function(it){return it.id===val;});_menuRecipeRows[i].inventoryId=val;_menuRecipeRows[i].name=inv?inv.name:'';_menuRecipeRows[i].unit=inv?inv.unit:'';}
-  else{_menuRecipeRows[i][field]=field==='qty'?parseFloat(val)||0:val;}
-  renderRecipeRows();
-}
-function saveMenuItem(){
-  if(!S.menuItems)S.menuItems=[];
-  var name=document.getElementById('menuItemName').value.trim();
-  var cat=document.getElementById('menuItemCat').value.trim();
-  var price=parseFloat(document.getElementById('menuItemPrice').value)||0;
-  if(!name){toast('⚠️ أدخل اسم المنتج');return;}
-  if(!price){toast('⚠️ أدخل سعر البيع');return;}
-  var recipe=_menuRecipeRows.filter(function(r){return r.inventoryId&&r.qty>0;});
-  var ei=parseInt(document.getElementById('menuEditIdx').value);
-  if(ei>=0&&(S.menuItems||[])[ei]){
-    S.menuItems[ei]=Object.assign(S.menuItems[ei],{name:name,category:cat,sellingPrice:price,recipe:recipe});
-  }else{
-    S.menuItems.push({id:'mi'+Date.now(),name:name,category:cat,sellingPrice:price,recipe:recipe,active:true});
-  }
-  cmo('moMenu');renderMenuItems();saveAll();toast('✅ تم حفظ المنتج');
-}
-function menuItemDel(idx){if(!confirm('حذف المنتج؟'))return;(S.menuItems||[]).splice(idx,1);renderMenuItems();saveAll();toast('🗑️ تم الحذف');}
-function menuItemToggle(idx){var item=(S.menuItems||[])[idx];if(!item)return;item.active=item.active===false?true:false;renderMenuItems();saveAll();}
-
+// JORDANIAN LABOR LAW SALARY CALCULATOR
 // ════════════════════════════════════════════════
+// قانون العمل الأردني: 26 يوم عمل/شهر · 8 ساعات/يوم · OT 125% · عطل 150% · بدون ضمان اجتماعي
+function renderSalLaw(){
+  var c=document.getElementById('salLawBody');if(!c)return;
+  var d=G();
+  if(!S.monthlyEmps||!S.monthlyEmps.length){c.innerHTML='<div class="alert al-i">لا يوجد موظفون شهريون</div>';return;}
+  var html='';
+  S.monthlyEmps.forEach(function(e){
+    var sal=d.mSal[e.id]||{base:0,allow:0,ded:0};
+    var base=sal.base||0;
+    var allow=sal.allow||0;
+    var ded=sal.ded||0;
+    var adv=pendAdv(e.id);
+    var absent=sal.absent||0;
+    var ot125=sal.ot125||0;
+    var ot150=sal.ot150||0;
+    var dailyRate=base>0?+(base/26).toFixed(3):0;
+    var hourlyRate=base>0?+(base/26/8).toFixed(3):0;
+    var absentDed=+(dailyRate*absent).toFixed(3);
+    var otPay125=+(hourlyRate*1.25*ot125).toFixed(3);
+    var otPay150=+(hourlyRate*1.5*ot150).toFixed(3);
+    var netSalary=+(base+allow+otPay125+otPay150-absentDed-ded-adv).toFixed(3);
+    if(netSalary<0)netSalary=0;
+    html+='<div style="background:var(--surf);border:1px solid var(--br);border-radius:var(--rm);padding:12px 14px;margin-bottom:8px">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+    html+='<div style="font-size:14px;font-weight:700">👤 '+esc(e.name)+'</div>';
+    html+='<div style="font-family:monospace;font-size:16px;font-weight:800;color:var(--gn)">'+n3(netSalary)+' JD صافي</div>';
+    html+='</div>';
+    // معدلات الأساس
+    html+='<div style="background:var(--primary-bg);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:11px;display:flex;gap:16px">';
+    html+='<div><span style="color:var(--tx3)">اليومية: </span><strong style="font-family:monospace">'+n3(dailyRate)+' JD</strong></div>';
+    html+='<div><span style="color:var(--tx3)">الساعية: </span><strong style="font-family:monospace">'+n3(hourlyRate)+' JD</strong></div>';
+    html+='<div><span style="color:var(--tx3)">معيار الشهر: </span><strong>26 يوم عمل</strong></div>';
+    html+='</div>';
+    // الحقول التفاعلية
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">';
+    html+='<div><label style="font-size:10.5px;color:var(--rd);font-weight:600;display:block;margin-bottom:3px">أيام الغياب ❌</label>';
+    html+='<input type="number" class="inp" step="1" min="0" max="26" value="'+(absent||'')+'" placeholder="0" style="width:100%;text-align:center" onchange="salLawChg(''+e.id+'','absent',this.value)"></div>';
+    html+='<div><label style="font-size:10.5px;color:var(--yw);font-weight:600;display:block;margin-bottom:3px">عمل إضافي 125% ⏰</label>';
+    html+='<input type="number" class="inp" step="0.5" min="0" value="'+(ot125||'')+'" placeholder="ساعات" style="width:100%;text-align:center" onchange="salLawChg(''+e.id+'','ot125',this.value)"></div>';
+    html+='<div><label style="font-size:10.5px;color:var(--primary);font-weight:600;display:block;margin-bottom:3px">عطل رسمية 150% 🏖️</label>';
+    html+='<input type="number" class="inp" step="0.5" min="0" value="'+(ot150||'')+'" placeholder="ساعات" style="width:100%;text-align:center" onchange="salLawChg(''+e.id+'','ot150',this.value)"></div>';
+    html+='</div>';
+    // تفصيل الحساب
+    html+='<div style="border-top:1px solid var(--br);padding-top:8px;margin-top:2px">';
+    html+='<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:2px 0"><span>الأساسي</span><span style="font-family:monospace">'+n3(base)+' JD</span></div>';
+    if(allow>0)html+='<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:2px 0"><span>البدلات</span><span style="font-family:monospace;color:var(--gn)">+ '+n3(allow)+' JD</span></div>';
+    if(otPay125>0)html+='<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:2px 0"><span>أجر إضافي 125% ('+ot125+' ساعة)</span><span style="font-family:monospace;color:var(--gn)">+ '+n3(otPay125)+' JD</span></div>';
+    if(otPay150>0)html+='<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:2px 0"><span>عطل رسمية 150% ('+ot150+' ساعة)</span><span style="font-family:monospace;color:var(--gn)">+ '+n3(otPay150)+' JD</span></div>';
+    if(absentDed>0)html+='<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:2px 0"><span>خصم الغياب ('+absent+' يوم × '+n3(dailyRate)+')</span><span style="font-family:monospace;color:var(--rd)">− '+n3(absentDed)+' JD</span></div>';
+    if(ded>0)html+='<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:2px 0"><span>استقطاعات أخرى</span><span style="font-family:monospace;color:var(--rd)">− '+n3(ded)+' JD</span></div>';
+    if(adv>0)html+='<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:2px 0"><span>سلف مستحقة</span><span style="font-family:monospace;color:var(--rd)">− '+n3(adv)+' JD</span></div>';
+    html+='<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding:6px 0;border-top:1px solid var(--br);margin-top:4px"><span>💰 صافي الراتب المستحق</span><span style="font-family:monospace;color:var(--gn)">'+n3(netSalary)+' JD</span></div>';
+    html+='</div>';
+    html+='</div>';
+  });
+  c.innerHTML=html;
+}
+function salLawChg(empId,field,val){
+  var d=G();
+  if(!d.mSal[empId])d.mSal[empId]={};
+  d.mSal[empId][field]=parseFloat(val)||0;
+  renderSalLaw();
+  saveAll();
+}
+
 // SHIFT CASH MANAGEMENT
 // ════════════════════════════════════════════════
 function renderShifts(){
