@@ -22,31 +22,74 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '11'
 
       - name: Sync index.html to assets
         run: cp index.html android/app/src/main/assets/public/index.html
 
-      - name: Accept Android licenses
-        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: ~/.gradle
-          key: gradle-${{ hashFiles('android/**/*.gradle*') }}
-
-      - name: Build APK
+      - name: Build APK manually (no Gradle)
         run: |
-          chmod +x android/gradlew
-          cd android
-          ./gradlew assembleRelease --no-daemon
+          set -e
+          BT=$ANDROID_HOME/build-tools/34.0.0
+          PLAT=$ANDROID_HOME/platforms/android-34/android.jar
+          PROJ=android/app
+          BUILD=/tmp/apk-build
+          mkdir -p $BUILD/gen $BUILD/obj
+
+          echo "=== 1. Compile resources ==="
+          $BT/aapt2 compile --dir $PROJ/src/main/res -o $BUILD/res.zip
+
+          echo "=== 2. Link resources ==="
+          $BT/aapt2 link \
+            -o $BUILD/resources.apk \
+            -I $PLAT \
+            --manifest $PROJ/src/main/AndroidManifest.xml \
+            --java $BUILD/gen \
+            -R $BUILD/res.zip \
+            --min-sdk-version 26 \
+            --target-sdk-version 34 \
+            --version-code 26 \
+            --version-name "26.0" \
+            --auto-add-overlay
+
+          echo "=== 3. Compile Java ==="
+          javac -source 8 -target 8 \
+            -cp $PLAT \
+            -d $BUILD/obj \
+            $PROJ/src/main/java/com/rayhanacafe/app/MainActivity.java \
+            $BUILD/gen/com/rayhanacafe/app/R.java
+
+          echo "=== 4. DEX ==="
+          $BT/d8 \
+            --output $BUILD \
+            $(find $BUILD/obj -name "*.class")
+
+          echo "=== 5. Package ==="
+          cp $BUILD/resources.apk $BUILD/unaligned.apk
+          zip -j $BUILD/unaligned.apk $BUILD/classes.dex
+          cd $PROJ/src/main && zip -r $BUILD/unaligned.apk assets/ && cd -
+
+          echo "=== 6. Zipalign ==="
+          $BT/zipalign -f 4 $BUILD/unaligned.apk $BUILD/aligned.apk
+
+          echo "=== 7. Sign ==="
+          $BT/apksigner sign \
+            --ks android/keystore/rayhanacafe.keystore \
+            --ks-pass pass:rayhanacafe123 \
+            --key-pass pass:rayhanacafe123 \
+            --ks-key-alias rayhanacafe \
+            --out rayhanacafe-v26.apk \
+            $BUILD/aligned.apk
+
+          echo "=== Done ==="
+          ls -lh rayhanacafe-v26.apk
+          $BT/apksigner verify --verbose rayhanacafe-v26.apk | head -5
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: rayhanacafe-v26
-          path: android/app/build/outputs/apk/release/*.apk
+          path: rayhanacafe-v26.apk
           retention-days: 90
 
       - name: Create GitHub Release
@@ -54,7 +97,7 @@ jobs:
         with:
           tag_name: v26.${{ github.run_number }}
           name: "📱 ريحانة كافيه v26.${{ github.run_number }}"
-          files: android/app/build/outputs/apk/release/*.apk
+          files: rayhanacafe-v26.apk
           body: |
             ## 📱 ريحانة كافيه — الإصدار 26
 
@@ -65,10 +108,10 @@ jobs:
             - 🗑️ إدارة مالية وإدارية بدون منيو
 
             ### 📥 التثبيت:
-            1. حمّل `app-release.apk`
+            1. حمّل `rayhanacafe-v26.apk`
             2. الإعدادات ← الأمان ← تثبيت تطبيقات غير معروفة ✓
             3. افتح الملف وثبّته
 
-            > Android 7.0+ مطلوب
+            > Android 8.0 (API 26) أو أحدث
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
