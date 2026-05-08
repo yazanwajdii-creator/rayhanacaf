@@ -67,7 +67,8 @@ jobs:
           echo "=== 5. Package ==="
           cp $BUILD/resources.apk $BUILD/unaligned.apk
           zip -j $BUILD/unaligned.apk $BUILD/classes.dex
-          cd $PROJ/src/main && zip -r $BUILD/unaligned.apk assets/ && cd -
+          # assets must be UNCOMPRESSED (-0) so WebView's openFd() can read them
+          cd $PROJ/src/main && zip -0 -r $BUILD/unaligned.apk assets/ && cd -
 
           echo "=== 6. Zipalign ==="
           $BT/zipalign -f 4 $BUILD/unaligned.apk $BUILD/aligned.apk
