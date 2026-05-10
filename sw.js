@@ -7,6 +7,7 @@
 const CACHE = 'rayhanacafe-v26';
 const CORE_FILES = ['./index.html', './manifest.json', './icon.svg'];
 
+// تثبيت: تخزين الملفات الأساسية
 self.addEventListener('install', function(event) {
   self.skipWaiting();
   event.waitUntil(
@@ -18,6 +19,7 @@ self.addEventListener('install', function(event) {
   );
 });
 
+// تفعيل: حذف cache القديم
 self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(keys) {
@@ -31,8 +33,10 @@ self.addEventListener('activate', function(event) {
   );
 });
 
+// Fetch: شبكة أولاً، cache ثانياً
 self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
+  // تجاهل طلبات API الخارجية (Supabase, Groq, Anthropic)
   var url = event.request.url;
   if (url.includes('supabase.co') || url.includes('api.groq.com') || url.includes('anthropic.com')) return;
 
