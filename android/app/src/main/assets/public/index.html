@@ -3767,7 +3767,7 @@ var DEFAULT_PWD = '1234';
 var PWD_KEY = 'rh_mgr_pwd';
 
 async function sha256(str){
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str+'__rh_v26__'));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str+'__rh_v25__'));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
