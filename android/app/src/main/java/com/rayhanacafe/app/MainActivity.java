@@ -102,8 +102,12 @@ public class MainActivity extends Activity {
                 ValueCallback<Uri[]> filePathCallback,
                 WebChromeClient.FileChooserParams fileChooserParams) {
                 MainActivity.this.filePathCallback = filePathCallback;
-                Intent intent = fileChooserParams.createIntent();
-                startActivityForResult(intent, FILE_CHOOSER_REQUEST);
+                // دعم الكاميرا والمعرض معاً لصور الفواتير
+                Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                Intent galleryIntent = fileChooserParams.createIntent();
+                Intent chooser = Intent.createChooser(galleryIntent, "صورة الفاتورة");
+                chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cameraIntent});
+                startActivityForResult(chooser, FILE_CHOOSER_REQUEST);
                 return true;
             }
         });

@@ -1,0 +1,35 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, claude/analyze-test-coverage-5Gq5x]
+    paths:
+      - 'index.html'
+      - 'manifest.json'
+      - 'sw.js'
+      - 'icon*.svg'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare web files
+        run: |
+          mkdir -p /tmp/pages
+          cp index.html manifest.json sw.js /tmp/pages/
+          cp icon.svg /tmp/pages/ 2>/dev/null || true
+          cp icon-maskable.svg /tmp/pages/ 2>/dev/null || true
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: /tmp/pages
+          publish_branch: gh-pages
+          commit_message: "deploy: ${{ github.sha }}"

@@ -1,0 +1,39 @@
+name: Sync Web Files to Main
+
+on:
+  push:
+    branches: [claude/analyze-test-coverage-5Gq5x]
+    paths:
+      - 'index.html'
+      - 'manifest.json'
+      - 'sw.js'
+      - 'icon*.svg'
+      - '.github/workflows/sync-to-main.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync web files to main
+        run: |
+          COMMIT_SHA="${{ github.sha }}"
+          git fetch origin main
+          git checkout main
+          git checkout $COMMIT_SHA -- index.html manifest.json sw.js icon.svg icon-maskable.svg
+          git add index.html manifest.json sw.js icon.svg icon-maskable.svg
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "sync: تحديث ملفات الويب من فرع التطوير"
+          git push origin main
