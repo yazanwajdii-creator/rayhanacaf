@@ -346,6 +346,34 @@ describe('calcTotals()', () => {
     const r = calcTotals(month);
     expect(r.daysActive).toBe(2);
   });
+
+  test('pmts (أجور يومية) مخصومة مسبقاً من cash — لا تُضاف لـ totalExp', () => {
+    // الموظفة تدفع 60 JD يوميات ثم تسلم 500 JD — cash=500 أي بعد الخصم
+    const month = mockMonth({
+      sales: [{ cash: 500, visa: 0, pmts: 60 }],
+    });
+    const r = calcTotals(month);
+    expect(r.netSales).toBe(500);      // cash + visa
+    expect(r.dailyWagesPaid).toBe(60); // للتوثيق فقط
+    expect(r.totalExp).toBe(0);        // لا مشتريات ولا التزامات ولا رواتب
+    expect(r.profit).toBe(500);        // 500 - 0 (pmts مخصوم مسبقاً من cash)
+  });
+
+  test('الربح يشمل COGS والالتزامات والرواتب (الأجور اليومية مخصومة من cash)', () => {
+    const emps = [{ id: 'e1' }];
+    const month = mockMonth({
+      // cash=1000 أي بعد خصم الأجور اليومية (pmts=50) من الكاش
+      sales:       [{ cash: 1000, visa: 0, pmts: 50 }],
+      purchases:   [{ cat: 'COGS', amt: 200 }],
+      obligations: [{ amt: 100, paid: true }],
+      mSal:        { e1: { base: 150, allow: 0, ded: 0, paid: true } },
+      advances:    [],
+    });
+    const r = calcTotals(month, emps);
+    // totalExp = COGS(200) + oblPaid(100) + mSalPaid(150) = 450
+    expect(r.totalExp).toBe(450);
+    expect(r.profit).toBe(550); // 1000 - 450
+  });
 });
 
 // ─── initMonth ────────────────────────────────────────────────────────────────
@@ -408,34 +436,39 @@ describe('initMonth()', () => {
 
 describe('validatePasswordChange()', () => {
   const correctPwd = 'test1234';
-  const stored     = btoa(correctPwd);
+  let stored;
 
-  test('تنجح مع كلمة المرور الصحيحة', () => {
-    expect(validatePasswordChange(stored, correctPwd, 'newpass', 'newpass').ok).toBe(true);
+  beforeAll(async () => {
+    stored = await sha256(correctPwd);
   });
 
-  test('ترفض كلمة المرور القديمة الخاطئة', () => {
-    const r = validatePasswordChange(stored, 'wrongpwd', 'newpass', 'newpass');
+  test('تنجح مع كلمة المرور الصحيحة', async () => {
+    const r = await validatePasswordChange(stored, correctPwd, 'newpass', 'newpass');
+    expect(r.ok).toBe(true);
+  });
+
+  test('ترفض كلمة المرور القديمة الخاطئة', async () => {
+    const r = await validatePasswordChange(stored, 'wrongpwd', 'newpass', 'newpass');
     expect(r.ok).toBe(false);
     expect(r.error).toBe('كلمة المرور الحالية غير صحيحة');
   });
 
-  test('ترفض كلمة المرور الجديدة أقل من 4 أحرف', () => {
-    const r = validatePasswordChange(stored, correctPwd, 'ab', 'ab');
+  test('ترفض كلمة المرور الجديدة أقل من 4 أحرف', async () => {
+    const r = await validatePasswordChange(stored, correctPwd, 'ab', 'ab');
     expect(r.ok).toBe(false);
     expect(r.error).toBe('يجب أن تكون 4 أحرف على الأقل');
   });
 
-  test('ترفض كلمتَي المرور غير المتطابقتين', () => {
-    const r = validatePasswordChange(stored, correctPwd, 'newpass', 'different');
+  test('ترفض كلمتَي المرور غير المتطابقتين', async () => {
+    const r = await validatePasswordChange(stored, correctPwd, 'newpass', 'different');
     expect(r.ok).toBe(false);
     expect(r.error).toBe('كلمتا المرور غير متطابقتين');
   });
 
-  test('⚠️ خلل: تفشل بعد ترحيل كلمة المرور إلى SHA-256', async () => {
+  test('تنجح بعد ترحيل كلمة المرور إلى SHA-256', async () => {
     const sha256Stored = await sha256(correctPwd);
-    const result = validatePasswordChange(sha256Stored, correctPwd, 'newpass', 'newpass');
-    expect(result.ok).toBe(false); // هذا الفشل هو الخلل — يجب أن تنجح بعد الإصلاح
+    const result = await validatePasswordChange(sha256Stored, correctPwd, 'newpass', 'newpass');
+    expect(result.ok).toBe(true);
   });
 });
 

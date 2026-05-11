@@ -3562,9 +3562,13 @@ function qeUpdateMonthCount() {
 }
 
 function qeCalc() {
-  var cash = parseFloat(document.getElementById('qeCash').value)||0;
-  var visa = parseFloat(document.getElementById('qeVisa').value)||0;
-  var pmts = parseFloat(document.getElementById('qePmts').value)||0;
+  var cashEl = document.getElementById('qeCash');
+  var visaEl = document.getElementById('qeVisa');
+  var pmtsEl = document.getElementById('qePmts');
+  if(!cashEl || !visaEl || !pmtsEl) return;
+  var cash = parseFloat(cashEl.value)||0;
+  var visa = parseFloat(visaEl.value)||0;
+  var pmts = parseFloat(pmtsEl.value)||0;
   var ns = cash + visa;
   var tot = ns + pmts;
   var nsEl = document.getElementById('qeNs');
@@ -3574,8 +3578,8 @@ function qeCalc() {
 }
 
 function qeNotesChange() {
-  // Live preview of who will be marked present
-  var notes = document.getElementById('qeNotes').value;
+  var notesEl = document.getElementById('qeNotes');
+  var notes = notesEl ? notesEl.value : '';
   var names = S.dailyEmps.filter(function(e){ return notes.indexOf(e.name) > -1; }).map(function(e){ return e.name; });
   var sub = document.getElementById('qeSub');
   if(names.length && sub) {
@@ -3835,30 +3839,29 @@ function doLogin(role) {
       try { updateDailyInsights(); } catch(e) { console.log('Insights:', e); }
       try { updateQuickInsights(); } catch(e) { console.log('QuickIns:', e); }
       try { startAutoSave(); } catch(e) { console.log('AutoSave:', e); }
-    // Supabase: تهيئة وتحميل بعد الدخول
+    // Supabase: تهيئة وسحب فوري بعد الدخول (supaUpdateUI تبدأ المؤقت التلقائي)
     try {
       supaInit();
       supaUpdateUI(!!SUPA);
       if(SUPA){
-        supaSync('pull').then(function(){
-          toast('☁️ تم تحديث البيانات من السحابة');
-        }).catch(function(e){ console.warn('Supabase pull:', e); });
+        supaSync('pull',{silent:true}).catch(function(e){ console.warn('Supabase pull on login:', e); });
       }
     } catch(e) {}
     }, 500);
   }, 100);
 }
 
-function changePwd() {
+async function changePwd() {
   var old = document.getElementById('pwdOld') ? document.getElementById('pwdOld').value : '';
   var nw  = document.getElementById('pwdNew') ? document.getElementById('pwdNew').value : '';
   var cf  = document.getElementById('pwdConf') ? document.getElementById('pwdConf').value : '';
   var err = document.getElementById('pwdChgErr');
-  var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
-  if (btoa(old) !== stored) { if(err) err.textContent = 'كلمة المرور الحالية غير صحيحة'; return; }
+  var stored = safeLS.getItem(PWD_KEY) || await sha256(DEFAULT_PWD);
+  var oldHash = await sha256(old);
+  if (oldHash !== stored) { if(err) err.textContent = 'كلمة المرور الحالية غير صحيحة'; return; }
   if (nw.length < 4) { if(err) err.textContent = 'يجب أن تكون 4 أحرف على الأقل'; return; }
   if (nw !== cf) { if(err) err.textContent = 'كلمتا المرور غير متطابقتين'; return; }
-  safeLS.setItem(PWD_KEY, btoa(nw));
+  safeLS.setItem(PWD_KEY, await sha256(nw));
   if(err) err.textContent = '';
   ['pwdOld','pwdNew','pwdConf'].forEach(id => { var e = document.getElementById(id); if(e) e.value = ''; });
   cmo('moPwd');
@@ -3948,15 +3951,15 @@ function getMonth(key){
     if(PL[key]){
       S.months[key]=JSON.parse(JSON.stringify(PL[key]));
       const ex=S.months[key].sales.map(s=>s.day);
-      for(let d=1;d<=days;d++)if(!ex.includes(d))S.months[key].sales.push({day:d,cash:0,visa:0,pmts:0,notes:""});
+      for(let d=1;d<=days;d++)if(!ex.includes(d))S.months[key].sales.push({day:d,cash:0,visa:0,pmts:0,notes:"",receivedBy:""});
       S.months[key].sales.sort((a,b)=>a.day-b.day);
     }else{
       S.months[key]={
-        sales:Array.from({length:days},(_,i)=>({day:i+1,cash:0,visa:0,pmts:0,notes:""})),
+        sales:Array.from({length:days},(_,i)=>({day:i+1,cash:0,visa:0,pmts:0,notes:"",receivedBy:""})),
         purchases:[],
         obligations:[{id:"o1",name:"إيجار المحل",amt:500,paid:false,due:""},{id:"o2",name:"فاتورة الكهرباء والمياه",amt:0,paid:false,due:""},{id:"o3",name:"قسط الجمعية",amt:1000,paid:false,due:""},{id:"o4",name:"اشتراك الإنترنت",amt:0,paid:false,due:""},{id:"o5",name:"مواد التنظيف",amt:0,paid:false,due:""},{id:"o6",name:"مصروفات الصيانة",amt:0,paid:false,due:""},{id:"o7",name:"مصروفات أخرى",amt:0,paid:false,due:""}],
-        mSal:S.monthlyEmps.reduce((o,e)=>{o[e.id]={base:0,allow:0,ded:0};return o},{}),
-        dWages:S.dailyEmps.reduce((o,e)=>{o[e.id]={rate:0,att:[]};return o},{}),
+        mSal:S.monthlyEmps.reduce((o,e)=>{o[e.id]={base:0,allow:0,ded:0,paid:false};return o},{}),
+        dWages:S.dailyEmps.reduce((o,e)=>{o[e.id]={rate:0,att:[],rateOverrides:{}};return o},{}),
         advances:[],cashflow:{opening:0,actual:0}
       };
     }
@@ -4323,8 +4326,10 @@ function totals(){
   // V24-3 FIX: فقط الرواتب المدفوعة + الالتزامات المدفوعة تدخل في المصاريف
   // الرواتب غير المدفوعة = مستحقات معلقة لا تؤثر على الربح حتى تُدفع
   // ═══════════════════════════════════════════════════════════════════════════
+  // الأجور اليومية مخصومة مسبقاً من cash (الموظفة تدفعها قبل تسليم النقد)
+  // pmts = توثيق ما دُفع — لا تُضاف لـ totalExp لتجنب الحساب المزدوج
   const totalExp=bycat.total+oblPaid+mSalPaid;
-  
+
   // صافي الربح = صافي البيع - إجمالي المصروفات الفعلية
   const profit=netSales-totalExp;
   const margin=netSales>0?profit/netSales*100:0;
@@ -11632,14 +11637,7 @@ function supaConnectAndTest(){
   supaSync('push').then(function(){
     toast('✅ تم الربط بنجاح! بياناتك في السحابة ☁️');
     log('تفعيل Supabase');
-    supaUpdateUI(true);
-    // تفعيل مزامنة تلقائية
-    SUPA_AUTO=true;
-    safeLS.setItem('rh_supa_auto','1');
-    if(SUPA_TIMER) clearInterval(SUPA_TIMER);
-    SUPA_TIMER=setInterval(function(){
-      if(SUPA) requestAnimationFrame(function(){ setTimeout(function(){ supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError); }, 0); });
-    },5*60*1000);
+    supaUpdateUI(true); // تبدأ المزامنة التلقائية تلقائياً
   }).catch(function(e){
     if(errEl) errEl.textContent='❌ '+e.message+' — تأكد من تنفيذ SQL في الخطوة ٣';
     SUPA=null;
@@ -11653,6 +11651,7 @@ function supaConnectAndTest(){
 async function supaSync(direction, opts){
   if(!SUPA) throw new Error('Supabase not connected');
   var forceOverwrite = (opts && opts.force) || false;
+  var silentConflict = (opts && opts.silent) || false; // للمزامنة التلقائية: تخطي مربع التأكيد
 
   if(direction === 'push'){
     // إذا كان هناك رفع أو سحب جارٍ — تجاهل هذا الطلب
@@ -11715,7 +11714,12 @@ async function supaSync(direction, opts){
       var _localT = new Date(_localLastPush).getTime();
       var _remoteT = new Date(sv.savedAt).getTime();
       if(_localT > _remoteT + 60000){
-        // البيانات المحلية أحدث بأكثر من دقيقة — نسأل المستخدم قبل الكتابة فوقها
+        if(silentConflict){
+          // مزامنة تلقائية: البيانات المحلية أحدث — تخطي السحب بصمت والإبقاء على البيانات المحلية
+          supaSetStatus('ok','✅ بياناتك أحدث — سيتم الرفع قريباً');
+          return;
+        }
+        // سحب يدوي: نسأل المستخدم قبل الكتابة فوق البيانات المحلية
         var cloudTime = new Date(sv.savedAt).toLocaleString('ar');
         var localTime = new Date(_localLastPush).toLocaleString('ar');
         var confirmed = confirm(
@@ -11767,7 +11771,7 @@ function toggleSupaAuto(){
     if(btn) btn.textContent='إيقاف';
     if(SUPA_TIMER) clearInterval(SUPA_TIMER);
     SUPA_TIMER = setInterval(function(){
-      if(SUPA) requestAnimationFrame(function(){ setTimeout(function(){ supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError); }, 0); });
+      if(SUPA) supaSync('pull',{silent:true}).catch(supaHandleSyncError);
     }, 5*60*1000);
     toast('🔄 مزامنة تلقائية كل 5 دقائق');
   } else {
@@ -11827,14 +11831,15 @@ function supaUpdateUI(connected){
     // cloud tab indicator
     var cloudTab=document.getElementById('cloudTab');
     if(cloudTab) cloudTab.textContent='☁️✅ السحابة';
-    // auto sync
-    var autoOn=safeLS.getItem('rh_supa_auto')==='1';
+    // مزامنة تلقائية — تُفعَّل دائماً عند الاتصال بالسحابة
+    SUPA_AUTO = true;
+    safeLS.setItem('rh_supa_auto','1');
     var autoBtn=document.getElementById('supaAutoBtn');
-    if(autoBtn) autoBtn.textContent=autoOn?'إيقاف':'تشغيل';
+    if(autoBtn) autoBtn.textContent='إيقاف';
     T('supaLastSync',last?'آخر مزامنة: '+last:'لم تتم مزامنة بعد');
-    if(autoOn&&!SUPA_TIMER){
+    if(!SUPA_TIMER){
       SUPA_TIMER=setInterval(function(){
-        if(SUPA) requestAnimationFrame(function(){ setTimeout(function(){ supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError); }, 0); });
+        if(SUPA) supaSync('pull',{silent:true}).catch(supaHandleSyncError);
       },5*60*1000);
     }
   } else {
