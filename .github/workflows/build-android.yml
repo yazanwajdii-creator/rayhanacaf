@@ -60,17 +60,18 @@ jobs:
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 30
 
-      - name: Create Release on tag
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Publish APK to latest release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: latest
+          name: ريحانة كافيه — آخر إصدار
+          prerelease: true
           files: android/app/build/outputs/apk/debug/*.apk
-          name: ريحانة كافيه ${{ github.ref_name }}
           body: |
             ## تطبيق ريحانة كافيه للأندرويد
 
             ### التثبيت:
-            1. حمّل ملف `app-debug.apk`
+            1. حمّل ملف `app-debug.apk` مباشرة
             2. افتح الملف على جهازك
             3. اسمح بتثبيت التطبيقات من مصادر غير معروفة إذا طُلب منك
 
