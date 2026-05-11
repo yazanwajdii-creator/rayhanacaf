@@ -3840,23 +3840,24 @@ function doLogin(role) {
       supaInit();
       supaUpdateUI(!!SUPA);
       if(SUPA){
-        supaSync('pull').catch(function(e){ console.warn('Supabase pull on login:', e); });
+        supaSync('pull',{silent:true}).catch(function(e){ console.warn('Supabase pull on login:', e); });
       }
     } catch(e) {}
     }, 500);
   }, 100);
 }
 
-function changePwd() {
+async function changePwd() {
   var old = document.getElementById('pwdOld') ? document.getElementById('pwdOld').value : '';
   var nw  = document.getElementById('pwdNew') ? document.getElementById('pwdNew').value : '';
   var cf  = document.getElementById('pwdConf') ? document.getElementById('pwdConf').value : '';
   var err = document.getElementById('pwdChgErr');
-  var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
-  if (btoa(old) !== stored) { if(err) err.textContent = 'كلمة المرور الحالية غير صحيحة'; return; }
+  var stored = safeLS.getItem(PWD_KEY) || await sha256(DEFAULT_PWD);
+  var oldHash = await sha256(old);
+  if (oldHash !== stored) { if(err) err.textContent = 'كلمة المرور الحالية غير صحيحة'; return; }
   if (nw.length < 4) { if(err) err.textContent = 'يجب أن تكون 4 أحرف على الأقل'; return; }
   if (nw !== cf) { if(err) err.textContent = 'كلمتا المرور غير متطابقتين'; return; }
-  safeLS.setItem(PWD_KEY, btoa(nw));
+  safeLS.setItem(PWD_KEY, await sha256(nw));
   if(err) err.textContent = '';
   ['pwdOld','pwdNew','pwdConf'].forEach(id => { var e = document.getElementById(id); if(e) e.value = ''; });
   cmo('moPwd');
@@ -11644,6 +11645,7 @@ function supaConnectAndTest(){
 async function supaSync(direction, opts){
   if(!SUPA) throw new Error('Supabase not connected');
   var forceOverwrite = (opts && opts.force) || false;
+  var silentConflict = (opts && opts.silent) || false; // للمزامنة التلقائية: تخطي مربع التأكيد
 
   if(direction === 'push'){
     // إذا كان هناك رفع أو سحب جارٍ — تجاهل هذا الطلب
@@ -11706,7 +11708,12 @@ async function supaSync(direction, opts){
       var _localT = new Date(_localLastPush).getTime();
       var _remoteT = new Date(sv.savedAt).getTime();
       if(_localT > _remoteT + 60000){
-        // البيانات المحلية أحدث بأكثر من دقيقة — نسأل المستخدم قبل الكتابة فوقها
+        if(silentConflict){
+          // مزامنة تلقائية: البيانات المحلية أحدث — تخطي السحب بصمت والإبقاء على البيانات المحلية
+          supaSetStatus('ok','✅ بياناتك أحدث — سيتم الرفع قريباً');
+          return;
+        }
+        // سحب يدوي: نسأل المستخدم قبل الكتابة فوق البيانات المحلية
         var cloudTime = new Date(sv.savedAt).toLocaleString('ar');
         var localTime = new Date(_localLastPush).toLocaleString('ar');
         var confirmed = confirm(
@@ -11758,7 +11765,7 @@ function toggleSupaAuto(){
     if(btn) btn.textContent='إيقاف';
     if(SUPA_TIMER) clearInterval(SUPA_TIMER);
     SUPA_TIMER = setInterval(function(){
-      if(SUPA) supaSync('pull').catch(supaHandleSyncError);
+      if(SUPA) supaSync('pull',{silent:true}).catch(supaHandleSyncError);
     }, 5*60*1000);
     toast('🔄 مزامنة تلقائية كل 5 دقائق');
   } else {
@@ -11826,7 +11833,7 @@ function supaUpdateUI(connected){
     T('supaLastSync',last?'آخر مزامنة: '+last:'لم تتم مزامنة بعد');
     if(!SUPA_TIMER){
       SUPA_TIMER=setInterval(function(){
-        if(SUPA) supaSync('pull').catch(supaHandleSyncError);
+        if(SUPA) supaSync('pull',{silent:true}).catch(supaHandleSyncError);
       },5*60*1000);
     }
   } else {
