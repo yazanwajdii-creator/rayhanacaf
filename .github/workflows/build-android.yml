@@ -24,10 +24,19 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Accept Android SDK licenses
+      - name: Diagnose environment
         run: |
+          echo "### Environment Info" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "Java: $(java -version 2>&1 | head -1)" >> $GITHUB_STEP_SUMMARY
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_STEP_SUMMARY
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_STEP_SUMMARY
+          ls $ANDROID_SDK_ROOT/platforms/ 2>/dev/null | tr '\n' ' ' >> $GITHUB_STEP_SUMMARY || echo "no platforms" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           SDKMANAGER=$(find "$ANDROID_SDK_ROOT" -name "sdkmanager" -type f 2>/dev/null | head -1)
-          [ -n "$SDKMANAGER" ] && yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          echo "sdkmanager: ${SDKMANAGER:-not found}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
 
       - name: Create local.properties
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
@@ -45,10 +54,27 @@ jobs:
           restore-keys: gradle-
 
       - name: Build debug APK
+        id: build
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/build.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Show build error in summary
+        if: failure()
+        run: |
+          echo "### Build Error" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -A20 "FAILURE\|What went wrong\|Exception" /tmp/build.log | head -60 >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: /tmp/build.log
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
