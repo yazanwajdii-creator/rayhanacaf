@@ -346,6 +346,32 @@ describe('calcTotals()', () => {
     const r = calcTotals(month);
     expect(r.daysActive).toBe(2);
   });
+
+  test('pmts (أجور يومية) تُخصم من الربح كمصروف فعلي', () => {
+    const month = mockMonth({
+      sales: [{ cash: 500, visa: 0, pmts: 60 }],
+    });
+    const r = calcTotals(month);
+    expect(r.netSales).toBe(500);      // netSales لا تشمل pmts
+    expect(r.dailyWagesPaid).toBe(60); // الأجور = pmts
+    expect(r.totalExp).toBe(60);       // pmts ضمن المصاريف
+    expect(r.profit).toBe(440);        // الربح بعد خصم الأجور
+  });
+
+  test('الربح يشمل جميع مصاريف الأجور والمشتريات والالتزامات', () => {
+    const emps = [{ id: 'e1' }];
+    const month = mockMonth({
+      sales:       [{ cash: 1000, visa: 0, pmts: 50 }],
+      purchases:   [{ cat: 'COGS', amt: 200 }],
+      obligations: [{ amt: 100, paid: true }],
+      mSal:        { e1: { base: 150, allow: 0, ded: 0, paid: true } },
+      advances:    [],
+    });
+    const r = calcTotals(month, emps);
+    // totalExp = COGS(200) + oblPaid(100) + mSalPaid(150) + pmts(50) = 500
+    expect(r.totalExp).toBe(500);
+    expect(r.profit).toBe(500); // 1000 - 500
+  });
 });
 
 // ─── initMonth ────────────────────────────────────────────────────────────────

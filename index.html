@@ -3562,9 +3562,13 @@ function qeUpdateMonthCount() {
 }
 
 function qeCalc() {
-  var cash = parseFloat(document.getElementById('qeCash').value)||0;
-  var visa = parseFloat(document.getElementById('qeVisa').value)||0;
-  var pmts = parseFloat(document.getElementById('qePmts').value)||0;
+  var cashEl = document.getElementById('qeCash');
+  var visaEl = document.getElementById('qeVisa');
+  var pmtsEl = document.getElementById('qePmts');
+  if(!cashEl || !visaEl || !pmtsEl) return;
+  var cash = parseFloat(cashEl.value)||0;
+  var visa = parseFloat(visaEl.value)||0;
+  var pmts = parseFloat(pmtsEl.value)||0;
   var ns = cash + visa;
   var tot = ns + pmts;
   var nsEl = document.getElementById('qeNs');
@@ -3574,8 +3578,8 @@ function qeCalc() {
 }
 
 function qeNotesChange() {
-  // Live preview of who will be marked present
-  var notes = document.getElementById('qeNotes').value;
+  var notesEl = document.getElementById('qeNotes');
+  var notes = notesEl ? notesEl.value : '';
   var names = S.dailyEmps.filter(function(e){ return notes.indexOf(e.name) > -1; }).map(function(e){ return e.name; });
   var sub = document.getElementById('qeSub');
   if(names.length && sub) {
@@ -3947,15 +3951,15 @@ function getMonth(key){
     if(PL[key]){
       S.months[key]=JSON.parse(JSON.stringify(PL[key]));
       const ex=S.months[key].sales.map(s=>s.day);
-      for(let d=1;d<=days;d++)if(!ex.includes(d))S.months[key].sales.push({day:d,cash:0,visa:0,pmts:0,notes:""});
+      for(let d=1;d<=days;d++)if(!ex.includes(d))S.months[key].sales.push({day:d,cash:0,visa:0,pmts:0,notes:"",receivedBy:""});
       S.months[key].sales.sort((a,b)=>a.day-b.day);
     }else{
       S.months[key]={
-        sales:Array.from({length:days},(_,i)=>({day:i+1,cash:0,visa:0,pmts:0,notes:""})),
+        sales:Array.from({length:days},(_,i)=>({day:i+1,cash:0,visa:0,pmts:0,notes:"",receivedBy:""})),
         purchases:[],
         obligations:[{id:"o1",name:"إيجار المحل",amt:500,paid:false,due:""},{id:"o2",name:"فاتورة الكهرباء والمياه",amt:0,paid:false,due:""},{id:"o3",name:"قسط الجمعية",amt:1000,paid:false,due:""},{id:"o4",name:"اشتراك الإنترنت",amt:0,paid:false,due:""},{id:"o5",name:"مواد التنظيف",amt:0,paid:false,due:""},{id:"o6",name:"مصروفات الصيانة",amt:0,paid:false,due:""},{id:"o7",name:"مصروفات أخرى",amt:0,paid:false,due:""}],
-        mSal:S.monthlyEmps.reduce((o,e)=>{o[e.id]={base:0,allow:0,ded:0};return o},{}),
-        dWages:S.dailyEmps.reduce((o,e)=>{o[e.id]={rate:0,att:[]};return o},{}),
+        mSal:S.monthlyEmps.reduce((o,e)=>{o[e.id]={base:0,allow:0,ded:0,paid:false};return o},{}),
+        dWages:S.dailyEmps.reduce((o,e)=>{o[e.id]={rate:0,att:[],rateOverrides:{}};return o},{}),
         advances:[],cashflow:{opening:0,actual:0}
       };
     }
@@ -4322,8 +4326,9 @@ function totals(){
   // V24-3 FIX: فقط الرواتب المدفوعة + الالتزامات المدفوعة تدخل في المصاريف
   // الرواتب غير المدفوعة = مستحقات معلقة لا تؤثر على الربح حتى تُدفع
   // ═══════════════════════════════════════════════════════════════════════════
-  const totalExp=bycat.total+oblPaid+mSalPaid;
-  
+  // الأجور اليومية المدفوعة (pmts) جزء من المصاريف الفعلية
+  const totalExp=bycat.total+oblPaid+mSalPaid+dailyWagesPaid;
+
   // صافي الربح = صافي البيع - إجمالي المصروفات الفعلية
   const profit=netSales-totalExp;
   const margin=netSales>0?profit/netSales*100:0;
