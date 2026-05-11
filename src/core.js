@@ -153,16 +153,14 @@ function initMonth(key, monthlyEmps = [], dailyEmps = []) {
 
 /**
  * يتحقق من صحة طلب تغيير كلمة المرور (بدون DOM).
- * يعكس المنطق الحالي في changePwd() — index.html السطر 3713.
- *
- * ⚠️ خلل موثق: هذه الدالة تقارن باستخدام btoa فقط.
- * بعد ترحيل كلمة المرور إلى SHA-256 (يحدث تلقائياً في checkPwd)،
- * ستفشل المقارنة دائماً لأن stored أصبح SHA-256 وليس base64.
+ * يعكس المنطق المُصلح في changePwd() — index.html السطر 3713.
+ * تستخدم SHA-256 للمقارنة لتتوافق مع checkPwd() بعد الترحيل.
  */
-function validatePasswordChange(stored, oldRaw, newPwd, confirmPwd) {
-  if (btoa(oldRaw) !== stored)  return { ok: false, error: 'كلمة المرور الحالية غير صحيحة' };
-  if (newPwd.length < 4)        return { ok: false, error: 'يجب أن تكون 4 أحرف على الأقل' };
-  if (newPwd !== confirmPwd)    return { ok: false, error: 'كلمتا المرور غير متطابقتين' };
+async function validatePasswordChange(stored, oldRaw, newPwd, confirmPwd) {
+  const oldHash = await sha256(oldRaw);
+  if (oldHash !== stored)    return { ok: false, error: 'كلمة المرور الحالية غير صحيحة' };
+  if (newPwd.length < 4)     return { ok: false, error: 'يجب أن تكون 4 أحرف على الأقل' };
+  if (newPwd !== confirmPwd) return { ok: false, error: 'كلمتا المرور غير متطابقتين' };
   return { ok: true };
 }
 
