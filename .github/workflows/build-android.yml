@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main, claude/implement-todo-item-q6IWC]
+    branches: [main]
     paths:
       - 'index.html'
       - 'android/**'
@@ -12,6 +12,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,14 +29,6 @@ jobs:
 
       - name: Sync latest index.html into Android assets
         run: cp index.html android/app/src/main/assets/public/index.html
-
-      - name: Download gradle-wrapper.jar
-        run: |
-          mkdir -p android/gradle/wrapper
-          curl -sL "https://github.com/gradle/gradle/raw/v8.2.0/gradle/wrapper/gradle-wrapper.jar" \
-            -o android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || \
-          wget -q "https://services.gradle.org/distributions/gradle-8.2-wrapper.jar" \
-            -O android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
