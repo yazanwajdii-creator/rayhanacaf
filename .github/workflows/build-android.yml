@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main, claude/implement-todo-item-q6IWC]
+    branches: [main, claude/fix-apk-build-github-Q1Fy1]
     paths:
       - 'index.html'
       - 'android/**'
@@ -11,7 +11,9 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,19 +24,28 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Check connectivity and environment
+        run: |
+          echo "## Diagnostics" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_STEP_SUMMARY
+          echo "Java: $(java -version 2>&1 | head -1)" >> $GITHUB_STEP_SUMMARY
+          GM=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/8.5.2/gradle-8.5.2.pom")
+          echo "Google Maven (dl.google.com): $GM" >> $GITHUB_STEP_SUMMARY
+          GM2=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "https://maven.google.com/com/android/tools/build/gradle/8.5.2/gradle-8.5.2.pom")
+          echo "Google Maven (maven.google.com): $GM2" >> $GITHUB_STEP_SUMMARY
+          GR=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "https://services.gradle.org/distributions/gradle-8.7-bin.zip")
+          echo "Gradle distribution: $GR" >> $GITHUB_STEP_SUMMARY
+          ls ${ANDROID_SDK_ROOT}/platforms/ 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "no platforms" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          SDKMANAGER=$(find "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" -name "sdkmanager" -type f 2>/dev/null | head -1)
+          [ -n "$SDKMANAGER" ] && yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+
+      - name: Create local.properties
+        run: echo "sdk.dir=${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" > android/local.properties
 
       - name: Sync latest index.html into Android assets
         run: cp index.html android/app/src/main/assets/public/index.html
-
-      - name: Download gradle-wrapper.jar
-        run: |
-          mkdir -p android/gradle/wrapper
-          curl -sL "https://github.com/gradle/gradle/raw/v8.2.0/gradle/wrapper/gradle-wrapper.jar" \
-            -o android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || \
-          wget -q "https://services.gradle.org/distributions/gradle-8.2-wrapper.jar" \
-            -O android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -42,16 +53,30 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: gradle-
+          key: v2-gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: v2-gradle-
 
       - name: Build debug APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/build.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Show build error in summary
+        if: failure()
+        run: |
+          echo "## Build Error" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -A 20 "FAILURE\|What went wrong\|Could not\|error:" /tmp/build.log | head -60 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: /tmp/build.log
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
