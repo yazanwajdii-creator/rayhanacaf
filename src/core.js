@@ -93,9 +93,9 @@ function calcTotals(monthData, monthlyEmps = [], dailyEmps = []) {
     dwTotal += calcDailyTotal(w);
   });
 
-  const dailyWagesPaid = pmts; // الأجور اليومية = ما دُفع فعلاً من الكاش
+  const dailyWagesPaid = pmts; // للتوثيق — مخصومة مسبقاً من cash
   const grossP    = netSales - bycat.COGS;
-  const totalExp  = bycat.total + oblPaid + mSalPaid + dailyWagesPaid;
+  const totalExp  = bycat.total + oblPaid + mSalPaid;
   const profit    = netSales - totalExp;
   const margin    = netSales > 0 ? (profit / netSales) * 100 : 0;
 

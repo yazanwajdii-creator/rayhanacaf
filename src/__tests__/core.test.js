@@ -347,20 +347,22 @@ describe('calcTotals()', () => {
     expect(r.daysActive).toBe(2);
   });
 
-  test('pmts (أجور يومية) تُخصم من الربح كمصروف فعلي', () => {
+  test('pmts (أجور يومية) مخصومة مسبقاً من cash — لا تُضاف لـ totalExp', () => {
+    // الموظفة تدفع 60 JD يوميات ثم تسلم 500 JD — cash=500 أي بعد الخصم
     const month = mockMonth({
       sales: [{ cash: 500, visa: 0, pmts: 60 }],
     });
     const r = calcTotals(month);
-    expect(r.netSales).toBe(500);      // netSales لا تشمل pmts
-    expect(r.dailyWagesPaid).toBe(60); // الأجور = pmts
-    expect(r.totalExp).toBe(60);       // pmts ضمن المصاريف
-    expect(r.profit).toBe(440);        // الربح بعد خصم الأجور
+    expect(r.netSales).toBe(500);      // cash + visa
+    expect(r.dailyWagesPaid).toBe(60); // للتوثيق فقط
+    expect(r.totalExp).toBe(0);        // لا مشتريات ولا التزامات ولا رواتب
+    expect(r.profit).toBe(500);        // 500 - 0 (pmts مخصوم مسبقاً من cash)
   });
 
-  test('الربح يشمل جميع مصاريف الأجور والمشتريات والالتزامات', () => {
+  test('الربح يشمل COGS والالتزامات والرواتب (الأجور اليومية مخصومة من cash)', () => {
     const emps = [{ id: 'e1' }];
     const month = mockMonth({
+      // cash=1000 أي بعد خصم الأجور اليومية (pmts=50) من الكاش
       sales:       [{ cash: 1000, visa: 0, pmts: 50 }],
       purchases:   [{ cat: 'COGS', amt: 200 }],
       obligations: [{ amt: 100, paid: true }],
@@ -368,9 +370,9 @@ describe('calcTotals()', () => {
       advances:    [],
     });
     const r = calcTotals(month, emps);
-    // totalExp = COGS(200) + oblPaid(100) + mSalPaid(150) + pmts(50) = 500
-    expect(r.totalExp).toBe(500);
-    expect(r.profit).toBe(500); // 1000 - 500
+    // totalExp = COGS(200) + oblPaid(100) + mSalPaid(150) = 450
+    expect(r.totalExp).toBe(450);
+    expect(r.profit).toBe(550); // 1000 - 450
   });
 });
 
