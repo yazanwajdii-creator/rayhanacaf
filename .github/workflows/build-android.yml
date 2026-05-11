@@ -24,12 +24,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK platform 34
+      - name: Accept Android SDK licenses
         run: |
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
-            "platforms;android-34" \
-            "build-tools;34.0.0"
+          SDKMANAGER=$(find "$ANDROID_SDK_ROOT" -name "sdkmanager" -type f 2>/dev/null | head -1)
+          [ -n "$SDKMANAGER" ] && yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
 
       - name: Sync latest index.html into Android assets
         run: cp index.html android/app/src/main/assets/public/index.html
