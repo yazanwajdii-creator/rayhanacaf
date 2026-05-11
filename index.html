@@ -3835,14 +3835,12 @@ function doLogin(role) {
       try { updateDailyInsights(); } catch(e) { console.log('Insights:', e); }
       try { updateQuickInsights(); } catch(e) { console.log('QuickIns:', e); }
       try { startAutoSave(); } catch(e) { console.log('AutoSave:', e); }
-    // Supabase: تهيئة وتحميل بعد الدخول
+    // Supabase: تهيئة وسحب فوري بعد الدخول (supaUpdateUI تبدأ المؤقت التلقائي)
     try {
       supaInit();
       supaUpdateUI(!!SUPA);
       if(SUPA){
-        supaSync('pull').then(function(){
-          toast('☁️ تم تحديث البيانات من السحابة');
-        }).catch(function(e){ console.warn('Supabase pull:', e); });
+        supaSync('pull').catch(function(e){ console.warn('Supabase pull on login:', e); });
       }
     } catch(e) {}
     }, 500);
@@ -11632,14 +11630,7 @@ function supaConnectAndTest(){
   supaSync('push').then(function(){
     toast('✅ تم الربط بنجاح! بياناتك في السحابة ☁️');
     log('تفعيل Supabase');
-    supaUpdateUI(true);
-    // تفعيل مزامنة تلقائية
-    SUPA_AUTO=true;
-    safeLS.setItem('rh_supa_auto','1');
-    if(SUPA_TIMER) clearInterval(SUPA_TIMER);
-    SUPA_TIMER=setInterval(function(){
-      if(SUPA) requestAnimationFrame(function(){ setTimeout(function(){ supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError); }, 0); });
-    },5*60*1000);
+    supaUpdateUI(true); // تبدأ المزامنة التلقائية تلقائياً
   }).catch(function(e){
     if(errEl) errEl.textContent='❌ '+e.message+' — تأكد من تنفيذ SQL في الخطوة ٣';
     SUPA=null;
@@ -11767,7 +11758,7 @@ function toggleSupaAuto(){
     if(btn) btn.textContent='إيقاف';
     if(SUPA_TIMER) clearInterval(SUPA_TIMER);
     SUPA_TIMER = setInterval(function(){
-      if(SUPA) requestAnimationFrame(function(){ setTimeout(function(){ supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError); }, 0); });
+      if(SUPA) supaSync('pull').catch(supaHandleSyncError);
     }, 5*60*1000);
     toast('🔄 مزامنة تلقائية كل 5 دقائق');
   } else {
@@ -11827,14 +11818,15 @@ function supaUpdateUI(connected){
     // cloud tab indicator
     var cloudTab=document.getElementById('cloudTab');
     if(cloudTab) cloudTab.textContent='☁️✅ السحابة';
-    // auto sync
-    var autoOn=safeLS.getItem('rh_supa_auto')==='1';
+    // مزامنة تلقائية — تُفعَّل دائماً عند الاتصال بالسحابة
+    SUPA_AUTO = true;
+    safeLS.setItem('rh_supa_auto','1');
     var autoBtn=document.getElementById('supaAutoBtn');
-    if(autoBtn) autoBtn.textContent=autoOn?'إيقاف':'تشغيل';
+    if(autoBtn) autoBtn.textContent='إيقاف';
     T('supaLastSync',last?'آخر مزامنة: '+last:'لم تتم مزامنة بعد');
-    if(autoOn&&!SUPA_TIMER){
+    if(!SUPA_TIMER){
       SUPA_TIMER=setInterval(function(){
-        if(SUPA) requestAnimationFrame(function(){ setTimeout(function(){ supaSync('push').then(function(){_supaRetryCount=0;}).catch(supaHandleSyncError); }, 0); });
+        if(SUPA) supaSync('pull').catch(supaHandleSyncError);
       },5*60*1000);
     }
   } else {
