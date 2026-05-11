@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       contents: write
     steps:
@@ -24,22 +24,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Diagnose environment
+      - name: Accept Android SDK licenses
         run: |
-          echo "### Environment Info" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "Java: $(java -version 2>&1 | head -1)" >> $GITHUB_STEP_SUMMARY
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_STEP_SUMMARY
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_STEP_SUMMARY
-          ls $ANDROID_SDK_ROOT/platforms/ 2>/dev/null | tr '\n' ' ' >> $GITHUB_STEP_SUMMARY || echo "no platforms" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          SDKMANAGER=$(find "$ANDROID_SDK_ROOT" -name "sdkmanager" -type f 2>/dev/null | head -1)
-          echo "sdkmanager: ${SDKMANAGER:-not found}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          SDKMANAGER=$(find "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" -name "sdkmanager" -type f 2>/dev/null | head -1)
+          [ -n "$SDKMANAGER" ] && yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
 
       - name: Create local.properties
-        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+        run: echo "sdk.dir=${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" > android/local.properties
 
       - name: Sync latest index.html into Android assets
         run: cp index.html android/app/src/main/assets/public/index.html
@@ -64,9 +55,9 @@ jobs:
       - name: Show build error in summary
         if: failure()
         run: |
-          echo "### Build Error" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Error" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          grep -A20 "FAILURE\|What went wrong\|Exception" /tmp/build.log | head -60 >> $GITHUB_STEP_SUMMARY || true
+          grep -A 30 "FAILURE\|What went wrong\|Exception\|error:" /tmp/build.log | head -80 >> $GITHUB_STEP_SUMMARY || tail -80 /tmp/build.log >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload build log
