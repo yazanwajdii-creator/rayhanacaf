@@ -3,7 +3,7 @@
   "short_name": "ريحانة",
   "description": "نظام إدارة كافيه ريحانة — مالية · رواتب · مشتريات · تقارير",
   "start_url": "./index.html",
-  "id": "rayhanacafe-v26",
+  "id": "rayhanacafe-v27",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#FDF8F0",
