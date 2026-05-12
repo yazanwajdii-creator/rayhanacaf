@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main, claude/fix-apk-build-github-Q1Fy1]
+    branches: [main, claude/fix-apk-build-github-Q1Fy1, claude/fix-app-login-sync-rLGz7]
     paths:
       - 'index.html'
       - 'android/**'
@@ -88,17 +88,23 @@ jobs:
       - name: Publish APK to latest release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: ريحانة كافيه — آخر إصدار
-          prerelease: true
+          tag_name: v27
+          name: ريحانة كافيه v27.0.0
+          prerelease: false
           files: android/app/build/outputs/apk/debug/*.apk
           body: |
-            ## تطبيق ريحانة كافيه للأندرويد
+            ## ريحانة كافيه — الإصدار v27.0.0
+
+            ### التحديثات:
+            - 🔑 إصلاح تسجيل الدخول — كلمة المرور تعمل بشكل موثوق
+            - ☁️ إصلاح المزامنة مع السحابة (Supabase) — البيانات القديمة تُسترد تلقائياً
+            - 🔄 رقم إصدار جديد (versionCode 27) واسم ملف جديد حتى يتعرّف الهاتف عليه كتحديث
 
             ### التثبيت:
-            1. حمّل ملف `app-debug.apk` مباشرة
+            1. حمّل ملف `rayhana-cafe-v27.0.0-debug.apk` مباشرة
             2. افتح الملف على جهازك
             3. اسمح بتثبيت التطبيقات من مصادر غير معروفة إذا طُلب منك
+            4. كلمة المرور الافتراضية: **1234** (يظهر التلميح تحت مربع كلمة المرور إن لم تكن قد غيّرتها)
 
             ### المتطلبات:
-            - Android 7.0 (API 24) أو أحدث
+            - Android 8.0 (API 26) أو أحدث
