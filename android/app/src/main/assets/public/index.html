@@ -4271,7 +4271,7 @@ function autoAttFromNotes(day, notes) {
         if(sumEl) sumEl.textContent = att.length + " يوم";
         // Update total display if visible
         var totEl = document.getElementById("att_t_"+e.id);
-        if(totEl) totEl.textContent = n3((d.dWages[e.id].rate||0)*att.length) + " JD";
+        if(totEl) totEl.textContent = n3(_dwTotal(d.dWages[e.id])) + " JD";
         changed.push(e.name);
       }
     });
@@ -4284,19 +4284,18 @@ function autoAttFromNotes(day, notes) {
 }
 
 function updateDailyWageTotal() {
-  // Safe salary update that reads from data not DOM
+  // إجمالي الأجور اليومية — يحترم rateOverrides لكل يوم
   try {
     var d = G();
     var dwT = 0;
     S.dailyEmps.forEach(function(e) {
       var w = d.dWages[e.id] || {};
-      var rate = w.rate || 0;
       var days = (w.att || []).length;
-      dwT += rate * days;
-      // Update UI if visible
+      var empTotal = _dwTotal(w);
+      dwT += empTotal;
       var tEl = document.getElementById("att_t_"+e.id);
       var sEl = document.getElementById("att_s_"+e.id);
-      if(tEl) tEl.textContent = n3(rate*days) + " JD";
+      if(tEl) tEl.textContent = n3(empTotal) + " JD";
       if(sEl) sEl.textContent = days + " يوم";
     });
     var dwEl = document.getElementById("dwtotal");
@@ -6032,8 +6031,8 @@ function exportExcel(){
   ob.push(["الإجمالي",d.obligations.reduce((s,o)=>s+(o.amt||0),0),"",""]);
   const wsOb=XLSX.utils.aoa_to_sheet(ob);wsOb["!cols"]=[{wch:26},{wch:12},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,wsOb,"الالتزامات");
   const sl=[["ريحانة كافيه — الرواتب والأجور"],[],["الموظف","النوع","الأساسي","البدلات","الاستقطاعات","أيام الحضور","الإجمالي"]];
-  S.monthlyEmps.forEach(e=>{const s=d.mSal[e.id]||{};sl.push([e.name,"شهري",s.base||0,s.allow||0,s.ded||0,"—",(s.base||0)+(s.allow||0)-(s.ded||0)]);});
-  S.dailyEmps.forEach(e=>{const w=d.dWages[e.id]||{};const dy=(w.att||[]).length;sl.push([e.name,"يومي",w.rate||0,0,0,dy,(w.rate||0)*dy]);});
+  S.monthlyEmps.forEach(e=>{const s=d.mSal[e.id]||{};const adv=pendAdv(e.id);const net=Math.max(0,(s.base||0)+(s.allow||0)-(s.ded||0)-adv);sl.push([e.name,"شهري",s.base||0,s.allow||0,(s.ded||0)+adv,"—",net]);});
+  S.dailyEmps.forEach(e=>{const w=d.dWages[e.id]||{};const dy=(w.att||[]).length;sl.push([e.name,"يومي",w.rate||0,0,0,dy,_dwTotal(w)]);});
   const wsSl=XLSX.utils.aoa_to_sheet(sl);wsSl["!cols"]=[{wch:14},{wch:10},{wch:12},{wch:12},{wch:12},{wch:12},{wch:14}];XLSX.utils.book_append_sheet(wb,wsSl,"الرواتب");
   const av=[["ريحانة كافيه — السلف"],[],["الموظف","التاريخ","المبلغ","الحالة","الملاحظة"]];
   d.advances.forEach(a=>av.push([a.empName,a.date,a.amt,a.status,a.note||""]));
@@ -6993,17 +6992,18 @@ function buildCafeContext(){
   var totalMonSal=0;
   S.monthlyEmps.forEach(function(e){
     var ms=d.mSal[e.id]||{base:0,allow:0,ded:0};
-    var net=(ms.base||0)+(ms.allow||0)-(ms.ded||0);
+    var adv=pendAdv(e.id);
+    var net=Math.max(0,(ms.base||0)+(ms.allow||0)-(ms.ded||0)-adv);
     totalMonSal+=net;
-    salLines.push(e.name+': '+n3(net)+' JD (أساسي '+n3(ms.base||0)+' + علاوة '+n3(ms.allow||0)+')');
+    salLines.push(e.name+': '+n3(net)+' JD (أساسي '+n3(ms.base||0)+' + علاوة '+n3(ms.allow||0)+' − خصم '+n3(ms.ded||0)+' − سلف '+n3(adv)+')');
   });
   var totalDayWages=0;
   S.dailyEmps.forEach(function(e){
     var dw=d.dWages[e.id]||{rate:0,att:[]};
     var att=(dw.att||[]).length;
-    var wage=(dw.rate||0)*att;
+    var wage=_dwTotal(dw); // يحترم rateOverrides لكل يوم
     totalDayWages+=wage;
-    salLines.push(e.name+': '+n3(wage)+' JD ('+att+' يوم × '+n3(dw.rate||0)+')');
+    salLines.push(e.name+': '+n3(wage)+' JD ('+att+' يوم · أساس '+n3(dw.rate||0)+(Object.keys(dw.rateOverrides||{}).length?' + تعديلات يومية':'')+')');
   });
 
   // الالتزامات
@@ -11268,30 +11268,41 @@ setTimeout(createAutoBackup, 5000);
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* V24-3 PRO: تحليل الاتجاهات والتوقعات                                        */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+// حساب موجز لشهر معيّن بنفس منطق totals() — يضمن اتساق الأرقام بين كل التقارير
+function _monthSummary(d) {
+  if (!d) return { revenue: 0, expenses: 0, profit: 0 };
+  var cash = 0, visa = 0;
+  (d.sales || []).forEach(function(s) { cash += s.cash || 0; visa += s.visa || 0; });
+  var netSales = cash + visa;
+  var purchases = 0;
+  (d.purchases || []).forEach(function(p) { purchases += p.amt || 0; });
+  var oblPaid = (d.obligations || []).filter(function(o){return o.paid;}).reduce(function(s,o){return s+(o.amt||0);},0);
+  // الرواتب المدفوعة فقط — مطابق لـ totals()
+  var mSalPaid = 0;
+  (S.monthlyEmps || []).forEach(function(e) {
+    var sal = (d.mSal||{})[e.id] || {};
+    if (!sal.paid) return;
+    var gross = (sal.base||0) + (sal.allow||0);
+    var adv = (d.advances||[]).filter(function(a){return a.empId===e.id && (a.status==='مستحقة'||a.status==='مسددة جزئياً');}).reduce(function(s,a){return s+(a.amt||0);},0);
+    mSalPaid += Math.max(0, gross - (sal.ded||0) - adv);
+  });
+  var expenses = purchases + oblPaid + mSalPaid;
+  return { revenue: netSales, expenses: expenses, profit: netSales - expenses };
+}
+
 function analyzeTrends() {
   var months = [];
   var keys = Object.keys(S.months || {}).sort();
-  
-  // جمع بيانات آخر 6 أشهر
+
+  // جمع بيانات آخر 6 أشهر بنفس معادلة totals()
   keys.slice(-6).forEach(function(k) {
-    var d = S.months[k];
-    if (!d) return;
-    
-    var cash = 0, visa = 0, pmts = 0, purchases = 0;
-    (d.sales || []).forEach(function(s) {
-      cash += s.cash || 0;
-      visa += s.visa || 0;
-      pmts += s.pmts || 0;
-    });
-    (d.purchases || []).forEach(function(p) {
-      purchases += p.amt || 0;
-    });
-    
+    var summary = _monthSummary(S.months[k]);
+    if (!summary) return;
     months.push({
       key: k,
-      revenue: cash + visa,
-      expenses: purchases,
-      profit: (cash + visa) - purchases
+      revenue: summary.revenue,
+      expenses: summary.expenses,
+      profit: summary.profit
     });
   });
   
@@ -11387,12 +11398,8 @@ function renderMonthComparison() {
   }
   
   var data = keys.map(function(k) {
-    var d = S.months[k];
-    var cash = 0, visa = 0, purchases = 0;
-    (d.sales || []).forEach(function(s) { cash += s.cash || 0; visa += s.visa || 0; });
-    (d.purchases || []).forEach(function(p) { purchases += p.amt || 0; });
-    var rev = cash + visa;
-    return { key: k, revenue: rev, expenses: purchases, profit: rev - purchases };
+    var s = _monthSummary(S.months[k]);
+    return { key: k, revenue: s.revenue, expenses: s.expenses, profit: s.profit };
   });
   
   var maxVal = Math.max.apply(null, data.map(function(d) { return Math.max(d.revenue, d.expenses); })) || 1;
@@ -11439,36 +11446,38 @@ function renderEmployeeReport() {
   var html = '<div class="card" style="margin:0"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">👥</span>تقرير الموظفين</div></div>';
   html += '<div class="card-body">';
   
-  // الموظفين الشهريين
+  // الموظفين الشهريين — يجب أن يطابق منطق totals() تماماً
   if (S.monthlyEmps && S.monthlyEmps.length > 0) {
     html += '<div style="font-size:12px;font-weight:700;color:var(--tx3);margin-bottom:10px">📋 الموظفين الشهريين</div>';
     S.monthlyEmps.forEach(function(e) {
       var sal = d.mSal[e.id] || {};
       var gross = (sal.base || 0) + (sal.allow || 0);
-      var net = gross - (sal.ded || 0);
-      
+      var adv = pendAdv(e.id); // السلف المستحقة — كانت مفقودة
+      var net = Math.max(0, gross - (sal.ded || 0) - adv);
+
       html += '<div class="employee-report-card">';
       html += '<div class="emp-report-header">';
       html += '<div style="display:flex;align-items:center;gap:10px"><div class="emp-avatar">👤</div>';
-      html += '<div><div class="emp-name">' + e.name + '</div><div class="emp-role">راتب شهري</div></div></div>';
+      html += '<div><div class="emp-name">' + e.name + '</div><div class="emp-role">راتب شهري' + (sal.paid?' · ✅ مدفوع':' · ⏳ مستحق') + '</div></div></div>';
       html += '</div>';
       html += '<div class="emp-stats-grid">';
       html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--bl)">' + n3(sal.base || 0) + '</div><div class="emp-stat-label">الأساسي</div></div>';
       html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--gn)">' + n3(sal.allow || 0) + '</div><div class="emp-stat-label">البدلات</div></div>';
+      html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--rd)">' + n3((sal.ded||0) + adv) + '</div><div class="emp-stat-label">خصم + سلف</div></div>';
       html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--gold)">' + n3(net) + '</div><div class="emp-stat-label">الصافي</div></div>';
       html += '</div></div>';
     });
   }
-  
-  // الموظفين اليوميين
+
+  // الموظفين اليوميين — يحترم rateOverrides تماماً مثل _dwTotal
   if (S.dailyEmps && S.dailyEmps.length > 0) {
     html += '<div style="font-size:12px;font-weight:700;color:var(--tx3);margin:16px 0 10px">⏰ الموظفين اليوميين</div>';
     S.dailyEmps.forEach(function(e) {
       var w = d.dWages[e.id] || {};
       var days = (w.att || []).length;
-      var total = (w.rate || 0) * days;
-      var daysInMonth = new Date(S.activeKey.split('-')[0], S.activeKey.split('-')[1], 0).getDate();
-      var attendance = ((days / daysInMonth) * 100).toFixed(0);
+      var total = _dwTotal(w); // يحترم rateOverrides لكل يوم بدلاً من rate*days
+      var daysInMonth = daysIn(S.activeKey);
+      var attendance = daysInMonth > 0 ? ((days / daysInMonth) * 100).toFixed(0) : '0';
       
       html += '<div class="employee-report-card">';
       html += '<div class="emp-report-header">';
