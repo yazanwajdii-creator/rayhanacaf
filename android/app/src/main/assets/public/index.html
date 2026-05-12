@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V25 PRO</title>
+<title>ريحانة V27 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1786,80 +1786,61 @@ body.dark .ss-card{background:var(--surf)}
 <div id="pinScreen">
   <div class="pin-wrap">
     <div class="pin-logo">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 390" width="210" height="273">
-        <!-- OUTER ARCH -->
-        <path d="M28,390 L28,190 C28,78 92,54 150,54 C208,54 272,78 272,190 L272,390"
-          fill="none" stroke="#C17F24" stroke-width="2.4"/>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 440" width="240" height="352" style="display:block;margin:0 auto">
+        <!-- OUTER ARCH (gold) -->
+        <path d="M30,432 L30,200 C30,82 95,52 150,52 C205,52 270,82 270,200 L270,432"
+          fill="none" stroke="#C17F24" stroke-width="2.2" stroke-linecap="round"/>
         <!-- INNER ARCH -->
-        <path d="M42,390 L42,195 C42,96 100,72 150,72 C200,72 258,96 258,195 L258,390"
-          fill="none" stroke="#C17F24" stroke-width="1.4"/>
-        <!-- Base connectors (left & right) -->
-        <line x1="28" y1="372" x2="42" y2="372" stroke="#C17F24" stroke-width="1.4"/>
-        <line x1="258" y1="372" x2="272" y2="372" stroke="#C17F24" stroke-width="1.4"/>
+        <path d="M48,432 L48,208 C48,100 102,72 150,72 C198,72 252,100 252,208 L252,432"
+          fill="none" stroke="#C17F24" stroke-width="1.2"/>
+        <!-- Base connectors -->
+        <line x1="30" y1="414" x2="48" y2="414" stroke="#C17F24" stroke-width="1.2"/>
+        <line x1="252" y1="414" x2="270" y2="414" stroke="#C17F24" stroke-width="1.2"/>
 
-        <!-- 4-POINTED SPARKLE STARS -->
-        <!-- Top center — large -->
-        <path d="M150,43 L153.2,52.5 L163,55.5 L153.2,58.5 L150,68 L146.8,58.5 L137,55.5 L146.8,52.5 Z" fill="#C17F24"/>
-        <!-- Upper left — small -->
-        <path d="M70,120 L71.3,124.5 L76,125.8 L71.3,127 L70,131.5 L68.7,127 L64,125.8 L68.7,124.5 Z" fill="#C17F24"/>
-        <!-- Upper right — small -->
-        <path d="M230,120 L231.3,124.5 L236,125.8 L231.3,127 L230,131.5 L228.7,127 L224,125.8 L228.7,124.5 Z" fill="#C17F24"/>
-        <!-- Left middle — medium -->
-        <path d="M13,232 L16.2,240 L24.5,243 L16.2,246 L13,254 L9.8,246 L1.5,243 L9.8,240 Z" fill="#C17F24"/>
-        <!-- Right middle — medium -->
-        <path d="M287,232 L290.2,240 L298.5,243 L290.2,246 L287,254 L283.8,246 L275.5,243 L283.8,240 Z" fill="#C17F24"/>
-        <!-- Lower left — tiny -->
-        <path d="M47,346 L48.1,349.6 L52,350.8 L48.1,352 L47,355.5 L45.9,352 L42,350.8 L45.9,349.6 Z" fill="#C17F24"/>
-        <!-- Lower right — tiny -->
-        <path d="M253,346 L254.1,349.6 L258,350.8 L254.1,352 L253,355.5 L251.9,352 L248,350.8 L251.9,349.6 Z" fill="#C17F24"/>
+        <!-- SPARKLE STARS (4-point) -->
+        <path d="M150,40 L153,50 L163,53 L153,56 L150,66 L147,56 L137,53 L147,50 Z" fill="#C17F24"/>
+        <path d="M72,116 L73.4,121 L78,122 L73.4,123 L72,128 L70.6,123 L66,122 L70.6,121 Z" fill="#C17F24"/>
+        <path d="M228,116 L229.4,121 L234,122 L229.4,123 L228,128 L226.6,123 L222,122 L226.6,121 Z" fill="#C17F24"/>
+        <path d="M16,236 L19,244 L27,247 L19,250 L16,258 L13,250 L5,247 L13,244 Z" fill="#C17F24"/>
+        <path d="M284,236 L287,244 L295,247 L287,250 L284,258 L281,250 L273,247 L281,244 Z" fill="#C17F24"/>
+        <path d="M52,352 L53,355.5 L56.5,356.5 L53,357.5 L52,361 L51,357.5 L47.5,356.5 L51,355.5 Z" fill="#C17F24"/>
+        <path d="M248,352 L249,355.5 L252.5,356.5 L249,357.5 L248,361 L247,357.5 L243.5,356.5 L247,355.5 Z" fill="#C17F24"/>
 
-        <!-- HERB / PLANT — main stem -->
-        <line x1="150" y1="320" x2="150" y2="130" stroke="#1A4A28" stroke-width="2.2" stroke-linecap="round"/>
+        <!-- OLIVE BRANCH — gentle organic stem -->
+        <path d="M150,340 C146,295 153,250 148,205 C146,180 152,158 150,128"
+          fill="none" stroke="#1A4A28" stroke-width="2.4" stroke-linecap="round"/>
 
-        <!-- LEAF PAIRS (6 pairs, bottom → top, each side is a curved blade) -->
-        <!-- Pair 1 — largest, lowest -->
-        <path d="M150,310 Q132,300 109,312 Q124,322 150,310Z" fill="#1A4A28"/>
-        <path d="M150,310 Q168,300 191,312 Q176,322 150,310Z" fill="#1A4A28"/>
-        <!-- Pair 2 -->
-        <path d="M150,286 Q131,276 108,286 Q122,296 150,286Z" fill="#1A4A28"/>
-        <path d="M150,286 Q169,276 192,286 Q178,296 150,286Z" fill="#1A4A28"/>
-        <!-- Pair 3 -->
-        <path d="M150,262 Q133,253 113,260 Q126,270 150,262Z" fill="#1A4A28"/>
-        <path d="M150,262 Q167,253 187,260 Q174,270 150,262Z" fill="#1A4A28"/>
-        <!-- Pair 4 -->
-        <path d="M150,238 Q135,229 118,234 Q130,244 150,238Z" fill="#1A4A28"/>
-        <path d="M150,238 Q165,229 182,234 Q170,244 150,238Z" fill="#1A4A28"/>
-        <!-- Pair 5 -->
-        <path d="M150,214 Q138,206 124,209 L132,218 L150,214Z" fill="#1A4A28"/>
-        <path d="M150,214 Q162,206 176,209 L168,218 L150,214Z" fill="#1A4A28"/>
-        <!-- Pair 6 — smallest, near top -->
-        <path d="M150,190 Q141,183 130,185 L137,193 L150,190Z" fill="#1A4A28"/>
-        <path d="M150,190 Q159,183 170,185 L163,193 L150,190Z" fill="#1A4A28"/>
+        <!-- LEAVES — alternating, each tilted at a natural angle -->
+        <!-- Bottom-most: longest leaves, leaning slightly down -->
+        <g transform="translate(150 324) rotate(-18)"><path d="M0,0 C-12,-8 -28,-9 -42,-4 C-28,1 -12,1 0,0 Z" fill="#1A4A28"/></g>
+        <g transform="translate(150 314) rotate(22)"><path d="M0,0 C12,-8 28,-9 42,-4 C28,1 12,1 0,0 Z" fill="#1A4A28"/></g>
+        <g transform="translate(150 296) rotate(-25)"><path d="M0,0 C-11,-7 -26,-8 -38,-3 C-26,1 -11,1 0,0 Z" fill="#1A4A28"/></g>
+        <g transform="translate(150 282) rotate(28)"><path d="M0,0 C11,-7 26,-8 38,-3 C26,1 11,1 0,0 Z" fill="#1A4A28"/></g>
+        <g transform="translate(150 264) rotate(-30)"><path d="M0,0 C-10,-6 -23,-7 -34,-3 C-23,1 -10,1 0,0 Z" fill="#1A4A28"/></g>
+        <g transform="translate(150 250) rotate(33)"><path d="M0,0 C10,-6 23,-7 34,-3 C23,1 10,1 0,0 Z" fill="#1A4A28"/></g>
+        <g transform="translate(150 232) rotate(-35)"><path d="M0,0 C-9,-5 -20,-6 -30,-2 C-20,1 -9,1 0,0 Z" fill="#1A4A28"/></g>
+        <g transform="translate(150 218) rotate(38)"><path d="M0,0 C9,-5 20,-6 30,-2 C20,1 9,1 0,0 Z" fill="#1A4A28"/></g>
+        <g transform="translate(150 200) rotate(-40)"><path d="M0,0 C-8,-4 -17,-5 -25,-2 C-17,1 -8,1 0,0 Z" fill="#1A4A28"/></g>
+        <g transform="translate(150 186) rotate(42)"><path d="M0,0 C8,-4 17,-5 25,-2 C17,1 8,1 0,0 Z" fill="#1A4A28"/></g>
+        <g transform="translate(150 168) rotate(-45)"><path d="M0,0 C-7,-3 -14,-4 -20,-1 C-14,1 -7,1 0,0 Z" fill="#1A4A28"/></g>
+        <g transform="translate(150 154) rotate(48)"><path d="M0,0 C7,-3 14,-4 20,-1 C14,1 7,1 0,0 Z" fill="#1A4A28"/></g>
 
-        <!-- BERRIES / BUDS at stem top -->
-        <circle cx="150" cy="133" r="4" fill="#1A4A28"/>
-        <!-- Left cluster -->
-        <line x1="150" y1="143" x2="139" y2="154" stroke="#1A4A28" stroke-width="1.3" stroke-linecap="round"/>
-        <circle cx="137" cy="156" r="3.2" fill="#1A4A28"/>
-        <line x1="150" y1="154" x2="132" y2="165" stroke="#1A4A28" stroke-width="1.3" stroke-linecap="round"/>
-        <circle cx="130" cy="167" r="2.6" fill="#1A4A28"/>
-        <!-- Right cluster -->
-        <line x1="150" y1="143" x2="161" y2="154" stroke="#1A4A28" stroke-width="1.3" stroke-linecap="round"/>
-        <circle cx="163" cy="156" r="3.2" fill="#1A4A28"/>
-        <line x1="150" y1="154" x2="168" y2="165" stroke="#1A4A28" stroke-width="1.3" stroke-linecap="round"/>
-        <circle cx="170" cy="167" r="2.6" fill="#1A4A28"/>
+        <!-- TIP — bud cluster -->
+        <circle cx="150" cy="130" r="3.4" fill="#1A4A28"/>
+        <circle cx="146" cy="142" r="2.4" fill="#1A4A28"/>
+        <circle cx="154" cy="142" r="2.4" fill="#1A4A28"/>
 
-        <!-- TEXT: ريحانة (calligraphic Arabic) -->
-        <text x="154" y="356"
+        <!-- TEXT: ريحانة — calligraphic -->
+        <text x="156" y="392"
           text-anchor="middle"
           font-family="'Amiri','IBM Plex Sans Arabic',serif"
-          font-size="60" font-weight="700"
+          font-size="58" font-weight="700"
           fill="#1A4A28">ريحانة</text>
-        <!-- TEXT: كافيه (small, offset left like real logo) -->
-        <text x="97" y="378"
+        <!-- كافيه -->
+        <text x="100" y="415"
           text-anchor="middle"
           font-family="'Amiri','IBM Plex Sans Arabic',serif"
-          font-size="18"
+          font-size="17"
           fill="#1A4A28">كافيه</text>
       </svg>
     </div>
@@ -1870,15 +1851,22 @@ body.dark .ss-card{background:var(--surf)}
         maxlength="30"
         autocomplete="current-password"
         style="width:100%;padding:14px 16px;border-radius:12px;font-size:16px;font-family:'IBM Plex Sans Arabic',sans-serif;outline:none;text-align:center;letter-spacing:4px;margin-bottom:12px;display:block"
-        onkeydown="if(event.key==='Enter')checkPwd()"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();checkPwd();}"
         oninput="document.getElementById('pwd-err').textContent=''">
-      <button onclick="checkPwd()"
+      <button id="pwdLoginBtn" onclick="checkPwd()"
         style="width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#1A5C28,#2A7A3A);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;letter-spacing:.5px;box-shadow:0 4px 16px rgba(26,92,40,.25)">
         دخول
       </button>
       <div id="pwd-err" style="color:#B91C1C;font-size:12px;margin-top:10px;min-height:18px;text-align:center;font-weight:600"></div>
+      <div id="pwd-hint" style="display:none;font-size:12px;color:#1A5C28;margin-top:8px;text-align:center;line-height:1.6;background:rgba(26,92,40,.08);border:1px solid rgba(26,92,40,.18);border-radius:8px;padding:8px 10px">
+        🔑 كلمة المرور الافتراضية: <strong>1234</strong>
+      </div>
+      <button type="button" onclick="pwdReset()"
+        style="display:block;width:100%;margin-top:14px;padding:11px;border-radius:10px;border:1px solid rgba(26,92,40,.25);background:transparent;color:#1A5C28;font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif">
+        🔓 نسيت كلمة المرور؟ إعادة التعيين إلى 1234
+      </button>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v26</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v27</div>
   </div>
 </div>
 
@@ -3699,7 +3687,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v26';
+      const CACHE_NAME = 'rayhana-v27';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -3765,36 +3753,102 @@ function registerServiceWorker() {
 setTimeout(registerServiceWorker, 3000);
 
 // ═══════════════════════════════════════════
-// PASSWORD LOGIN
+// PASSWORD LOGIN (v27 — bulletproof)
 // ═══════════════════════════════════════════
 var DEFAULT_PWD = '1234';
 var PWD_KEY = 'rh_mgr_pwd';
 
 async function sha256(str){
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str+'__rh_v25__'));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  try {
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str+'__rh_v25__'));
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+  } catch(e) {}
+  return null;
+}
+
+// تلميح كلمة المرور: يُعرض فقط على التثبيت الجديد
+function pwdShowHintIfFresh(){
+  try {
+    var hint = document.getElementById('pwd-hint');
+    if(!hint) return;
+    if(!safeLS.getItem(PWD_KEY)) hint.style.display='block';
+  } catch(e) {}
+}
+try { document.addEventListener('DOMContentLoaded', pwdShowHintIfFresh); } catch(e) {}
+
+// إعادة تعيين كلمة المرور إلى الافتراضية (1234)
+function pwdReset(){
+  if(!confirm('سيتم إعادة تعيين كلمة المرور إلى 1234. متابعة؟')) return;
+  try {
+    safeLS.removeItem(PWD_KEY);
+    try { idbSet(PWD_KEY, null).catch(function(){}); } catch(e) {}
+    var hint = document.getElementById('pwd-hint');
+    if(hint) hint.style.display='block';
+    var err = document.getElementById('pwd-err');
+    if(err){ err.style.color='#1A5C28'; err.textContent='✅ تم إعادة التعيين — استخدم 1234'; }
+    setTimeout(function(){
+      if(err){ err.style.color='#B91C1C'; err.textContent=''; }
+    }, 3500);
+  } catch(e) {}
 }
 
 async function checkPwd() {
   var input = document.getElementById('pwdInput');
   var err = document.getElementById('pwd-err');
+  var btn = document.getElementById('pwdLoginBtn');
   if (!input) return;
-  var val = input.value;
-  var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
-  input.value = '';
-  var hash = await sha256(val);
-  if (hash === stored) {
-    doLogin('manager');
-  } else if (btoa(val) === stored) {
-    // migration: re-store as SHA-256
-    safeLS.setItem(PWD_KEY, hash);
-    doLogin('manager');
-  } else {
-    err.textContent = '❌ كلمة المرور غير صحيحة';
-    input.focus();
-    // shake animation
-    input.style.borderColor = 'rgba(239,68,68,.8)';
-    setTimeout(function(){ input.style.borderColor = 'rgba(255,255,255,.15)'; }, 1200);
+  // قفل سريع لمنع نقرات متعددة أثناء حساب الـ hash
+  if (input.dataset.busy === '1') return;
+  input.dataset.busy = '1';
+  if (btn) { btn.disabled = true; btn.style.opacity = '.7'; }
+  try {
+    var val = (input.value || '').replace(/^\s+|\s+$/g, '');
+    if (!val) {
+      if (err) err.textContent = '⚠️ أدخل كلمة المرور';
+      input.focus();
+      return;
+    }
+    var stored = safeLS.getItem(PWD_KEY);
+    var hash = await sha256(val);
+    var ok = false;
+
+    if (!stored) {
+      // لا توجد كلمة مرور محفوظة — يُقبل الافتراضي فقط
+      if (val === DEFAULT_PWD) {
+        ok = true;
+        if (hash) { try { safeLS.setItem(PWD_KEY, hash); } catch(e) {} }
+      }
+    } else {
+      // مقارنة SHA-256 الأساسية
+      if (hash && hash === stored) {
+        ok = true;
+      } else if (btoa(val) === stored) {
+        // ترحيل من الصيغة القديمة (btoa) إلى SHA-256
+        ok = true;
+        if (hash) { try { safeLS.setItem(PWD_KEY, hash); } catch(e) {} }
+      }
+    }
+
+    if (ok) {
+      if (err) err.textContent = '';
+      // لا نمسح القيمة إلا بعد نجاح الدخول
+      input.value = '';
+      doLogin('manager');
+    } else {
+      if (err) err.textContent = '❌ كلمة المرور غير صحيحة';
+      input.focus();
+      input.style.borderColor = 'rgba(239,68,68,.8)';
+      try { input.animate([{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:280}); } catch(e) {}
+      setTimeout(function(){ input.style.borderColor = 'rgba(255,255,255,.15)'; }, 1200);
+    }
+  } catch(e) {
+    if (err) err.textContent = '⚠️ خطأ — حاول مجدداً';
+    console.warn('checkPwd error:', e);
+  } finally {
+    input.dataset.busy = '';
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
   }
 }
 
@@ -4217,7 +4271,7 @@ function autoAttFromNotes(day, notes) {
         if(sumEl) sumEl.textContent = att.length + " يوم";
         // Update total display if visible
         var totEl = document.getElementById("att_t_"+e.id);
-        if(totEl) totEl.textContent = n3((d.dWages[e.id].rate||0)*att.length) + " JD";
+        if(totEl) totEl.textContent = n3(_dwTotal(d.dWages[e.id])) + " JD";
         changed.push(e.name);
       }
     });
@@ -4230,19 +4284,18 @@ function autoAttFromNotes(day, notes) {
 }
 
 function updateDailyWageTotal() {
-  // Safe salary update that reads from data not DOM
+  // إجمالي الأجور اليومية — يحترم rateOverrides لكل يوم
   try {
     var d = G();
     var dwT = 0;
     S.dailyEmps.forEach(function(e) {
       var w = d.dWages[e.id] || {};
-      var rate = w.rate || 0;
       var days = (w.att || []).length;
-      dwT += rate * days;
-      // Update UI if visible
+      var empTotal = _dwTotal(w);
+      dwT += empTotal;
       var tEl = document.getElementById("att_t_"+e.id);
       var sEl = document.getElementById("att_s_"+e.id);
-      if(tEl) tEl.textContent = n3(rate*days) + " JD";
+      if(tEl) tEl.textContent = n3(empTotal) + " JD";
       if(sEl) sEl.textContent = days + " يوم";
     });
     var dwEl = document.getElementById("dwtotal");
@@ -5877,7 +5930,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v26',
+    version:'v27',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -5890,7 +5943,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v26_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v27_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
@@ -5978,8 +6031,8 @@ function exportExcel(){
   ob.push(["الإجمالي",d.obligations.reduce((s,o)=>s+(o.amt||0),0),"",""]);
   const wsOb=XLSX.utils.aoa_to_sheet(ob);wsOb["!cols"]=[{wch:26},{wch:12},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,wsOb,"الالتزامات");
   const sl=[["ريحانة كافيه — الرواتب والأجور"],[],["الموظف","النوع","الأساسي","البدلات","الاستقطاعات","أيام الحضور","الإجمالي"]];
-  S.monthlyEmps.forEach(e=>{const s=d.mSal[e.id]||{};sl.push([e.name,"شهري",s.base||0,s.allow||0,s.ded||0,"—",(s.base||0)+(s.allow||0)-(s.ded||0)]);});
-  S.dailyEmps.forEach(e=>{const w=d.dWages[e.id]||{};const dy=(w.att||[]).length;sl.push([e.name,"يومي",w.rate||0,0,0,dy,(w.rate||0)*dy]);});
+  S.monthlyEmps.forEach(e=>{const s=d.mSal[e.id]||{};const adv=pendAdv(e.id);const net=Math.max(0,(s.base||0)+(s.allow||0)-(s.ded||0)-adv);sl.push([e.name,"شهري",s.base||0,s.allow||0,(s.ded||0)+adv,"—",net]);});
+  S.dailyEmps.forEach(e=>{const w=d.dWages[e.id]||{};const dy=(w.att||[]).length;sl.push([e.name,"يومي",w.rate||0,0,0,dy,_dwTotal(w)]);});
   const wsSl=XLSX.utils.aoa_to_sheet(sl);wsSl["!cols"]=[{wch:14},{wch:10},{wch:12},{wch:12},{wch:12},{wch:12},{wch:14}];XLSX.utils.book_append_sheet(wb,wsSl,"الرواتب");
   const av=[["ريحانة كافيه — السلف"],[],["الموظف","التاريخ","المبلغ","الحالة","الملاحظة"]];
   d.advances.forEach(a=>av.push([a.empName,a.date,a.amt,a.status,a.note||""]));
@@ -6939,17 +6992,18 @@ function buildCafeContext(){
   var totalMonSal=0;
   S.monthlyEmps.forEach(function(e){
     var ms=d.mSal[e.id]||{base:0,allow:0,ded:0};
-    var net=(ms.base||0)+(ms.allow||0)-(ms.ded||0);
+    var adv=pendAdv(e.id);
+    var net=Math.max(0,(ms.base||0)+(ms.allow||0)-(ms.ded||0)-adv);
     totalMonSal+=net;
-    salLines.push(e.name+': '+n3(net)+' JD (أساسي '+n3(ms.base||0)+' + علاوة '+n3(ms.allow||0)+')');
+    salLines.push(e.name+': '+n3(net)+' JD (أساسي '+n3(ms.base||0)+' + علاوة '+n3(ms.allow||0)+' − خصم '+n3(ms.ded||0)+' − سلف '+n3(adv)+')');
   });
   var totalDayWages=0;
   S.dailyEmps.forEach(function(e){
     var dw=d.dWages[e.id]||{rate:0,att:[]};
     var att=(dw.att||[]).length;
-    var wage=(dw.rate||0)*att;
+    var wage=_dwTotal(dw); // يحترم rateOverrides لكل يوم
     totalDayWages+=wage;
-    salLines.push(e.name+': '+n3(wage)+' JD ('+att+' يوم × '+n3(dw.rate||0)+')');
+    salLines.push(e.name+': '+n3(wage)+' JD ('+att+' يوم · أساس '+n3(dw.rate||0)+(Object.keys(dw.rateOverrides||{}).length?' + تعديلات يومية':'')+')');
   });
 
   // الالتزامات
@@ -9111,7 +9165,7 @@ document.addEventListener('keydown', function(e) {
     if (e.key === '1' && tabs[0]) { tabs[0].click(); }
     if (e.key === '2' && tabs[1]) { tabs[1].click(); }
     if (e.key === '3' && tabs[2]) { tabs[2].click(); }
-    if (e.key === '4' && tabs[3]) { tabs[3].click(); }
+    if (e.key === '4' && tabs[8]) { tabs[8].click(); }
   }
   
   // D للوضع الليلي
@@ -11214,30 +11268,41 @@ setTimeout(createAutoBackup, 5000);
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* V24-3 PRO: تحليل الاتجاهات والتوقعات                                        */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+// حساب موجز لشهر معيّن بنفس منطق totals() — يضمن اتساق الأرقام بين كل التقارير
+function _monthSummary(d) {
+  if (!d) return { revenue: 0, expenses: 0, profit: 0 };
+  var cash = 0, visa = 0;
+  (d.sales || []).forEach(function(s) { cash += s.cash || 0; visa += s.visa || 0; });
+  var netSales = cash + visa;
+  var purchases = 0;
+  (d.purchases || []).forEach(function(p) { purchases += p.amt || 0; });
+  var oblPaid = (d.obligations || []).filter(function(o){return o.paid;}).reduce(function(s,o){return s+(o.amt||0);},0);
+  // الرواتب المدفوعة فقط — مطابق لـ totals()
+  var mSalPaid = 0;
+  (S.monthlyEmps || []).forEach(function(e) {
+    var sal = (d.mSal||{})[e.id] || {};
+    if (!sal.paid) return;
+    var gross = (sal.base||0) + (sal.allow||0);
+    var adv = (d.advances||[]).filter(function(a){return a.empId===e.id && (a.status==='مستحقة'||a.status==='مسددة جزئياً');}).reduce(function(s,a){return s+(a.amt||0);},0);
+    mSalPaid += Math.max(0, gross - (sal.ded||0) - adv);
+  });
+  var expenses = purchases + oblPaid + mSalPaid;
+  return { revenue: netSales, expenses: expenses, profit: netSales - expenses };
+}
+
 function analyzeTrends() {
   var months = [];
   var keys = Object.keys(S.months || {}).sort();
-  
-  // جمع بيانات آخر 6 أشهر
+
+  // جمع بيانات آخر 6 أشهر بنفس معادلة totals()
   keys.slice(-6).forEach(function(k) {
-    var d = S.months[k];
-    if (!d) return;
-    
-    var cash = 0, visa = 0, pmts = 0, purchases = 0;
-    (d.sales || []).forEach(function(s) {
-      cash += s.cash || 0;
-      visa += s.visa || 0;
-      pmts += s.pmts || 0;
-    });
-    (d.purchases || []).forEach(function(p) {
-      purchases += p.amt || 0;
-    });
-    
+    var summary = _monthSummary(S.months[k]);
+    if (!summary) return;
     months.push({
       key: k,
-      revenue: cash + visa,
-      expenses: purchases,
-      profit: (cash + visa) - purchases
+      revenue: summary.revenue,
+      expenses: summary.expenses,
+      profit: summary.profit
     });
   });
   
@@ -11333,12 +11398,8 @@ function renderMonthComparison() {
   }
   
   var data = keys.map(function(k) {
-    var d = S.months[k];
-    var cash = 0, visa = 0, purchases = 0;
-    (d.sales || []).forEach(function(s) { cash += s.cash || 0; visa += s.visa || 0; });
-    (d.purchases || []).forEach(function(p) { purchases += p.amt || 0; });
-    var rev = cash + visa;
-    return { key: k, revenue: rev, expenses: purchases, profit: rev - purchases };
+    var s = _monthSummary(S.months[k]);
+    return { key: k, revenue: s.revenue, expenses: s.expenses, profit: s.profit };
   });
   
   var maxVal = Math.max.apply(null, data.map(function(d) { return Math.max(d.revenue, d.expenses); })) || 1;
@@ -11385,36 +11446,38 @@ function renderEmployeeReport() {
   var html = '<div class="card" style="margin:0"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">👥</span>تقرير الموظفين</div></div>';
   html += '<div class="card-body">';
   
-  // الموظفين الشهريين
+  // الموظفين الشهريين — يجب أن يطابق منطق totals() تماماً
   if (S.monthlyEmps && S.monthlyEmps.length > 0) {
     html += '<div style="font-size:12px;font-weight:700;color:var(--tx3);margin-bottom:10px">📋 الموظفين الشهريين</div>';
     S.monthlyEmps.forEach(function(e) {
       var sal = d.mSal[e.id] || {};
       var gross = (sal.base || 0) + (sal.allow || 0);
-      var net = gross - (sal.ded || 0);
-      
+      var adv = pendAdv(e.id); // السلف المستحقة — كانت مفقودة
+      var net = Math.max(0, gross - (sal.ded || 0) - adv);
+
       html += '<div class="employee-report-card">';
       html += '<div class="emp-report-header">';
       html += '<div style="display:flex;align-items:center;gap:10px"><div class="emp-avatar">👤</div>';
-      html += '<div><div class="emp-name">' + e.name + '</div><div class="emp-role">راتب شهري</div></div></div>';
+      html += '<div><div class="emp-name">' + e.name + '</div><div class="emp-role">راتب شهري' + (sal.paid?' · ✅ مدفوع':' · ⏳ مستحق') + '</div></div></div>';
       html += '</div>';
       html += '<div class="emp-stats-grid">';
       html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--bl)">' + n3(sal.base || 0) + '</div><div class="emp-stat-label">الأساسي</div></div>';
       html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--gn)">' + n3(sal.allow || 0) + '</div><div class="emp-stat-label">البدلات</div></div>';
+      html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--rd)">' + n3((sal.ded||0) + adv) + '</div><div class="emp-stat-label">خصم + سلف</div></div>';
       html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--gold)">' + n3(net) + '</div><div class="emp-stat-label">الصافي</div></div>';
       html += '</div></div>';
     });
   }
-  
-  // الموظفين اليوميين
+
+  // الموظفين اليوميين — يحترم rateOverrides تماماً مثل _dwTotal
   if (S.dailyEmps && S.dailyEmps.length > 0) {
     html += '<div style="font-size:12px;font-weight:700;color:var(--tx3);margin:16px 0 10px">⏰ الموظفين اليوميين</div>';
     S.dailyEmps.forEach(function(e) {
       var w = d.dWages[e.id] || {};
       var days = (w.att || []).length;
-      var total = (w.rate || 0) * days;
-      var daysInMonth = new Date(S.activeKey.split('-')[0], S.activeKey.split('-')[1], 0).getDate();
-      var attendance = ((days / daysInMonth) * 100).toFixed(0);
+      var total = _dwTotal(w); // يحترم rateOverrides لكل يوم بدلاً من rate*days
+      var daysInMonth = daysIn(S.activeKey);
+      var attendance = daysInMonth > 0 ? ((days / daysInMonth) * 100).toFixed(0) : '0';
       
       html += '<div class="employee-report-card">';
       html += '<div class="emp-report-header">';
@@ -11591,6 +11654,7 @@ var SUPA_URL_KEY = 'rh_supa_url';
 var SUPA_KEY_KEY = 'rh_supa_key';
 var SUPA_TABLE   = 'rh_store';
 var SUPA_ROW     = 'rayhana_cafe_v26';
+var SUPA_ROW_FALLBACKS = ['rayhana_cafe_v25']; // مفاتيح قديمة — تُقرأ كاحتياط فقط إن غاب الأساسي
 
 /* ── إنشاء الاتصال ── */
 function supaInit(){
@@ -11698,13 +11762,25 @@ async function supaSync(direction, opts){
       .from(SUPA_TABLE)
       .select('value, updated_at')
       .eq('key', SUPA_ROW)
-      .single();
-    if(res.error){
-      if(res.error.code === 'PGRST116'){
-        supaSetStatus('ok','☁️ لا توجد بيانات في السحابة بعد — ارفع أولاً');
-        return;
+      .maybeSingle();
+    // إن لم يوجد المفتاح الحالي — جرّب المفاتيح القديمة (هجرة)
+    if(!res.error && !res.data && Array.isArray(SUPA_ROW_FALLBACKS)){
+      for(var fi=0; fi<SUPA_ROW_FALLBACKS.length; fi++){
+        var fk = SUPA_ROW_FALLBACKS[fi];
+        var fb = await SUPA.from(SUPA_TABLE).select('value, updated_at').eq('key', fk).maybeSingle();
+        if(!fb.error && fb.data){
+          res = fb;
+          console.log('[Supabase] migrated read from legacy key:', fk);
+          break;
+        }
       }
+    }
+    if(res.error){
       throw new Error(res.error.message);
+    }
+    if(!res.data){
+      supaSetStatus('ok','☁️ لا توجد بيانات في السحابة بعد — ارفع أولاً');
+      return;
     }
     var sv = res.data.value;
     // كشف التعارض: هل البيانات المحلية أحدث من السحابة؟
