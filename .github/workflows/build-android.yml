@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main, claude/fix-apk-build-github-Q1Fy1]
+    branches: [main, claude/fix-apk-build-github-Q1Fy1, claude/fix-login-salary-advance-BjQqS]
     paths:
       - 'index.html'
       - 'android/**'
