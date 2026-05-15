@@ -2497,12 +2497,14 @@ body.dark .ss-card{background:var(--surf)}
               <div style="font-size:13px;font-weight:700;color:#0070F2;margin-bottom:9px">يزن</div>
               <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">نقدي صافي استلمه</span><span id="mgr-yz-r" class="num" style="color:#0070F2;font-weight:700">0.000 JD</span></div>
               <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">مشتريات أجراها</span><span id="mgr-yz-p" class="num" style="color:var(--rd);font-weight:700">0.000 JD</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">سلف منحها للموظفين</span><span id="mgr-yz-adv" class="num" style="color:var(--rd);font-weight:700">0.000 JD</span></div>
               <div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0;background:linear-gradient(90deg,rgba(0,112,242,.1),transparent);margin:4px -12px -12px;padding:8px 12px;border-radius:0 0 7px 7px"><b>صافي بيده</b><span id="mgr-yz-n" class="num" style="font-weight:700">0.000 JD</span></div>
             </div>
             <div style="padding:12px;border-radius:9px;border:2px solid #B8860B;background:var(--surf2)">
               <div style="font-size:13px;font-weight:700;color:#B8860B;margin-bottom:9px">عبدالرحمن</div>
               <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">نقدي صافي استلمه</span><span id="mgr-ab-r" class="num" style="color:#B8860B;font-weight:700">0.000 JD</span></div>
               <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">مشتريات أجراها</span><span id="mgr-ab-p" class="num" style="color:var(--rd);font-weight:700">0.000 JD</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--br)"><span style="color:var(--tx3)">سلف منحها للموظفين</span><span id="mgr-ab-adv" class="num" style="color:var(--rd);font-weight:700">0.000 JD</span></div>
               <div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0;background:linear-gradient(90deg,rgba(184,134,11,.1),transparent);margin:4px -12px -12px;padding:8px 12px;border-radius:0 0 7px 7px"><b>صافي بيده</b><span id="mgr-ab-n" class="num" style="font-weight:700">0.000 JD</span></div>
             </div>
           </div>
@@ -2745,9 +2747,9 @@ body.dark .ss-card{background:var(--surf)}
         <div class="card-body" style="padding:11px">
           <div class="tbl-wrap">
             <table>
-              <thead><tr><th>التاريخ</th><th>الموظف/ة</th><th>المبلغ</th><th>الحالة</th><th>ملاحظة</th><th>إجراء</th></tr></thead>
+              <thead><tr><th>التاريخ</th><th>الموظف/ة</th><th>المبلغ</th><th>الحالة</th><th>من دفع</th><th>ملاحظة</th><th>إجراء</th></tr></thead>
               <tbody id="advBody"></tbody>
-              <tfoot><tr><td colspan="2">المستحق</td><td id="t-adv" class="num">0.000</td><td colspan="3"></td></tr></tfoot>
+              <tfoot><tr><td colspan="2">المستحق</td><td id="t-adv" class="num">0.000</td><td colspan="4"></td></tr></tfoot>
             </table>
           </div>
         </div>
@@ -3375,6 +3377,7 @@ create policy "allow_all" on rh_store
   <div class="fg"><label>التاريخ</label><input type="date" class="fi" id="aDate"></div>
   <div class="fg"><label>الموظف/ة</label><select class="fs" id="aEmp"><option value="">— اختر —</option></select></div>
   <div class="fg"><label>المبلغ (JD)</label><input type="number" class="fi" id="aAmt" step="0.001" min="0" placeholder="0.000"></div>
+  <div class="fg"><label>دفع بواسطة</label><select class="fs" id="aPaidBy"><option value="">— من دفع السلفة —</option><option value="يزن">يزن</option><option value="عبدالرحمن">عبدالرحمن</option></select></div>
   <div class="fg"><label>الحالة</label><select class="fs" id="aStat"><option>مستحقة</option><option>مسددة</option><option>مسددة جزئياً</option></select></div>
   <div class="fg"><label>السبب</label><input type="text" class="fi" id="aNote" placeholder="الغرض..."></div>
   <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="addAdv()">✅ تسجيل</button><button class="btn btn-ghost" style="flex:1" onclick="cmo('moAdv')">إلغاء</button></div>
@@ -4381,8 +4384,8 @@ function totals(){
 ═══════════════════════════════════════════════════════════════════════════ */
 function updateMgrTotals(){
   var d=G();
-  var yz={r:0,p:0},ab={r:0,p:0},un={r:0,p:0};
-  
+  var yz={r:0,p:0,adv:0},ab={r:0,p:0,adv:0},un={r:0,p:0};
+
   // حساب النقدي الصافي المستلم لكل مدير (بعد خصم اليوميات من الموظفة)
   d.sales.forEach(function(s){
     var cash=(s.cash||0); // هذا هو النقد الصافي بعد خصم اليوميات
@@ -4391,19 +4394,28 @@ function updateMgrTotals(){
     else if(s.receivedBy==="عبدالرحمن")ab.r+=cash;
     else un.r+=cash;
   });
-  
+
   // حساب المشتريات لكل مدير
   d.purchases.forEach(function(p){
     if(p.buyer==="يزن")yz.p+=p.amt;
     else if(p.buyer==="عبدالرحمن")ab.p+=p.amt;
     else un.p+=p.amt;
   });
-  
+
+  // حساب السلف المستحقة التي دفعها كل مدير (تُطرح من صافيه)
+  d.advances.filter(function(a){return a.status==="مستحقة"||a.status==="مسددة جزئياً";}).forEach(function(a){
+    if(a.paidBy==="يزن")yz.adv+=a.amt||0;
+    else if(a.paidBy==="عبدالرحمن")ab.adv+=a.amt||0;
+  });
+
   T("mgr-yz-r",n3(yz.r)+" JD");T("mgr-yz-p",n3(yz.p)+" JD");
   T("mgr-ab-r",n3(ab.r)+" JD");T("mgr-ab-p",n3(ab.p)+" JD");
   T("mgr-un-r",n3(un.r)+" JD");T("mgr-un-p",n3(un.p)+" JD");
-  // صافي كل مدير = نقد مستلم − مشتريات أجراها
-  var yN=yz.r-yz.p, aN=ab.r-ab.p;
+  var yazAdvEl=document.getElementById("mgr-yz-adv"),abAdvEl=document.getElementById("mgr-ab-adv");
+  if(yazAdvEl)yazAdvEl.textContent=n3(yz.adv)+" JD";
+  if(abAdvEl)abAdvEl.textContent=n3(ab.adv)+" JD";
+  // صافي كل مدير = نقد مستلم − مشتريات أجراها − سلف منحها
+  var yN=yz.r-yz.p-yz.adv, aN=ab.r-ab.p-ab.adv;
   var yn=document.getElementById("mgr-yz-n"), an=document.getElementById("mgr-ab-n");
   if(yn){yn.textContent=n3(yN)+" JD";yn.style.color=yN>=0?"var(--gn)":"var(--rd)";}
   if(an){an.textContent=n3(aN)+" JD";an.style.color=aN>=0?"var(--gn)":"var(--rd)";}
@@ -5423,23 +5435,27 @@ function toggleSalPaid(empId){
 /* ADVANCES */
 function buildAdvEmpSel(){const sel=$("aEmp");if(!sel)return;sel.innerHTML='<option value="">— اختر —</option>';[...S.monthlyEmps,...S.dailyEmps].forEach(e=>{const o=document.createElement("option");o.value=e.id;o.textContent=e.name;sel.appendChild(o);});}
 function addAdv(){
-  const date=$("aDate").value,empId=$("aEmp").value,amt=parseFloat($("aAmt").value)||0,status=$("aStat").value,note=$("aNote").value.trim();
+  const date=$("aDate").value,empId=$("aEmp").value,amt=parseFloat($("aAmt").value)||0,
+        status=$("aStat").value,note=$("aNote").value.trim(),
+        paidBy=$("aPaidBy")?$("aPaidBy").value:"";
   if(!date||!empId||amt<=0){toast("⚠️ تأكد من ملء جميع الحقول");return;}
   const emp=[...S.monthlyEmps,...S.dailyEmps].find(e=>e.id===empId)||{name:empId};
-  G().advances.push({date,empId,empName:emp.name,amt,status,note});
+  G().advances.push({date,empId,empName:emp.name,amt,status,note,paidBy});
   renderAdv();renderAdvLedger();initSalTables();updateDash();cmo("moAdv");
   ["aAmt","aNote"].forEach(id=>$(id).value="");
+  if($("aPaidBy"))$("aPaidBy").value="";
   saveAll();toast(`✅ سلفة — ${emp.name} — ${n3(amt)} JD`);log(`إضافة سلفة — ${emp.name} — ${n3(amt)} JD`);
 }
 function renderAdv(){
   const b=$("advBody");if(!b)return;b.innerHTML="";let tot=0;
   const adv=G().advances;
-  if(!adv.length){b.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--tx4)">لا توجد سلف</td></tr>';T("t-adv","0.000");return;}
+  if(!adv.length){b.innerHTML='<tr><td colspan="7" style="padding:22px;color:var(--tx4)">لا توجد سلف</td></tr>';T("t-adv","0.000");return;}
   adv.forEach((a,i)=>{
     if(a.status==="مستحقة"||a.status==="مسددة جزئياً")tot+=a.amt;
     const sc=a.status==="مسددة"?"bg-ok":a.status==="مسددة جزئياً"?"bg-w":"bg-e";
+    const pb=a.paidBy==="يزن"?'<span class="badge bg-b" style="font-size:10px">يزن</span>':a.paidBy==="عبدالرحمن"?'<span class="badge bg-w" style="font-size:10px">عبدالرحمن</span>':'<span style="color:var(--tx4);font-size:11px">—</span>';
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td class="num" style="font-size:11.5px">${a.date}</td><td style="font-weight:600">${a.empName}</td><td class="td-y num">${n3(a.amt)}</td><td><span class="badge ${sc}">${a.status}</span></td><td style="font-size:11px;color:var(--tx3)">${a.note||"—"}</td><td><select class="inp" style="font-size:11px;padding:4px" onchange="updAdvStat(${i},this.value)"><option ${a.status==="مستحقة"?"selected":""}>مستحقة</option><option ${a.status==="مسددة"?"selected":""}>مسددة</option><option ${a.status==="مسددة جزئياً"?"selected":""}>مسددة جزئياً</option></select><button class="btn btn-r btn-xs del-btn" onclick="delAdv(${i})" style="margin-top:3px;display:block">🗑️</button></td>`;
+    tr.innerHTML=`<td class="num" style="font-size:11.5px">${a.date}</td><td style="font-weight:600">${a.empName}</td><td class="td-y num">${n3(a.amt)}</td><td><span class="badge ${sc}">${a.status}</span></td><td>${pb}</td><td style="font-size:11px;color:var(--tx3)">${a.note||"—"}</td><td><select class="inp" style="font-size:11px;padding:4px" onchange="updAdvStat(${i},this.value)"><option ${a.status==="مستحقة"?"selected":""}>مستحقة</option><option ${a.status==="مسددة"?"selected":""}>مسددة</option><option ${a.status==="مسددة جزئياً"?"selected":""}>مسددة جزئياً</option></select><button class="btn btn-r btn-xs del-btn" onclick="delAdv(${i})" style="margin-top:3px;display:block">🗑️</button></td>`;
     b.appendChild(tr);
   });T("t-adv",n3(tot));
 }
@@ -5451,7 +5467,7 @@ function renderAdvLedger(){
     const pending=emAdv.filter(a=>a.status==="مستحقة"||a.status==="مسددة جزئياً").reduce((s,a)=>s+a.amt,0);
     const total=emAdv.reduce((s,a)=>s+a.amt,0);
     if(!emAdv.length)return`<div class="adv-block"><div class="adv-emp-hd"><span class="adv-emp-name">👤 ${e.name}</span><span class="badge bg-ok">لا توجد سلف</span></div></div>`;
-    return`<div class="adv-block"><div class="adv-emp-hd"><span class="adv-emp-name">👤 ${e.name}</span><span class="adv-bal" style="color:${pending>0?"var(--rdd)":"var(--gnd)"}">مستحق: <span class="num">${n3(pending)}</span> JD <span style="color:var(--tx3);font-size:11px;font-weight:400">/ إجمالي: ${n3(total)} JD</span></span></div><div class="tbl-wrap" style="border:none;border-radius:0"><table><thead><tr><th>التاريخ</th><th>المبلغ</th><th>الحالة</th><th>الملاحظة</th></tr></thead><tbody>${emAdv.map(a=>`<tr><td class="num" style="font-size:11px">${a.date}</td><td class="num">${n3(a.amt)}</td><td><span class="badge ${a.status==="مسددة"?"bg-ok":a.status==="مسددة جزئياً"?"bg-w":"bg-e"}">${a.status}</span></td><td style="font-size:11px;color:var(--tx3)">${a.note||"—"}</td></tr>`).join("")}</tbody></table></div></div>`;
+    return`<div class="adv-block"><div class="adv-emp-hd"><span class="adv-emp-name">👤 ${e.name}</span><span class="adv-bal" style="color:${pending>0?"var(--rdd)":"var(--gnd)"}">مستحق: <span class="num">${n3(pending)}</span> JD <span style="color:var(--tx3);font-size:11px;font-weight:400">/ إجمالي: ${n3(total)} JD</span></span></div><div class="tbl-wrap" style="border:none;border-radius:0"><table><thead><tr><th>التاريخ</th><th>المبلغ</th><th>الحالة</th><th>من دفع</th><th>الملاحظة</th></tr></thead><tbody>${emAdv.map(a=>{const pb=a.paidBy==="يزن"?'<span class="badge bg-b" style="font-size:10px">يزن</span>':a.paidBy==="عبدالرحمن"?'<span class="badge bg-w" style="font-size:10px">عبدالرحمن</span>':'—';return`<tr><td class="num" style="font-size:11px">${a.date}</td><td class="num">${n3(a.amt)}</td><td><span class="badge ${a.status==="مسددة"?"bg-ok":a.status==="مسددة جزئياً"?"bg-w":"bg-e"}">${a.status}</span></td><td>${pb}</td><td style="font-size:11px;color:var(--tx3)">${a.note||"—"}</td></tr>`;}).join("")}</tbody></table></div></div>`;
   }).join("");
 }
 function updAdvStat(i,status){G().advances[i].status=status;renderAdv();renderAdvLedger();S.monthlyEmps.forEach(e=>{const pa=pendAdv(e.id);T(`ms_${e.id}_av`,n3(pa));const base=pf(`ms_${e.id}_b`),allow=pf(`ms_${e.id}_a`),ded=pf(`ms_${e.id}_d`);T(`ms_${e.id}_n`,n3(Math.max(0,base+allow-ded-pa)));});updateDash();saveAll();toast("✅ تم التحديث");}
@@ -6578,11 +6594,11 @@ function renderSalLaw(){
     // الحقول التفاعلية
     html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">';
     html+='<div><label style="font-size:10.5px;color:var(--rd);font-weight:600;display:block;margin-bottom:3px">أيام الغياب ❌</label>';
-    html+='<input type="number" class="inp" step="1" min="0" max="26" value="'+(absent||'')+'" placeholder="0" style="width:100%;text-align:center" onchange="salLawChg(''+e.id+'','absent',this.value)"></div>';
+    html+='<input type="number" class="inp" step="1" min="0" max="26" value="'+(absent||'')+'" placeholder="0" style="width:100%;text-align:center" onchange="salLawChg(\''+e.id+'\',\'absent\',this.value)"></div>';
     html+='<div><label style="font-size:10.5px;color:var(--yw);font-weight:600;display:block;margin-bottom:3px">عمل إضافي 125% ⏰</label>';
-    html+='<input type="number" class="inp" step="0.5" min="0" value="'+(ot125||'')+'" placeholder="ساعات" style="width:100%;text-align:center" onchange="salLawChg(''+e.id+'','ot125',this.value)"></div>';
+    html+='<input type="number" class="inp" step="0.5" min="0" value="'+(ot125||'')+'" placeholder="ساعات" style="width:100%;text-align:center" onchange="salLawChg(\''+e.id+'\',\'ot125\',this.value)"></div>';
     html+='<div><label style="font-size:10.5px;color:var(--primary);font-weight:600;display:block;margin-bottom:3px">عطل رسمية 150% 🏖️</label>';
-    html+='<input type="number" class="inp" step="0.5" min="0" value="'+(ot150||'')+'" placeholder="ساعات" style="width:100%;text-align:center" onchange="salLawChg(''+e.id+'','ot150',this.value)"></div>';
+    html+='<input type="number" class="inp" step="0.5" min="0" value="'+(ot150||'')+'" placeholder="ساعات" style="width:100%;text-align:center" onchange="salLawChg(\''+e.id+'\',\'ot150\',this.value)"></div>';
     html+='</div>';
     // تفصيل الحساب
     html+='<div style="border-top:1px solid var(--br);padding-top:8px;margin-top:2px">';
