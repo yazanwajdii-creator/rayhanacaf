@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main, claude/fix-apk-build-github-Q1Fy1, claude/fix-app-login-sync-rLGz7]
+    branches: [main, claude/fix-apk-build-github-Q1Fy1, claude/fix-app-login-sync-rLGz7, claude/login-errors-apk-build-IkkTd]
     paths:
       - 'index.html'
       - 'android/**'
