@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V25 PRO</title>
+<title>ريحانة V28 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1870,15 +1870,24 @@ body.dark .ss-card{background:var(--surf)}
         maxlength="30"
         autocomplete="current-password"
         style="width:100%;padding:14px 16px;border-radius:12px;font-size:16px;font-family:'IBM Plex Sans Arabic',sans-serif;outline:none;text-align:center;letter-spacing:4px;margin-bottom:12px;display:block"
-        onkeydown="if(event.key==='Enter')checkPwd()"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();checkPwd();}"
         oninput="document.getElementById('pwd-err').textContent=''">
-      <button onclick="checkPwd()"
+      <button id="pwdLoginBtn" onclick="checkPwd()"
         style="width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#1A5C28,#2A7A3A);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;letter-spacing:.5px;box-shadow:0 4px 16px rgba(26,92,40,.25)">
         دخول
       </button>
       <div id="pwd-err" style="color:#B91C1C;font-size:12px;margin-top:10px;min-height:18px;text-align:center;font-weight:600"></div>
+      <div id="pwd-hint" style="display:none;font-size:11.5px;color:#1A5C28;margin-top:8px;text-align:center;line-height:1.6">
+        🔑 كلمة المرور الافتراضية: <strong>1234</strong>
+      </div>
+      <div style="text-align:center;margin-top:12px">
+        <a href="javascript:void(0)" onclick="pwdReset()"
+          style="font-size:11.5px;color:rgba(26,61,30,.55);text-decoration:none;font-family:'IBM Plex Sans Arabic',sans-serif;border-bottom:1px dashed rgba(26,61,30,.3);padding-bottom:1px">
+          نسيت كلمة المرور؟
+        </a>
+      </div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v26</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v28</div>
   </div>
 </div>
 
@@ -3457,7 +3466,12 @@ function idbGet(key) {
     });
   });
 }
-// يُشغَّل عند بدء التطبيق: يعيد البيانات من IDB إذا كان localStorage فارغاً
+// ═══════════════════════════════════════════════════════════════════════════
+// EMBEDDED SEED — بيانات المستخدم الافتراضية (v28)
+// تُحمَّل تلقائياً عند أول تثبيت إذا كان التخزين فارغاً تماماً
+// ═══════════════════════════════════════════════════════════════════════════
+var RH_EMBEDDED_SEED = {"version":"v28","activeKey":"2026-05","months":{"2026-05":{"sales":[{"day":1,"cash":322.7,"visa":100.75,"pmts":40,"notes":"عنود+حنين+سجود+هبه","receivedBy":"عبدالرحمن"},{"day":2,"cash":113.75,"visa":36.75,"pmts":45,"notes":"ليان+حنين+هبه+سجود","receivedBy":"عبدالرحمن"},{"day":3,"cash":148.75,"visa":27.75,"pmts":60,"notes":"ليان+حنين+سجود+عنود+سارة+هبة","receivedBy":"عبدالرحمن"},{"day":4,"cash":229,"visa":56.75,"pmts":50,"notes":"","receivedBy":"يزن"},{"day":5,"cash":307,"visa":76.5,"pmts":50,"notes":"","receivedBy":"يزن"},{"day":6,"cash":301.75,"visa":25,"pmts":51.5,"notes":"سارا+حنين+سارا+سجود+ليان","receivedBy":"عبدالرحمن"},{"day":7,"cash":366.6,"visa":139,"pmts":50,"notes":"حنين+سارا+ليان+هبه+رحمه","receivedBy":"عبدالرحمن"},{"day":8,"cash":97,"visa":48.75,"pmts":60,"notes":"حنين+سارا+سارا+بشرى+رحمة","receivedBy":"عبدالرحمن"},{"day":9,"cash":208.75,"visa":81.5,"pmts":55,"notes":"حنين+ليان+حلا+اصاله+سدين","receivedBy":"عبدالرحمن"},{"day":10,"cash":208,"visa":34,"pmts":40,"notes":"ليان+عنود+حنين+هبة","receivedBy":"عبدالرحمن"},{"day":11,"cash":186.75,"visa":63.5,"pmts":40,"notes":"ليان+حنين+هبه+عنود","receivedBy":"عبدالرحمن"},{"day":12,"cash":180,"visa":127.75,"pmts":30,"notes":"ليان+حنين+هبه","receivedBy":"يزن"},{"day":13,"cash":225,"visa":91.5,"pmts":40,"notes":"حلا+ليان+حنين+هبه","receivedBy":"عبدالرحمن"},{"day":14,"cash":210.5,"visa":23,"pmts":40,"notes":"حلا+ليان+حنين+سوار+رحمه+هبه+عنود","receivedBy":"يزن"},{"day":15,"cash":166,"visa":53.5,"pmts":40,"notes":"حنين+سوار+هبه+ليان","receivedBy":"عبدالرحمن"},{"day":16,"cash":168,"visa":25.25,"pmts":30,"notes":"","receivedBy":"يزن"},{"day":17,"cash":74,"visa":54,"pmts":50,"notes":"حلا +ليان + هبه+عنود+حنين","receivedBy":"عبدالرحمن"},{"day":18,"cash":121.25,"visa":52,"pmts":30,"notes":"ليان + هبه + عنود","receivedBy":"عبدالرحمن"},{"day":19,"cash":20,"visa":16.5,"pmts":30,"notes":"هبه + اشراق + عنود","receivedBy":"عبدالرحمن"},{"day":20,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":21,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":22,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":23,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":24,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":25,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":26,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":27,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":28,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":29,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":30,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":31,"cash":0,"visa":0,"pmts":0,"notes":""}],"purchases":[{"date":"2026-05-01","sId":"s5","sName":"ارض السكر","cat":"COGS","desc":"","amt":216.85,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-02","sId":"s3","sName":"يحيى رسمي","cat":"COGS","desc":"","amt":189,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-03","sId":"s3","sName":"يحيى رسمي","cat":"COGS","desc":"","amt":125,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-03","sId":"s4","sName":"عيسى الخوره","cat":"COGS","desc":"","amt":109.45,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-04","sId":"s3","sName":"يحيى رسمي","cat":"COGS","desc":"","amt":114,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-05","sId":"s9","sName":"مونين","cat":"COGS","desc":"","amt":370.65,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-06","sId":"s5","sName":"ارض السكر","cat":"COGS","desc":"شوك وافل","amt":20,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-08","sId":"s6","sName":"بن العميد","cat":"COGS","desc":"","amt":59,"inv":"","buyer":"يزن"},{"date":"2026-05-08","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"سكن اية","amt":65,"inv":"","buyer":"يزن"},{"date":"2026-05-09","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"سلفه حنين","amt":50,"inv":"","buyer":"يزن"},{"date":"2026-05-10","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"مصيدة الشبح","amt":60,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-10","sId":"s1778550883823","sName":"رجوى ماركت","cat":"COGS","desc":"","amt":63.85,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-10","sId":"s1778550889612","sName":"الفيصل مول","cat":"COGS","desc":"","amt":22.25,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-10","sId":"s1778550889612","sName":"الفيصل مول","cat":"COGS","desc":"حليب مكثف","amt":23,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-10","sId":"s5","sName":"ارض السكر","cat":"COGS","desc":"","amt":79,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-10","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"مواد للجلاية","amt":110.2,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-06","sId":"s5","sName":"ارض السكر","cat":"COGS","desc":"","amt":112.5,"inv":"","buyer":"يزن"},{"date":"2026-05-05","sId":"s2","sName":"الفيصل مول","cat":"COGS","desc":"","amt":8,"inv":"","buyer":"يزن"},{"date":"2026-05-05","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"انستجرام","amt":12.5,"inv":"","buyer":"يزن"},{"date":"2026-05-12","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"سلفه هاني","amt":20,"inv":"","buyer":"يزن"},{"date":"2026-05-14","sId":"s9","sName":"مونين","cat":"COGS","desc":"","amt":78.3,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-14","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"توصيل عينات المعطر","amt":5,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-14","sId":"s1778550889612","sName":"الفيصل مول","cat":"COGS","desc":"اكياس نفايات","amt":21,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-12","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"دفعه كلش","amt":50,"inv":"","buyer":"يزن"},{"date":"2026-05-12","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"سلفه هاني","amt":50,"inv":"","buyer":"يزن"},{"date":"2026-05-12","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"مواصلات ايه","amt":9,"inv":"","buyer":"يزن"},{"date":"2026-05-18","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"ماتشا + ادواتها","amt":57,"inv":"","buyer":"يزن"},{"date":"2026-05-18","sId":"s7","sName":"قهوه ايلي","cat":"COGS","desc":"قهوه ايلي","amt":420,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-18","sId":"s7","sName":"قهوه ايلي","cat":"COGS","desc":"مبيدات حشريه","amt":12,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-18","sId":"s3","sName":"يحيى رسمي","cat":"COGS","desc":"","amt":145,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-18","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"نت","amt":15,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-18","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"حليب مكثف","amt":81.4,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-19","sId":"s8","sName":"بوظه","cat":"COGS","desc":"","amt":93,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-19","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"سبوتات + تجديد نت","amt":13.75,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-19","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"عدي الخوره","amt":16,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-19","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"توصيل قهوه","amt":7,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-19","sId":"s1778550743363","sName":"متفرفات","cat":"COGS","desc":"احمد جبريل","amt":6.5,"inv":"","buyer":"عبدالرحمن"},{"date":"2026-05-18","sId":"s4","sName":"عيسى الخوره","cat":"COGS","desc":"فحم 6 كراتين","amt":120,"inv":"","buyer":"يزن"}],"obligations":[{"id":"o1","name":"إيجار المحل","amt":500,"paid":false,"due":""},{"id":"o2","name":"فاتورة الكهرباء والمياه","amt":0,"paid":false,"due":""},{"id":"o3","name":"قسط الجمعية","amt":1000,"paid":false,"due":""},{"id":"o4","name":"اشتراك الإنترنت","amt":0,"paid":false,"due":""},{"id":"o5","name":"مواد التنظيف","amt":0,"paid":false,"due":""},{"id":"o6","name":"مصروفات الصيانة","amt":0,"paid":false,"due":""},{"id":"o7","name":"مصروفات أخرى","amt":0,"paid":false,"due":""}],"mSal":{"hani":{"base":0,"allow":0,"ded":0},"sidra":{"base":0,"allow":0,"ded":0},"aya":{"base":0,"allow":0,"ded":0}},"dWages":{"tharaa":{"rate":0,"att":[]},"enaa":{"rate":0,"att":[]},"waad":{"rate":0,"att":[]}},"advances":[],"cashflow":{"opening":0,"actual":0}},"2026-04":{"sales":[{"day":1,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":2,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":3,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":4,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":5,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":6,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":7,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":8,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":9,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":10,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":11,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":12,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":13,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":14,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":15,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":16,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":17,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":18,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":19,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":20,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":21,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":22,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":23,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":24,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":25,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":26,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":27,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":28,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":29,"cash":0,"visa":0,"pmts":0,"notes":""},{"day":30,"cash":0,"visa":0,"pmts":0,"notes":""}],"purchases":[],"obligations":[{"id":"o1","name":"إيجار المحل","amt":500,"paid":false,"due":""},{"id":"o2","name":"فاتورة الكهرباء والمياه","amt":0,"paid":false,"due":""},{"id":"o3","name":"قسط الجمعية","amt":1000,"paid":false,"due":""},{"id":"o4","name":"اشتراك الإنترنت","amt":0,"paid":false,"due":""},{"id":"o5","name":"مواد التنظيف","amt":0,"paid":false,"due":""},{"id":"o6","name":"مصروفات الصيانة","amt":0,"paid":false,"due":""},{"id":"o7","name":"مصروفات أخرى","amt":0,"paid":false,"due":""}],"mSal":{"hani":{"base":0,"allow":0,"ded":0},"sidra":{"base":0,"allow":0,"ded":0},"aya":{"base":0,"allow":0,"ded":0}},"dWages":{"tharaa":{"rate":0,"att":[]},"enaa":{"rate":0,"att":[]},"waad":{"rate":0,"att":[]}},"advances":[],"cashflow":{"opening":0,"actual":0}}},"monthlyEmps":[{"id":"hani","name":"هاني"},{"id":"sidra","name":"سدرة"},{"id":"aya","name":"آية"}],"dailyEmps":[{"id":"tharaa","name":"ثراء"},{"id":"enaa","name":"عيناء"},{"id":"waad","name":"وعد"}],"lockedMonths":[],"suppliers":[{"id":"s1","name":"المؤسسة العسكرية","cat":"مواد غذائية ومواد خام","note":""},{"id":"s2","name":"الفيصل مول","cat":"مستلزمات التشغيل","note":""},{"id":"s3","name":"يحيى رسمي","cat":"مواد غذائية ومواد خام","note":""},{"id":"s4","name":"عيسى الخوره","cat":"مواد غذائية ومواد خام","note":""},{"id":"s5","name":"ارض السكر","cat":"مواد غذائية ومواد خام","note":""},{"id":"s6","name":"بن العميد","cat":"مشروبات ومواد القهوة","note":""},{"id":"s7","name":"قهوه ايلي","cat":"مشروبات ومواد القهوة","note":""},{"id":"s8","name":"بوظه","cat":"مواد غذائية ومواد خام","note":""},{"id":"s9","name":"مونين","cat":"مشروبات ومواد القهوة","note":"سيروب"},{"id":"s10","name":"مياه أفا","cat":"مشروبات ومواد القهوة","note":"مياه معدنية"},{"id":"s1778550743363","name":"متفرفات","cat":"مواد غذائية ومواد خام","note":""},{"id":"s1778550883823","name":"رجوى ماركت","cat":"مواد غذائية ومواد خام","note":""},{"id":"s1778550889612","name":"الفيصل مول","cat":"مواد غذائية ومواد خام","note":""}]};
+// يُشغَّل عند بدء التطبيق: يستعيد البيانات من IDB، وإن غابت يحمّل البذرة المضمَّنة
 function idbRecoverIfNeeded() {
   try {
     if (safeLS.getItem(SK)) {
@@ -3465,14 +3479,36 @@ function idbRecoverIfNeeded() {
       idbSet(SK, safeLS.getItem(SK)).catch(function(){});
       return;
     }
-    // localStorage مسوح! ننقذ من IDB
+    // localStorage مسوح — ننقذ من IDB أو من البذرة المضمَّنة
     idbGet(SK).then(function(saved) {
-      if (!saved) return;
-      safeLS.setItem(SK, saved);
-      try { loadStore(); renderAll(); } catch(e) {}
-      toast('♻️ تم استعادة بيانات ريحانة من النسخة الاحتياطية الآمنة!');
-      console.log('[IDB] ✅ Data recovered from IndexedDB');
-    }).catch(function(e) { console.warn('[IDB] Recovery failed:', e); });
+      if (saved) {
+        safeLS.setItem(SK, saved);
+        try { loadStore(); renderAll(); } catch(e) {}
+        try { toast('♻️ تم استعادة بيانات ريحانة من النسخة الاحتياطية الآمنة!'); } catch(e){}
+        console.log('[IDB] ✅ Data recovered from IndexedDB');
+        return;
+      }
+      // كلا التخزينين فارغ — نُحمّل البذرة المضمَّنة (بيانات المستخدم)
+      if (typeof RH_EMBEDDED_SEED === 'object' && RH_EMBEDDED_SEED && RH_EMBEDDED_SEED.months) {
+        var seedStr = JSON.stringify(RH_EMBEDDED_SEED);
+        safeLS.setItem(SK, seedStr);
+        idbSet(SK, seedStr).catch(function(){});
+        try { loadStore(); renderAll(); } catch(e) {}
+        try { toast('📦 تم تحميل بياناتك المحفوظة في النسخة'); } catch(e){}
+        console.log('[SEED] ✅ Loaded embedded user data');
+      }
+    }).catch(function(e) {
+      console.warn('[IDB] Recovery failed:', e);
+      // محاولة أخيرة: تحميل البذرة حتى لو فشل IDB
+      if (typeof RH_EMBEDDED_SEED === 'object' && RH_EMBEDDED_SEED && RH_EMBEDDED_SEED.months) {
+        try {
+          var seedStr = JSON.stringify(RH_EMBEDDED_SEED);
+          safeLS.setItem(SK, seedStr);
+          loadStore(); renderAll();
+          toast('📦 تم تحميل البيانات المضمَّنة');
+        } catch(_){}
+      }
+    });
   } catch(e) { console.warn('[IDB] init error:', e); }
 }
 // يطلب من المتصفح/أندرويد عدم مسح البيانات تلقائياً أبداً
@@ -3699,7 +3735,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v26';
+      const CACHE_NAME = 'rayhana-v28';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -3780,29 +3816,87 @@ async function sha256(str){
   return null;
 }
 
+// تلميح كلمة المرور: يُعرض فقط على التثبيت الجديد
+function pwdShowHintIfFresh(){
+  try {
+    var hint = document.getElementById('pwd-hint');
+    if(!hint) return;
+    if(!safeLS.getItem(PWD_KEY)) hint.style.display='block';
+  } catch(e) {}
+}
+try { document.addEventListener('DOMContentLoaded', pwdShowHintIfFresh); } catch(e) {}
+
+// إعادة تعيين كلمة المرور إلى الافتراضية (1234)
+function pwdReset(){
+  if(!confirm('سيتم إعادة تعيين كلمة المرور إلى 1234. متابعة؟')) return;
+  try {
+    safeLS.removeItem(PWD_KEY);
+    try { idbSet(PWD_KEY, null).catch(function(){}); } catch(e) {}
+    var hint = document.getElementById('pwd-hint');
+    if(hint) hint.style.display='block';
+    var err = document.getElementById('pwd-err');
+    if(err){ err.style.color='#1A5C28'; err.textContent='✅ تم إعادة التعيين — استخدم 1234'; }
+    setTimeout(function(){
+      if(err){ err.style.color='#B91C1C'; err.textContent=''; }
+    }, 3500);
+  } catch(e) {}
+}
+
 async function checkPwd() {
   var input = document.getElementById('pwdInput');
   var err = document.getElementById('pwd-err');
+  var btn = document.getElementById('pwdLoginBtn');
   if (!input) return;
-  var val = input.value;
-  var stored = safeLS.getItem(PWD_KEY) || btoa(DEFAULT_PWD);
-  input.value = '';
-  var hash = await sha256(val);
-  var ok = false;
-  if (hash !== null && hash === stored) {
-    ok = true;
-  } else if (btoa(val) === stored) {
-    // migration or fallback when crypto.subtle unavailable
-    if (hash !== null) safeLS.setItem(PWD_KEY, hash);
-    ok = true;
-  }
-  if (ok) {
-    doLogin('manager');
-  } else {
-    err.textContent = '❌ كلمة المرور غير صحيحة';
-    input.focus();
-    input.style.borderColor = 'rgba(239,68,68,.8)';
-    setTimeout(function(){ input.style.borderColor = 'rgba(255,255,255,.15)'; }, 1200);
+  // قفل سريع لمنع نقرات متعددة أثناء حساب الـ hash
+  if (input.dataset.busy === '1') return;
+  input.dataset.busy = '1';
+  if (btn) { btn.disabled = true; btn.style.opacity = '.7'; }
+  try {
+    var val = (input.value || '').replace(/^\s+|\s+$/g, '');
+    if (!val) {
+      if (err) err.textContent = '⚠️ أدخل كلمة المرور';
+      input.focus();
+      return;
+    }
+    var stored = safeLS.getItem(PWD_KEY);
+    var hash = await sha256(val);
+    var ok = false;
+
+    if (!stored) {
+      // لا توجد كلمة مرور محفوظة — يُقبل الافتراضي فقط
+      if (val === DEFAULT_PWD) {
+        ok = true;
+        if (hash) { try { safeLS.setItem(PWD_KEY, hash); } catch(e) {} }
+      }
+    } else {
+      // مقارنة SHA-256 الأساسية
+      if (hash && hash === stored) {
+        ok = true;
+      } else if (btoa(val) === stored) {
+        // ترحيل من الصيغة القديمة (btoa) إلى SHA-256
+        ok = true;
+        if (hash) { try { safeLS.setItem(PWD_KEY, hash); } catch(e) {} }
+      }
+    }
+
+    if (ok) {
+      if (err) err.textContent = '';
+      // لا نمسح القيمة إلا بعد نجاح الدخول
+      input.value = '';
+      doLogin('manager');
+    } else {
+      if (err) err.textContent = '❌ كلمة المرور غير صحيحة';
+      input.focus();
+      input.style.borderColor = 'rgba(239,68,68,.8)';
+      try { input.animate([{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:280}); } catch(e) {}
+      setTimeout(function(){ input.style.borderColor = 'rgba(255,255,255,.15)'; }, 1200);
+    }
+  } catch(e) {
+    if (err) err.textContent = '⚠️ خطأ — حاول مجدداً';
+    console.warn('checkPwd error:', e);
+  } finally {
+    input.dataset.busy = '';
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
   }
 }
 
@@ -5885,7 +5979,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v26',
+    version:'v28',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -5898,7 +5992,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v26_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v28_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);

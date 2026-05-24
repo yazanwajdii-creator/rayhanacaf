@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main, claude/fix-apk-build-github-Q1Fy1]
+    branches: [main, claude/fix-apk-build-github-Q1Fy1, claude/v28-hardened-build]
     paths:
       - 'index.html'
       - 'android/**'
@@ -85,20 +85,28 @@ jobs:
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 30
 
-      - name: Publish APK to latest release
+      - name: Publish APK to v28 release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: ريحانة كافيه — آخر إصدار
-          prerelease: true
+          tag_name: v28
+          name: ريحانة كافيه v28.0.0
+          prerelease: false
           files: android/app/build/outputs/apk/debug/*.apk
           body: |
-            ## تطبيق ريحانة كافيه للأندرويد
+            ## ريحانة كافيه — الإصدار v28.0.0
+
+            ### التحديثات:
+            - 🔑 إصلاح موثوق لتسجيل الدخول — لا مسح حقل قبل تأكيد النجاح، رسالة خطأ لحقل فارغ، قفل ضد النقرات المتعددة
+            - 🔓 زر "نسيت كلمة المرور؟" واضح لإعادة الضبط إلى 1234
+            - 📦 **حماية البيانات**: بياناتك مدمجة في النسخة — عند أي تثبيت أو إعادة تعيين، تُحمَّل تلقائياً
+            - 🔁 طبقة استرداد ثلاثية: localStorage → IndexedDB → بذرة مضمَّنة
+            - 🔄 رقم إصدار جديد (versionCode 28) واسم ملف ‎`rayhana-cafe-v28.0.0-debug.apk`‎ حتى يتعرّف عليه الهاتف كتحديث
 
             ### التثبيت:
-            1. حمّل ملف `app-debug.apk` مباشرة
+            1. حمّل ملف ‎`rayhana-cafe-v28.0.0-debug.apk`‎ مباشرة
             2. افتح الملف على جهازك
             3. اسمح بتثبيت التطبيقات من مصادر غير معروفة إذا طُلب منك
+            4. كلمة المرور الافتراضية: **1234**
 
             ### المتطلبات:
-            - Android 7.0 (API 24) أو أحدث
+            - Android 8.0 (API 26) أو أحدث
