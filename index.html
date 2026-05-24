@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V29 PRO</title>
+<title>ريحانة V30 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1887,7 +1887,7 @@ body.dark .ss-card{background:var(--surf)}
         </a>
       </div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v29</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v30</div>
   </div>
 </div>
 
@@ -1915,19 +1915,11 @@ body.dark .ss-card{background:var(--surf)}
     </div>
   </div>
   
-  <!-- أزرار الإجراءات السريعة -->
+  <!-- أزرار الإجراءات السريعة (الأساسية فقط — تنظيف بصري) -->
   <div class="fab-container">
-    <button class="fab-btn fab-secondary" onclick="showShortcuts()" title="اختصارات لوحة المفاتيح">
-      ⌨️
-      <span class="fab-tooltip">اختصارات (؟)</span>
-    </button>
-    <button class="fab-btn fab-secondary" onclick="togglePresentationMode()" title="وضع العرض">
-      📺
-      <span class="fab-tooltip">وضع العرض</span>
-    </button>
     <button class="fab-btn fab-secondary" onclick="showBackups()" title="النسخ الاحتياطية">
       📦
-      <span class="fab-tooltip">النسخ الاحتياطية</span>
+      <span class="fab-tooltip">نسخ احتياطية</span>
     </button>
     <button class="fab-btn fab-primary" onclick="quickAddSale()" title="إضافة سريعة">
       ➕
@@ -2664,6 +2656,16 @@ body.dark .ss-card{background:var(--surf)}
             <button class="btn btn-ghost btn-sm" onclick="clearPurchFilter()">✕ إلغاء الفلتر</button>
             <div class="df-summary" id="purchFilterSummary"></div>
           </div>
+          <!-- v30: فلتر المشتري -->
+          <div class="date-filter-bar" style="margin-top:6px">
+            <span class="df-label">🛒 المشتري:</span>
+            <div class="df-group" style="flex:1">
+              <select class="df-inp-d" id="purchBuyer" onchange="renderPurch()" style="min-width:140px">
+                <option value="">— الكل —</option>
+              </select>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('purchBuyer').value='';renderPurch()">✕ كل المشترين</button>
+          </div>
           <div class="tbl-wrap">
             <table>
               <thead><tr><th>التاريخ</th><th>المورد</th><th>الفئة</th><th>البيان</th><th>المبلغ</th><th>المشتري</th><th>فاتورة</th><th>حذف</th></tr></thead>
@@ -2736,6 +2738,16 @@ body.dark .ss-card{background:var(--surf)}
             <span style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono'" id="dwtotal">0.000 JD</span>
           </div>
           <button class="btn btn-p btn-full" onclick="calcSal();toast('✅ تم حفظ الأجور')">💾 حفظ الأجور</button>
+        </div>
+      </div>
+
+      <!-- v30: تقرير حضور العاملات من ملاحظات الإيرادات -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">📋</span>تقرير الحضور من ملاحظات الإيرادات</div></div>
+        <div class="card-body">
+          <div class="alert al-i">📌 يستخرج كل الأسماء من حقل "الملاحظات" في الإيراد اليومي ويُحصي أيام دوام كل اسم.</div>
+          <button class="btn btn-p btn-full" onclick="renderNotesAttReport()">📊 عرض / تحديث التقرير</button>
+          <div id="notesAttBox" style="margin-top:10px"></div>
         </div>
       </div>
     </div>
@@ -3735,7 +3747,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v29';
+      const CACHE_NAME = 'rayhana-v30';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -4715,7 +4727,21 @@ function renderPurch(){
   // Date range filter
   const pFrom=$("purchFrom")?$("purchFrom").value:"";
   const pTo=$("purchTo")?$("purchTo").value:"";
-  const isDateFiltered=pFrom||pTo;
+  // v30: Buyer filter — يحدّث قائمة الخيارات تلقائياً من المشترين الموجودين
+  const pBuyerSel=$("purchBuyer");
+  const pBuyer = pBuyerSel ? pBuyerSel.value : "";
+  if(pBuyerSel){
+    var existing = new Set(Array.from(pBuyerSel.options).map(function(o){return o.value;}));
+    var buyers = Array.from(new Set(p.map(function(r){return r.buyer||"";}).filter(Boolean))).sort();
+    buyers.forEach(function(name){
+      if(!existing.has(name)){
+        var o = document.createElement("option");
+        o.value = name; o.textContent = name;
+        pBuyerSel.appendChild(o);
+      }
+    });
+  }
+  const isDateFiltered=pFrom||pTo||pBuyer;
   // Apply filters
   let shown=0,shownAmt=0,tot=0;
   if(!p.length){b.innerHTML='<tr><td colspan="7" style="padding:22px;color:var(--tx4)">لا توجد مشتريات</td></tr>';T("t-purch","0.000");const sum=$("purchFilterSummary");if(sum)sum.innerHTML="";return;}
@@ -4726,6 +4752,8 @@ function renderPurch(){
     // Date range filter
     if(pFrom&&r.date<pFrom)return;
     if(pTo&&r.date>pTo)return;
+    // v30: Buyer filter
+    if(pBuyer && (r.buyer||"") !== pBuyer)return;
     shownAmt+=r.amt;shown++;
     const cls={COGS:"td-y",OPS:"td-b",ADM:"td-g",MKT:"td-r"}[r.cat||"COGS"]||"td-y";
     const bcls={COGS:"bg-w",OPS:"bg-i",ADM:"bg-ok",MKT:"bg-e"}[r.cat||"COGS"]||"bg-w";
@@ -5954,6 +5982,70 @@ function loadStore(){
   }catch(e){console.warn("loadStore error:",e);}
 }
 
+// v30: تقرير حضور من ملاحظات الإيرادات — يستخرج كل الأسماء بغض النظر عن قائمة dailyEmps
+// مفيد للعاملات الجزئيات اللواتي لا يُسجَّلن رسمياً في قائمة الموظفين
+function buildNotesAttReport(){
+  var d = G();
+  var byName = {};
+  var totalPmts = 0;
+  (d.sales || []).forEach(function(s){
+    if(!s.notes) return;
+    var raw = String(s.notes).trim();
+    if(!raw) return;
+    // تقسيم على + أو , أو ، أو و (مع الفراغات)
+    var names = raw.split(/[+,،]|\s+و\s+/g)
+                   .map(function(n){ return n.replace(/\s+/g,' ').trim(); })
+                   .filter(function(n){ return n && n.length >= 2 && !/^\d+$/.test(n); });
+    if(names.length === 0) return;
+    var share = (s.pmts || 0) / names.length;
+    totalPmts += s.pmts || 0;
+    names.forEach(function(name){
+      if(!byName[name]) byName[name] = { days: [], share: 0 };
+      if(byName[name].days.indexOf(s.day) === -1) byName[name].days.push(s.day);
+      byName[name].share += share;
+    });
+  });
+  var sorted = Object.keys(byName).map(function(name){
+    return {
+      name: name,
+      days: byName[name].days.sort(function(a,b){ return a-b; }),
+      share: byName[name].share
+    };
+  }).sort(function(a,b){ return b.days.length - a.days.length; });
+  return { names: sorted, totalPmts: totalPmts };
+}
+
+function renderNotesAttReport(){
+  var box = document.getElementById('notesAttBox');
+  if(!box) return;
+  var r = buildNotesAttReport();
+  if(!r.names.length){
+    box.innerHTML = '<div class="alert al-i" style="margin:8px 0">لا توجد أسماء في ملاحظات الإيراد لهذا الشهر.</div>';
+    return;
+  }
+  var [y,m] = S.activeKey.split('-');
+  var html = '<div class="alert al-ok" style="margin-bottom:8px">📅 ' + MN[parseInt(m)-1] + ' ' + y +
+             ' · ' + r.names.length + ' اسم · إجمالي المدفوعات اليومية: ' + n3(r.totalPmts) + ' JD ' +
+             '<small style="display:block;margin-top:3px;color:var(--tx3)">القسمة افتراضياً بالتساوي بين الأسماء كل يوم. هذا تقدير للتوزيع — عدّله حسب الواقع.</small>' +
+             '</div>';
+  html += '<div class="tbl-wrap"><table><thead><tr>' +
+          '<th style="text-align:right">الاسم</th>' +
+          '<th style="text-align:center">عدد الأيام</th>' +
+          '<th style="text-align:right">الأيام</th>' +
+          '<th style="text-align:left">الحصة المقدّرة</th>' +
+          '</tr></thead><tbody>';
+  r.names.forEach(function(p){
+    html += '<tr>' +
+            '<td style="font-weight:700">' + esc(p.name) + '</td>' +
+            '<td class="td-b num" style="text-align:center">' + p.days.length + '</td>' +
+            '<td style="font-size:11.5px;color:var(--tx3)">' + p.days.join(', ') + '</td>' +
+            '<td class="td-g num" style="text-align:left">' + n3(p.share) + ' JD</td>' +
+            '</tr>';
+  });
+  html += '</tbody></table></div>';
+  box.innerHTML = html;
+}
+
 function syncAttFromAllNotes(){
   // Sync attendance from notes for ALL months — safe, data-only
   Object.keys(S.months).forEach(function(key){
@@ -5979,7 +6071,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v29',
+    version:'v30',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -5992,7 +6084,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v29_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v30_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
@@ -11648,32 +11740,8 @@ document.addEventListener('DOMContentLoaded', function(){
   if(pw) setTimeout(function(){ pw.focus(); }, 300);
 });
 
-// إضافة زر وضع العرض
-setTimeout(function() {
-  var fabContainer = document.querySelector('.fab-container');
-  if (fabContainer && !document.getElementById('fabPresentation')) {
-    var presBtn = document.createElement('div');
-    presBtn.id = 'fabPresentation';
-    presBtn.className = 'fab-btn';
-    presBtn.innerHTML = '📺';
-    presBtn.title = 'وضع العرض';
-    presBtn.onclick = enterPresentationMode;
-    presBtn.style.background = 'linear-gradient(135deg, #8B5CF6, #6366F1)';
-    fabContainer.insertBefore(presBtn, fabContainer.firstChild);
-  }
-  
-  // إضافة زر النسخ الاحتياطي
-  if (fabContainer && !document.getElementById('fabBackup')) {
-    var backupBtn = document.createElement('div');
-    backupBtn.id = 'fabBackup';
-    backupBtn.className = 'fab-btn';
-    backupBtn.innerHTML = '💾';
-    backupBtn.title = 'النسخ الاحتياطي';
-    backupBtn.onclick = showBackupManager;
-    backupBtn.style.background = 'linear-gradient(135deg, #10B981, #059669)';
-    fabContainer.insertBefore(backupBtn, fabContainer.firstChild);
-  }
-}, 2000);
+// v30: حُذف حقن الأزرار الإضافية (📺 وضع العرض + 💾 نسخ احتياطي)
+// السبب: تشويش بصري — الأزرار الأساسية في الـ fab-container كافية
 
 /* ═══════════════════════════════════════════════════════════════════════
    ريحانة V25 — SUPABASE SYNC ENGINE
