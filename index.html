@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V31 PRO</title>
+<title>ريحانة V32 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1887,7 +1887,7 @@ body.dark .ss-card{background:var(--surf)}
         </a>
       </div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v31</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v32</div>
   </div>
 </div>
 
@@ -3120,6 +3120,28 @@ body.dark .ss-card{background:var(--surf)}
         <div class="cloud-status-dot" id="supaDot"></div>
       </div>
 
+      <!-- v32: شارة "مُهيَّأ مسبقاً" -->
+      <div class="cloud-wizard-card" style="border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.08);margin-bottom:14px">
+        <div class="cloud-wizard-title" style="color:var(--gn)">✅ المزامنة السحابية مُفعَّلة تلقائياً</div>
+        <div style="font-size:12px;color:var(--tx2);margin-top:6px;line-height:1.7">
+          v32 يأتي مع Supabase مُهيَّأ مسبقاً لحسابك. لا تحتاج لإدخال أي شي.<br>
+          • <strong>عند كل حفظ</strong> ➜ يرفع البيانات للسحابة تلقائياً<br>
+          • <strong>عند فتح التطبيق</strong> ➜ يجلب آخر بيانات من السحابة<br>
+          • <strong>بين الأجهزة</strong> ➜ هاتفك وتابلتك = نفس البيانات
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn btn-ghost" style="flex:1;font-size:12px" onclick="supaSync('pull')">⬇️ جلب الآن من السحابة</button>
+          <button class="btn btn-ghost" style="flex:1;font-size:12px" onclick="supaSync('push')">⬆️ رفع الآن للسحابة</button>
+        </div>
+        <details style="margin-top:8px">
+          <summary style="font-size:11px;color:var(--tx4);cursor:pointer">⚙️ خيارات متقدمة (تعطيل/استبدال)</summary>
+          <div style="margin-top:8px;padding:8px;background:var(--surf2);border-radius:6px">
+            <button class="btn btn-ghost" style="width:100%;font-size:11px;margin-bottom:4px" onclick="if(confirm('تعطيل المزامنة السحابية؟ بياناتك ستبقى محلية فقط.')){safeLS.setItem('rh_supa_disabled','1');location.reload();}">🚫 تعطيل المزامنة السحابية</button>
+            <button class="btn btn-ghost" style="width:100%;font-size:11px" onclick="safeLS.removeItem('rh_supa_disabled');location.reload();">🔄 إعادة تفعيل المزامنة</button>
+          </div>
+        </details>
+      </div>
+
       <!-- SETUP WIZARD (shown when not connected) -->
       <div id="cloudSetupWizard">
 
@@ -3819,7 +3841,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v31';
+      const CACHE_NAME = 'rayhana-v32';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -6143,7 +6165,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v31',
+    version:'v32',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -6156,7 +6178,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v31_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v32_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
@@ -11834,15 +11856,27 @@ var SUPA_KEY_KEY = 'rh_supa_key';
 var SUPA_TABLE   = 'rh_store';
 var SUPA_ROW     = 'rayhana_cafe_v26';
 
-/* ── إنشاء الاتصال ── */
+// v32: مزامنة سحابية مُهيَّأة مسبقاً — لا حاجة لإدخال شي من المستخدم
+// مشروع Supabase الخاص بـ yazanwajdii-creator (تم الإعداد عبر MCP)
+var SUPA_BUILTIN_URL = 'https://uxwreejvcokwkbgwbrdj.supabase.co';
+var SUPA_BUILTIN_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4d3JlZWp2Y29rd2tiZ3dicmRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDczMTAsImV4cCI6MjA5MjE4MzMxMH0.dPlZm6RdE5Hvlxe_SBBPgP6CvR-i88uYjTi7L5sN_2Y';
+
+/* ── إنشاء الاتصال — يستخدم المُهيَّأ مسبقاً إذا لم يُدخل المستخدم آخر ── */
 function supaInit(){
-  var url = safeLS.getItem(SUPA_URL_KEY);
-  var key = safeLS.getItem(SUPA_KEY_KEY);
+  var url = safeLS.getItem(SUPA_URL_KEY) || SUPA_BUILTIN_URL;
+  var key = safeLS.getItem(SUPA_KEY_KEY) || SUPA_BUILTIN_KEY;
   if(!url || !key) return;
+  // إذا كان المستخدم قد عطّل المزامنة صراحةً (وضع 'OFF')، لا نُنشئ الاتصال
+  if(safeLS.getItem('rh_supa_disabled') === '1') return;
   try{
+    if(typeof supabase === 'undefined'){
+      // مكتبة Supabase لم تُحمَّل بعد — أعد المحاولة لاحقاً
+      setTimeout(supaInit, 1500);
+      return;
+    }
     SUPA = supabase.createClient(url, key);
     supaUpdateUI(true);
-    // رفع تلقائي عند كل حفظ
+    console.log('[Supabase] ✅ connected (auto, built-in config)');
   } catch(e){
     console.warn('Supabase init error:', e);
     SUPA = null;
