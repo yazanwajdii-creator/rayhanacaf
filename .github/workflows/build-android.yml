@@ -135,17 +135,32 @@ jobs:
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 30
 
-      - name: Publish APK to v36 release
+      - name: Publish APK to v37 release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v36
-          name: ريحانة كافيه v36.0.0
+          tag_name: v37
+          name: ريحانة كافيه v37.0.0
           prerelease: false
           files: android/app/build/outputs/apk/debug/*.apk
           body: |
-            ## ريحانة كافيه — الإصدار v36.0.0
+            ## ريحانة كافيه — الإصدار v37.0.0
 
-            ### 🛡️ محرك مزامنة محصّن (الميزة الكبرى!)
+            ### ⚡ أداء — إصلاح البطء والاهتزاز
+            تشخيص نقاط الضعف:
+            1. ❌ `animation:fadeIn .15s` على كل تبويب — كان يسبب الاهتزاز عند التنقّل
+            2. ❌ التبويبات الجديدة (today, rev, supp, cash, cloud) كانت تستدعي `renderAll()` الثقيلة
+            3. ❌ `setInterval(saveAll, 60000)` يُشغّل مزامنة كل دقيقة بلا داعٍ
+            4. ❌ `updateWelcomeCard` كل 60 ثانية — تكرار غير ضروري
+
+            الإصلاحات:
+            1. ✅ حُذف fadeIn animation من `.pg.on` — تنقّل فوري بدون اهتزاز
+            2. ✅ `pg(id)` الآن lazy لكل تبويب — يستدعي فقط render المطلوب
+            3. ✅ requestAnimationFrame قبل العمليات الثقيلة — UI يستجيب فوراً
+            4. ✅ حُذف saveAll كل 60s — يكفي الحفظ عند التعديل الفعلي
+            5. ✅ updateWelcomeCard كل 30 دقيقة فقط (والـ greeting يتغير بمعدل أبطأ)
+
+            ### من v36
+            - 🛡️ محرك مزامنة محصّن (CAS + قائمة دائمة + validation + checksum)
             بُني محرك مزامنة جديد من الصفر بمعايير إنتاج — 0% فقدان بيانات:
 
             **حماية ضد 10 نقاط ضعف اكتُشفت في v35:**
