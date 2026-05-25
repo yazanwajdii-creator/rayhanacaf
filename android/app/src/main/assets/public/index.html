@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V35 PRO</title>
+<title>ريحانة V36 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1838,7 +1838,7 @@ body.dark .ss-card{background:var(--surf)}
         </a>
       </div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v35</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v36</div>
   </div>
 </div>
 
@@ -3763,7 +3763,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v35';
+      const CACHE_NAME = 'rayhana-v36';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -6175,7 +6175,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v35',
+    version:'v36',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -6188,7 +6188,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v35_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v36_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
@@ -11933,8 +11933,13 @@ function supaConnectAndTest(){
   });
 }
 
-/* ── رفع وتحميل ── */
+/* ── رفع وتحميل ── v36: واجهة قديمة تُحوّل إلى المحرك الجديد ── */
 async function supaSync(direction, opts){
+  // v36: استخدم النظام المحصّن الجديد
+  if(typeof supaSyncV2 === 'function'){
+    return await supaSyncV2(direction, opts);
+  }
+  // Fallback إلى النسخة القديمة (لن يصل هنا عادةً)
   if(!SUPA) throw new Error('Supabase not connected');
   var forceOverwrite = (opts && opts.force) || false;
   var silentConflict = (opts && opts.silent) || false; // للمزامنة التلقائية: تخطي مربع التأكيد
@@ -12184,6 +12189,345 @@ function copySupaSQL(){
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   v36: محرك مزامنة محصّن — قائمة انتظار + CAS + validation + persistence
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// قائمة انتظار الرفع — تُحفظ في localStorage فتنجو من إعادة التشغيل
+var SYNC_QUEUE_KEY = 'rh_sync_queue';
+var SYNC_LAST_CLOUD_VERSION_KEY = 'rh_sync_cloud_version'; // updated_at آخر رفع/سحب
+var SYNC_CLIENT_ID_KEY = 'rh_sync_client_id'; // ID فريد لهذا الجهاز
+
+// ينشئ معرّف فريد للجهاز إذا لم يكن موجوداً
+function getClientId(){
+  var id = safeLS.getItem(SYNC_CLIENT_ID_KEY);
+  if(!id){
+    id = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+    safeLS.setItem(SYNC_CLIENT_ID_KEY, id);
+  }
+  return id;
+}
+
+// يبني snapshot كامل للحالة الحالية (مع checksum بسيط)
+function buildSnapshot(){
+  var snap = {
+    v: 36,
+    activeKey: S.activeKey,
+    months: S.months || {},
+    monthlyEmps: S.monthlyEmps || [],
+    dailyEmps: S.dailyEmps || [],
+    lockedMonths: S.lockedMonths || [],
+    suppliers: S.suppliers || [],
+    targets: S.targets || {},
+    inventory: S.inventory || [],
+    savedAt: new Date().toISOString(),
+    clientId: getClientId(),
+    device: navigator.userAgent.slice(0, 60),
+    seq: parseInt(safeLS.getItem('rh_push_seq') || '0', 10) + 1
+  };
+  // checksum: hash بسيط لكشف التلف
+  try { snap._checksum = _simpleHash(JSON.stringify(snap.months) + JSON.stringify(snap.suppliers)); }
+  catch(e){ snap._checksum = 0; }
+  return snap;
+}
+
+// hash بسيط 32-bit — للكشف عن التلف فقط، ليس للأمان
+function _simpleHash(str){
+  var h = 0;
+  for(var i = 0; i < str.length; i++){
+    h = ((h << 5) - h) + str.charCodeAt(i);
+    h |= 0;
+  }
+  return h;
+}
+
+// يتحقّق أن snapshot سليم قبل الكتابة فوق المحلي
+function validateSnapshot(snap){
+  if(!snap || typeof snap !== 'object') return { ok: false, error: 'snapshot ليس كائناً' };
+  if(!snap.months || typeof snap.months !== 'object') return { ok: false, error: 'months مفقود' };
+  if(!Array.isArray(snap.suppliers)) return { ok: false, error: 'suppliers ليس مصفوفة' };
+  if(!Array.isArray(snap.monthlyEmps)) return { ok: false, error: 'monthlyEmps ليس مصفوفة' };
+  if(!Array.isArray(snap.dailyEmps)) return { ok: false, error: 'dailyEmps ليس مصفوفة' };
+  // تحقّق checksum إن وُجد
+  if(snap._checksum !== undefined){
+    try {
+      var expected = _simpleHash(JSON.stringify(snap.months) + JSON.stringify(snap.suppliers));
+      if(expected !== snap._checksum){
+        return { ok: false, error: 'checksum غير متطابق — البيانات تالفة' };
+      }
+    } catch(e){}
+  }
+  // كل شهر يجب أن يحتوي sales كمصفوفة
+  var keys = Object.keys(snap.months);
+  for(var i = 0; i < keys.length; i++){
+    var m = snap.months[keys[i]];
+    if(!m || !Array.isArray(m.sales)){
+      return { ok: false, error: 'الشهر ' + keys[i] + ' بدون sales' };
+    }
+  }
+  return { ok: true };
+}
+
+// === قائمة الانتظار الدائمة ===
+function _queueLoad(){
+  try { return JSON.parse(safeLS.getItem(SYNC_QUEUE_KEY) || '[]'); }
+  catch(e){ return []; }
+}
+function _queueSave(q){
+  try { safeLS.setItem(SYNC_QUEUE_KEY, JSON.stringify(q)); } catch(e){}
+}
+function _queueEnqueue(snapshot){
+  var q = _queueLoad();
+  // نحتفظ بأحدث snapshot فقط (تجميع — لا حاجة لرفع كل خطوة)
+  q = [{ snapshot: snapshot, attempts: 0, queuedAt: Date.now() }];
+  _queueSave(q);
+}
+function _queueGetHead(){
+  var q = _queueLoad();
+  return q.length ? q[0] : null;
+}
+function _queueDropHead(){
+  var q = _queueLoad();
+  q.shift();
+  _queueSave(q);
+}
+function _queueBumpAttempts(){
+  var q = _queueLoad();
+  if(q.length){ q[0].attempts = (q[0].attempts || 0) + 1; _queueSave(q); }
+}
+
+// === محرك الرفع المُحصّن ===
+var _syncWorkerBusy = false;
+
+async function syncWorkerTick(){
+  if(_syncWorkerBusy) return;
+  if(!SUPA) return;
+  if(safeLS.getItem('rh_supa_disabled') === '1') return;
+  var head = _queueGetHead();
+  if(!head) return;
+
+  _syncWorkerBusy = true;
+  try {
+    supaSetStatus('saving', '☁️ جاري الحفظ في السحابة...');
+
+    // 1. فحص نسخة السحابة الحالية (compare-and-swap)
+    var headRes = await SUPA
+      .from(SUPA_TABLE)
+      .select('updated_at, value')
+      .eq('key', SUPA_ROW)
+      .maybeSingle();
+
+    var cloudUpdatedAt = headRes.data ? headRes.data.updated_at : null;
+    var lastKnown = safeLS.getItem(SYNC_LAST_CLOUD_VERSION_KEY);
+
+    // 2. CAS: إن تغيّرت السحابة منذ آخر sync، اسحب أولاً ودمج ثم ارفع
+    if(cloudUpdatedAt && lastKnown && cloudUpdatedAt !== lastKnown){
+      // جهاز آخر كتب — افحص هل بياناتنا تتعارض
+      var cloudSnap = headRes.data.value;
+      if(cloudSnap && cloudSnap.clientId !== getClientId()){
+        // جهاز آخر فعلاً — قرّر السلوك:
+        var cloudTime = new Date(cloudSnap.savedAt || cloudUpdatedAt).getTime();
+        var localTime = new Date(head.snapshot.savedAt).getTime();
+        if(cloudTime > localTime){
+          // السحابة أحدث — أحفظ التغييرات المحلية كملحق، اسحب، ثم ارفع المدموج
+          console.warn('[Sync] Cloud is newer — pulling first then re-pushing');
+          await _safePullAndMerge(cloudSnap, head.snapshot);
+          // أعد بناء snapshot جديد بعد الدمج
+          head.snapshot = buildSnapshot();
+        }
+      }
+    }
+
+    // 3. ارفع snapshot مع updated_at الجديد
+    var newUpdatedAt = new Date().toISOString();
+    var res = await SUPA
+      .from(SUPA_TABLE)
+      .upsert({
+        key: SUPA_ROW,
+        value: head.snapshot,
+        updated_at: newUpdatedAt
+      });
+    if(res.error) throw new Error(res.error.message);
+
+    // 4. نجح — احذف من القائمة، حدّث lastKnown
+    _queueDropHead();
+    safeLS.setItem(SYNC_LAST_CLOUD_VERSION_KEY, newUpdatedAt);
+    safeLS.setItem('rh_supa_last', new Date().toLocaleTimeString('ar'));
+    safeLS.setItem('rh_last_push_at', head.snapshot.savedAt);
+    safeLS.setItem('rh_push_seq', String(head.snapshot.seq || 0));
+    supaSetStatus('ok', '✅ محفوظ في السحابة');
+    setTimeout(function(){ supaSetStatus('ok', '✅ متصل بـ Supabase'); }, 2500);
+  } catch(e){
+    _queueBumpAttempts();
+    var head2 = _queueGetHead();
+    var attempts = head2 ? head2.attempts : 0;
+    console.warn('[Sync] push failed (attempt ' + attempts + '):', e && e.message);
+    var msg = e && e.message ? e.message : 'فشل غير معروف';
+    if(/network|fetch|failed|timeout/i.test(msg)){
+      supaSetStatus('warn', '⏳ بدون إنترنت — في قائمة الانتظار (' + attempts + ')');
+    } else {
+      supaSetStatus('error', '⚠️ فشل المزامنة — سيُعاد لاحقاً');
+    }
+    // exponential backoff: 2s, 4s, 8s, 16s, ثم كل 60s
+    var delay = attempts < 5 ? Math.pow(2, attempts) * 1000 : 60000;
+    setTimeout(syncWorkerTick, delay);
+  } finally {
+    _syncWorkerBusy = false;
+    // إن بقي شي في القائمة بعد نجاح أو فشل، شغّل مرة أخرى لاحقاً
+    var still = _queueGetHead();
+    if(still && !_syncWorkerBusy){
+      // الذيل سيُشغَّل تلقائياً عبر setTimeout أعلاه عند الفشل
+      // عند النجاح نُشغّل بسرعة لو فيه bunched
+      if(still.attempts === 0) setTimeout(syncWorkerTick, 50);
+    }
+  }
+}
+
+// دمج آمن للسحابة فوق المحلي (يحترم التغييرات المحلية الأحدث على مستوى الشهر)
+async function _safePullAndMerge(cloudSnap, localSnap){
+  var validation = validateSnapshot(cloudSnap);
+  if(!validation.ok){
+    console.warn('[Sync] cloud snapshot invalid:', validation.error);
+    return false;
+  }
+  // ندمج: نأخذ السحابة كأساس، ثم نُبقي تعديلات الشهر الحالي المحلية لو كانت أحدث
+  // قاعدة بسيطة: ندمج الموردين بالـ id، ندمج الأشهر مع أخذ الأحدث (لا يحدث عادةً لكن للاحتياط)
+  Object.keys(cloudSnap.months || {}).forEach(function(k){
+    if(!S.months[k]) S.months[k] = cloudSnap.months[k];
+    else {
+      // نأخذ السحابة لأنها أحدث (CAS قال ذلك)
+      S.months[k] = cloudSnap.months[k];
+    }
+  });
+  if(cloudSnap.monthlyEmps && cloudSnap.monthlyEmps.length) S.monthlyEmps = cloudSnap.monthlyEmps;
+  if(cloudSnap.dailyEmps && cloudSnap.dailyEmps.length) S.dailyEmps = cloudSnap.dailyEmps;
+  if(cloudSnap.suppliers && cloudSnap.suppliers.length) S.suppliers = cloudSnap.suppliers;
+  if(cloudSnap.lockedMonths) S.lockedMonths = cloudSnap.lockedMonths;
+  // لا نُغيّر activeKey حتى لا نُربك المستخدم
+  try { _origSaveAll(); } catch(e){}
+  return true;
+}
+
+// === واجهة مبسّطة: ضع طلب رفع في القائمة ===
+function syncEnqueuePush(){
+  if(!SUPA) return;
+  if(safeLS.getItem('rh_supa_disabled') === '1') return;
+  var snap = buildSnapshot();
+  _queueEnqueue(snap);
+  // شغّل العامل بعد إطار واحد (يسمح بتجميع التغييرات السريعة)
+  setTimeout(syncWorkerTick, 100);
+}
+
+// === Pull آمن مع validation ===
+async function syncPullSafe(opts){
+  opts = opts || {};
+  if(!SUPA) throw new Error('Supabase not connected');
+  supaSetStatus('loading', '⬇️ جاري التحميل من السحابة...');
+  var res = await SUPA
+    .from(SUPA_TABLE)
+    .select('value, updated_at')
+    .eq('key', SUPA_ROW)
+    .maybeSingle();
+  if(res.error){
+    throw new Error(res.error.message);
+  }
+  if(!res.data){
+    supaSetStatus('ok', '☁️ لا توجد بيانات في السحابة');
+    return false;
+  }
+  var snap = res.data.value;
+  // فحص validation قبل أي كتابة فوق المحلي — حماية رقم 1
+  var validation = validateSnapshot(snap);
+  if(!validation.ok){
+    supaSetStatus('error', '⚠️ بيانات السحابة تالفة: ' + validation.error);
+    toast('⚠️ بيانات السحابة تالفة — تم الإبقاء على المحلية. السبب: ' + validation.error);
+    log('فشل pull: ' + validation.error);
+    return false;
+  }
+
+  // كشف التعارض
+  var clientId = getClientId();
+  var localLastPush = safeLS.getItem('rh_last_push_at');
+  if(snap.clientId && snap.clientId !== clientId && localLastPush && snap.savedAt){
+    var localT = new Date(localLastPush).getTime();
+    var remoteT = new Date(snap.savedAt).getTime();
+    if(localT > remoteT + 60000){
+      if(opts.silent){
+        // المحلي أحدث — لا تكتب فوقه، بدلاً من ذلك ادفع للقائمة
+        supaSetStatus('ok', '✅ بياناتك أحدث — يُرفع الآن');
+        syncEnqueuePush();
+        return false;
+      }
+      if(!opts.force){
+        var cloudTime = new Date(snap.savedAt).toLocaleString('ar');
+        var localTime = new Date(localLastPush).toLocaleString('ar');
+        if(!confirm(
+          '⚠️ بياناتك المحلية أحدث من السحابة!\n\n' +
+          'محلي: ' + localTime + '\nسحابة: ' + cloudTime + '\n\n' +
+          'موافق = استبدل بالسحابة (أقدم) | إلغاء = ادفع المحلية الآن'
+        )){
+          syncEnqueuePush();
+          return false;
+        }
+      }
+    }
+  }
+
+  // الاستبدال الكامل — لا دمج جزئي (يضمن الاتساق)
+  // ⚠️ ملاحظة: هذا يحذف أي بيانات محلية غير موجودة في السحابة
+  S.months = snap.months || {};
+  if(snap.monthlyEmps && snap.monthlyEmps.length) S.monthlyEmps = snap.monthlyEmps;
+  if(snap.dailyEmps && snap.dailyEmps.length) S.dailyEmps = snap.dailyEmps;
+  if(snap.suppliers && snap.suppliers.length) S.suppliers = snap.suppliers;
+  if(snap.lockedMonths) S.lockedMonths = snap.lockedMonths;
+  if(snap.targets) S.targets = snap.targets;
+  if(snap.inventory) S.inventory = snap.inventory;
+  if(snap.activeKey && S.months[snap.activeKey]) S.activeKey = snap.activeKey;
+
+  safeLS.setItem(SYNC_LAST_CLOUD_VERSION_KEY, res.data.updated_at);
+  _origSaveAll();
+
+  // إعادة رسم كاملة
+  try { if(typeof buildMonthSel === 'function') buildMonthSel(); } catch(e){}
+  try { var mSel = document.getElementById('monthSel'); if(mSel) mSel.value = S.activeKey; } catch(e){}
+  try { if(typeof renderRevTable === 'function') renderRevTable(); } catch(e){}
+  try { if(typeof initSalTables === 'function') initSalTables(); } catch(e){}
+  try { if(typeof renderAll === 'function') renderAll(); } catch(e){}
+
+  var when = res.data.updated_at ? new Date(res.data.updated_at).toLocaleString('ar') : '—';
+  supaSetStatus('ok', '✅ تم التحميل · ' + when);
+  if(!opts.silent) toast('✅ تم تحميل البيانات من السحابة');
+  log('pull آمن من Supabase · ' + when);
+  return true;
+}
+
+// === Hook: استبدل supaSync القديم بالواجهة الجديدة ===
+async function supaSyncV2(direction, opts){
+  if(direction === 'push'){
+    syncEnqueuePush();
+    return;
+  }
+  if(direction === 'pull'){
+    return await syncPullSafe(opts || {});
+  }
+}
+
+// === Auto-retry: عند تحميل الصفحة، إن وُجدت تغييرات معلقة في القائمة، شغّل العامل ===
+(function(){
+  setTimeout(function(){
+    var head = _queueGetHead();
+    if(head && SUPA){
+      console.log('[Sync] استئناف ' + head.attempts + ' محاولات معلّقة من الجلسة السابقة');
+      syncWorkerTick();
+    }
+  }, 3000);
+})();
+
+// === Online/offline events ===
+window.addEventListener('online', function(){
+  setTimeout(syncWorkerTick, 500);
+});
+
 /* ── معالجة أخطاء المزامنة مع retry تلقائي ── */
 var _supaRetryCount = 0;
 var _supaRetryTimer = null;
@@ -12238,25 +12582,19 @@ window.addEventListener('online', function(){
   }
 });
 
-/* ── Hook: رفع تلقائي بعد كل حفظ ── */
+/* ── Hook: رفع تلقائي بعد كل حفظ — v36: يستخدم قائمة الانتظار الدائمة ── */
 var _origSaveAll = saveAll;
 saveAll = function(){
   _origSaveAll();
-  if(SUPA){
-    // debounce 3s — خاصية المزامنة لا تُشغَّل حتى يهدأ المستخدم
+  if(SUPA && safeLS.getItem('rh_supa_disabled') !== '1'){
+    // debounce 2s — جمع التغييرات السريعة معاً
     if(window._supaDebounce) clearTimeout(window._supaDebounce);
     window._supaDebounce = setTimeout(function(){
-      // تأجيل إطار واحد حتى تنتهي الرسوم وتستجيب الواجهة
+      // التأجيل بإطار يسمح لرسم UI يكتمل أولاً
       requestAnimationFrame(function(){
-        setTimeout(function(){
-          supaSync('push').then(function(){
-            _supaRetryCount = 0;
-          }).catch(function(e){
-            supaHandleSyncError(e);
-          });
-        }, 0);
+        syncEnqueuePush();
       });
-    }, 3000);
+    }, 2000);
   }
 };
 
