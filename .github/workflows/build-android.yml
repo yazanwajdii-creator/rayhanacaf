@@ -18,6 +18,56 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # v31: حاجز ضدّ تكرار خطأ v28 (renderSalLaw)
+      # نتحقق أن السكربت في index.html يُعرَب بنجاح في محرّك V8 الحقيقي
+      # قبل أي بناء — إذا فشل، نوقف الـ pipeline فوراً
+      - name: Validate index.html JavaScript syntax
+        run: |
+          set -e
+          # استخراج كل ما داخل <script> الكبير (السكربت الرئيسي)
+          python3 - <<'PYEOF'
+          with open('index.html', 'r', encoding='utf-8') as f:
+              html = f.read()
+          lines = html.split('\n')
+          start = end = None
+          for i, line in enumerate(lines):
+              if start is None and '<script>' in line and i > 3000:
+                  start = i + 1
+              elif start and '</script>' in line:
+                  end = i
+                  break
+          if start is None or end is None:
+              raise SystemExit('main <script> block not found in index.html')
+          with open('/tmp/script_block.js', 'w', encoding='utf-8') as f:
+              f.write('\n'.join(lines[start:end]))
+          print(f'Extracted main script: lines {start}-{end} ({end-start} lines)')
+          PYEOF
+          # تحقّق فعلي بـ V8 (نفس محرّك WebView في Android)
+          node -e "
+            const fs = require('fs');
+            const vm = require('vm');
+            try {
+              new vm.Script(fs.readFileSync('/tmp/script_block.js', 'utf-8'));
+              console.log('✅ index.html JS parses cleanly in V8');
+            } catch(e) {
+              console.error('❌ index.html JS has syntax error:', e.message);
+              const m = e.stack.match(/anonymous>:(\\d+)/);
+              if(m) console.error('At line ~' + m[1] + ' of extracted script');
+              process.exit(1);
+            }
+          "
+
+      - name: Install Jest dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run Jest unit tests
+        run: npm test -- --silent
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
