@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V37 PRO</title>
+<title>ريحانة V38 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1838,7 +1838,7 @@ body.dark .ss-card{background:var(--surf)}
         </a>
       </div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v37</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v38</div>
   </div>
 </div>
 
@@ -1948,6 +1948,9 @@ body.dark .ss-card{background:var(--surf)}
     </div>
     <div class="tb-right">
       <div id="syncPill" style="display:none;align-items:center;gap:4px;background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);border-radius:6px;padding:3px 8px;font-size:10.5px;font-weight:600;color:#5AC18E;white-space:nowrap;transition:all .3s"><span id="syncPillDot" style="width:5px;height:5px;border-radius:50%;background:#5AC18E;display:inline-block"></span><span id="syncPillTxt">محفوظ</span></div>
+      <!-- v38: زر تراجع/إعادة -->
+      <button class="tbtn" id="undoBtn" onclick="undoLast()" title="تراجع (Ctrl+Z)" style="font-size:14px;opacity:.4" disabled>↶</button>
+      <button class="tbtn" id="redoBtn" onclick="redoLast()" title="إعادة (Ctrl+Y)" style="font-size:14px;opacity:.4" disabled>↷</button>
       <button class="tbtn" id="syncRefreshBtn" onclick="tbSyncRefresh()" title="تحديث البيانات من السحابة" style="font-size:13px;display:none">🔄</button>
       <button class="tbtn" onclick="toggleNotifications()" title="الإشعارات" id="notifBtn" style="position:relative">
         🔔
@@ -3763,7 +3766,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v37';
+      const CACHE_NAME = 'rayhana-v38';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -5007,7 +5010,7 @@ function clearItemRows(){
   if(amt){amt.readOnly=false;amt.style.color='';amt.title='';}
 }
 
-function delPurch(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}if(!confirm("حذف المستند؟"))return;G().purchases.splice(i,1);renderPurch();renderSuppRpt();updateDash();saveAll();toast("🗑️ تم الحذف");}
+function delPurch(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}var p=G().purchases[i];if(!confirm("حذف فاتورة "+(p?p.sName+' ('+n3(p.amt)+' JD)':'?')+"؟"))return;undoSnapshot('حذف مشترى: '+(p?p.sName+' '+n3(p.amt):''));G().purchases.splice(i,1);renderPurch();renderSuppRpt();updateDash();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 function renderCatSum(){
   const c=$("catSum");if(!c)return;
   const purchases=G().purchases;
@@ -5396,7 +5399,7 @@ const SICO={"مواد غذائية ومواد خام":"🥗","مشروبات و�
 function renderSuppList(){const c=$("suppList");if(!c)return;if(!S.suppliers.length){c.innerHTML='<div class="alert al-i">لا يوجد موردون</div>';return;}c.innerHTML=S.suppliers.map((s,i)=>`<div class="sup-card"><div class="sup-ico">${SICO[s.cat]||"📦"}</div><div class="sup-info"><div class="sup-name">${s.name}</div><div class="sup-cat">${s.cat}${s.note?" — "+s.note:""}</div></div><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-xs" onclick="editSupp(${i})">✏️</button><button class="btn btn-r btn-xs del-btn" onclick="delSupp(${i})">🗑️</button></div></div>`).join("");applyRoles();}
 function editSupp(i){const s=S.suppliers[i];$("suppTit").textContent="✏️ تعديل المورد";$("suppEI").value=i;$("sName").value=s.name;$("sCat").value=s.cat;$("sNote").value=s.note||"";openMo("moSupp");}
 function saveSupp(){const n=$("sName").value.trim(),c=$("sCat").value,nt=$("sNote").value.trim();if(!n){toast("⚠️ أدخل اسم المورد");return;}const ei=$("suppEI").value;if(ei!==""){S.suppliers[parseInt(ei)]={...S.suppliers[parseInt(ei)],name:n,cat:c,note:nt};}else{S.suppliers.push({id:"s"+Date.now(),name:n,cat:c,note:nt});}buildPurchSupp();renderSuppList();renderSuppRpt();cmo("moSupp");$("suppEI").value="";$("suppTit").textContent="📦 إضافة مورد";["sName","sNote"].forEach(id=>$(id).value="");saveAll();toast("✅ تم الحفظ");}
-function delSupp(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(!confirm(`حذف "${S.suppliers[i].name}"؟`))return;S.suppliers.splice(i,1);buildPurchSupp();renderSuppList();renderSuppRpt();saveAll();toast("🗑️ تم الحذف");}
+function delSupp(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}var nm=S.suppliers[i]?S.suppliers[i].name:'?';if(!confirm(`حذف المورد "${nm}"؟`))return;undoSnapshot('حذف مورد: '+nm);S.suppliers.splice(i,1);buildPurchSupp();renderSuppList();renderSuppRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 function renderSuppRpt(){
   const c=$("suppRpt");if(!c)return;
   const sm={};G().purchases.forEach(p=>{if(!sm[p.sName])sm[p.sName]={t:0,n:0};sm[p.sName].t+=p.amt;sm[p.sName].n++;});
@@ -5467,7 +5470,7 @@ function saveOblig(){
   ["oName","oAmt","oDue"].forEach(id=>{const e=$(id);if(e)e.value="";});
   renderObligList();updateDash();calcCash();updateRpt();cmo("moOblig");saveAll();toast("✅ تم الحفظ");
 }
-function delOblig(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}if(!confirm(`حذف "${G().obligations[i].name}"؟`))return;G().obligations.splice(i,1);renderObligList();updateDash();calcCash();updateRpt();saveAll();toast("🗑️ تم الحذف");}
+function delOblig(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}var nm=G().obligations[i]?G().obligations[i].name:'?';if(!confirm(`حذف "${nm}"؟`))return;undoSnapshot('حذف التزام: '+nm);G().obligations.splice(i,1);renderObligList();updateDash();calcCash();updateRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 
 /* SALARIES */
 function initSalTables(){
@@ -5694,7 +5697,7 @@ function renderAdvLedger(){
   }).join("");
 }
 function updAdvStat(i,status){G().advances[i].status=status;renderAdv();renderAdvLedger();S.monthlyEmps.forEach(e=>{const pa=pendAdv(e.id);T(`ms_${e.id}_av`,n3(pa));const base=pf(`ms_${e.id}_b`),allow=pf(`ms_${e.id}_a`),ded=pf(`ms_${e.id}_d`);T(`ms_${e.id}_n`,n3(Math.max(0,base+allow-ded-pa)));});updateDash();saveAll();toast("✅ تم التحديث");}
-function delAdv(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(!confirm("حذف السلفة؟"))return;G().advances.splice(i,1);renderAdv();renderAdvLedger();initSalTables();updateDash();saveAll();toast("🗑️ تم الحذف");}
+function delAdv(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}var a=G().advances[i];if(!confirm("حذف سلفة "+(a?a.empName+' '+n3(a.amt):'?')+"؟"))return;undoSnapshot('حذف سلفة: '+(a?a.empName+' '+n3(a.amt):''));G().advances.splice(i,1);renderAdv();renderAdvLedger();initSalTables();updateDash();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 
 /* CASH BOX — تحديث فوري عند تغيير الالتزامات */
 function calcCash(){
@@ -6188,7 +6191,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v37',
+    version:'v38',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -6201,7 +6204,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v37_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v38_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
@@ -12203,6 +12206,142 @@ function copySupaSQL(){
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   v38: نظام Undo/Redo شامل
+   يلتقط snapshot قبل كل عملية حسّاسة (حذف، تعديل، توقيع دفع)
+   يحفظ آخر 50 خطوة. زر ↶ تراجع في الرأس.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var UNDO_STACK = [];
+var REDO_STACK = [];
+var UNDO_MAX = 50;
+var _undoSuppressNext = false; // لمنع تسجيل snapshot أثناء تنفيذ undo/redo
+
+// يلتقط snapshot قبل العملية مع وصف العملية
+function undoSnapshot(actionDesc){
+  if(_undoSuppressNext){ _undoSuppressNext = false; return; }
+  try {
+    var snap = {
+      ts: Date.now(),
+      action: actionDesc || 'تعديل',
+      user: CRN || 'نظام',
+      months: JSON.parse(JSON.stringify(S.months || {})),
+      monthlyEmps: JSON.parse(JSON.stringify(S.monthlyEmps || [])),
+      dailyEmps: JSON.parse(JSON.stringify(S.dailyEmps || [])),
+      suppliers: JSON.parse(JSON.stringify(S.suppliers || [])),
+      lockedMonths: JSON.parse(JSON.stringify(S.lockedMonths || [])),
+      activeKey: S.activeKey
+    };
+    UNDO_STACK.push(snap);
+    if(UNDO_STACK.length > UNDO_MAX) UNDO_STACK.shift();
+    REDO_STACK = []; // أي عملية جديدة تمسح redo
+    updateUndoUI();
+  } catch(e){ console.warn('undoSnapshot:', e); }
+}
+
+function updateUndoUI(){
+  var btn = document.getElementById('undoBtn');
+  if(btn){
+    btn.disabled = UNDO_STACK.length === 0;
+    btn.style.opacity = UNDO_STACK.length === 0 ? '.4' : '1';
+    if(UNDO_STACK.length > 0){
+      btn.title = 'تراجع: ' + UNDO_STACK[UNDO_STACK.length-1].action;
+    } else {
+      btn.title = 'لا توجد عمليات للتراجع';
+    }
+  }
+  var rbtn = document.getElementById('redoBtn');
+  if(rbtn){
+    rbtn.disabled = REDO_STACK.length === 0;
+    rbtn.style.opacity = REDO_STACK.length === 0 ? '.4' : '1';
+  }
+}
+
+function undoLast(){
+  if(UNDO_STACK.length === 0){ toast('لا توجد عمليات للتراجع'); return; }
+  var snap = UNDO_STACK.pop();
+  // قبل التراجع، احفظ الحالة الحالية في redo
+  var currentSnap = {
+    ts: Date.now(),
+    action: 'إعادة: ' + snap.action,
+    user: CRN || 'نظام',
+    months: JSON.parse(JSON.stringify(S.months || {})),
+    monthlyEmps: JSON.parse(JSON.stringify(S.monthlyEmps || [])),
+    dailyEmps: JSON.parse(JSON.stringify(S.dailyEmps || [])),
+    suppliers: JSON.parse(JSON.stringify(S.suppliers || [])),
+    lockedMonths: JSON.parse(JSON.stringify(S.lockedMonths || [])),
+    activeKey: S.activeKey
+  };
+  REDO_STACK.push(currentSnap);
+
+  // طبّق الـ snapshot
+  S.months = snap.months;
+  S.monthlyEmps = snap.monthlyEmps;
+  S.dailyEmps = snap.dailyEmps;
+  S.suppliers = snap.suppliers;
+  S.lockedMonths = snap.lockedMonths;
+  S.activeKey = snap.activeKey;
+
+  _undoSuppressNext = true; // لا تُسجّل snapshot لـ saveAll الناتج
+  try {
+    if(typeof buildMonthSel === 'function') buildMonthSel();
+    var mSel = document.getElementById('monthSel');
+    if(mSel) mSel.value = S.activeKey;
+    if(typeof renderRevTable === 'function') renderRevTable();
+    if(typeof initSalTables === 'function') initSalTables();
+    if(typeof renderAll === 'function') renderAll();
+    saveAll();
+  } catch(e){ console.warn('undo apply:', e); }
+  updateUndoUI();
+  toast('↶ تم التراجع: ' + snap.action);
+  log('تراجع: ' + snap.action);
+}
+
+function redoLast(){
+  if(REDO_STACK.length === 0){ toast('لا توجد عمليات للإعادة'); return; }
+  var snap = REDO_STACK.pop();
+  // قبل الإعادة، احفظ الحالة الحالية في undo
+  var currentSnap = {
+    ts: Date.now(),
+    action: snap.action.replace(/^إعادة: /, ''),
+    user: CRN || 'نظام',
+    months: JSON.parse(JSON.stringify(S.months || {})),
+    monthlyEmps: JSON.parse(JSON.stringify(S.monthlyEmps || [])),
+    dailyEmps: JSON.parse(JSON.stringify(S.dailyEmps || [])),
+    suppliers: JSON.parse(JSON.stringify(S.suppliers || [])),
+    lockedMonths: JSON.parse(JSON.stringify(S.lockedMonths || [])),
+    activeKey: S.activeKey
+  };
+  UNDO_STACK.push(currentSnap);
+
+  S.months = snap.months;
+  S.monthlyEmps = snap.monthlyEmps;
+  S.dailyEmps = snap.dailyEmps;
+  S.suppliers = snap.suppliers;
+  S.lockedMonths = snap.lockedMonths;
+  S.activeKey = snap.activeKey;
+
+  _undoSuppressNext = true;
+  try {
+    if(typeof renderRevTable === 'function') renderRevTable();
+    if(typeof initSalTables === 'function') initSalTables();
+    if(typeof renderAll === 'function') renderAll();
+    saveAll();
+  } catch(e){}
+  updateUndoUI();
+  toast('↷ تم إعادة العملية');
+}
+
+// اختصار لوحة المفاتيح Ctrl/Cmd+Z و Ctrl/Cmd+Y
+document.addEventListener('keydown', function(e){
+  if((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z'){
+    e.preventDefault(); undoLast();
+  }
+  if((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))){
+    e.preventDefault(); redoLast();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
    v36: محرك مزامنة محصّن — قائمة انتظار + CAS + validation + persistence
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -12238,9 +12377,7 @@ function buildSnapshot(){
     device: navigator.userAgent.slice(0, 60),
     seq: parseInt(safeLS.getItem('rh_push_seq') || '0', 10) + 1
   };
-  // checksum: hash بسيط لكشف التلف
-  try { snap._checksum = _simpleHash(JSON.stringify(snap.months) + JSON.stringify(snap.suppliers)); }
-  catch(e){ snap._checksum = 0; }
+  // v38: حُذف _checksum (كان يفشل false positive بعد رحلة JSONB)
   return snap;
 }
 
@@ -12258,18 +12395,12 @@ function _simpleHash(str){
 function validateSnapshot(snap){
   if(!snap || typeof snap !== 'object') return { ok: false, error: 'snapshot ليس كائناً' };
   if(!snap.months || typeof snap.months !== 'object') return { ok: false, error: 'months مفقود' };
-  if(!Array.isArray(snap.suppliers)) return { ok: false, error: 'suppliers ليس مصفوفة' };
-  if(!Array.isArray(snap.monthlyEmps)) return { ok: false, error: 'monthlyEmps ليس مصفوفة' };
-  if(!Array.isArray(snap.dailyEmps)) return { ok: false, error: 'dailyEmps ليس مصفوفة' };
-  // تحقّق checksum إن وُجد
-  if(snap._checksum !== undefined){
-    try {
-      var expected = _simpleHash(JSON.stringify(snap.months) + JSON.stringify(snap.suppliers));
-      if(expected !== snap._checksum){
-        return { ok: false, error: 'checksum غير متطابق — البيانات تالفة' };
-      }
-    } catch(e){}
-  }
+  if(!Array.isArray(snap.suppliers || [])) return { ok: false, error: 'suppliers ليس مصفوفة' };
+  if(!Array.isArray(snap.monthlyEmps || [])) return { ok: false, error: 'monthlyEmps ليس مصفوفة' };
+  if(!Array.isArray(snap.dailyEmps || [])) return { ok: false, error: 'dailyEmps ليس مصفوفة' };
+  // v38: حُذف checksum check — كان يفشل false positive لأن JSON.stringify
+  // يعطي ترتيب مفاتيح مختلف بعد رحلة Supabase JSONB
+  // الفحص البنيوي أدناه كافٍ
   // كل شهر يجب أن يحتوي sales كمصفوفة
   var keys = Object.keys(snap.months);
   for(var i = 0; i < keys.length; i++){
