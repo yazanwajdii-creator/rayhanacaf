@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V30 PRO</title>
+<title>ريحانة V31 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1887,7 +1887,7 @@ body.dark .ss-card{background:var(--surf)}
         </a>
       </div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v30</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v31</div>
   </div>
 </div>
 
@@ -2012,6 +2012,7 @@ body.dark .ss-card{background:var(--surf)}
   <div class="nav-tabs">
     <div class="nav-inner">
       <button class="ntab on" onclick="pg('dash',this)">📊 لوحة التحكم</button>
+      <button class="ntab" onclick="pg('today',this)">📆 اليوم</button>
       <button class="ntab" onclick="pg('rev',this)">💰 الإيرادات</button>
       <button class="ntab" onclick="pg('purch',this)">🛒 المشتريات</button>
       <button class="ntab" onclick="pg('supp',this)">📦 الموردون</button>
@@ -2533,6 +2534,77 @@ body.dark .ss-card{background:var(--surf)}
         </div>
       </div>
       <div class="card"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">📊</span>مؤشرات الأداء</div></div><div class="card-body" id="kpiBox"></div></div>
+    </div>
+
+    <!-- ═══════════ v31: شاشة "اليوم" — إدخال سريع موحَّد ═══════════ -->
+    <div id="today" class="pg">
+      <!-- بطاقة التاريخ + المناسبة -->
+      <div class="card" id="todayHeaderCard">
+        <div class="card-body" style="padding:14px">
+          <div id="todayDateBig" style="font-size:18px;font-weight:700;color:var(--tx);text-align:center">—</div>
+          <div id="todayHijri" style="font-size:13px;color:var(--tx3);text-align:center;margin-top:4px">—</div>
+          <div id="todayHolidayBadge" style="display:none;margin-top:10px"></div>
+        </div>
+      </div>
+
+      <!-- إيراد اليوم -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">💰</span>إيراد اليوم</div></div>
+        <div class="card-body" style="padding:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <label style="display:block">
+              <div style="font-size:11px;color:var(--tx3);margin-bottom:4px">💵 نقدي</div>
+              <input type="number" id="tdy_cash" class="inp" placeholder="0.000" step="0.001" min="0" inputmode="decimal" style="font-size:18px;font-weight:700;text-align:center;height:48px" oninput="todayUpdSummary()">
+            </label>
+            <label style="display:block">
+              <div style="font-size:11px;color:var(--tx3);margin-bottom:4px">💳 فيزا</div>
+              <input type="number" id="tdy_visa" class="inp" placeholder="0.000" step="0.001" min="0" inputmode="decimal" style="font-size:18px;font-weight:700;text-align:center;height:48px" oninput="todayUpdSummary()">
+            </label>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:var(--tx3);margin-bottom:4px">💸 مدفوعات اليوم (أجور)</div>
+            <input type="number" id="tdy_pmts" class="inp" placeholder="0.000" step="0.001" min="0" inputmode="decimal" style="font-size:16px;text-align:center;height:42px" oninput="todayUpdSummary()">
+          </div>
+
+          <!-- Chips العاملات -->
+          <div style="margin-bottom:8px">
+            <div style="font-size:12px;color:var(--tx3);margin-bottom:6px">👥 العاملات الحاضرات اليوم (اضغط للإضافة/الإزالة):</div>
+            <div id="tdy_chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="text" id="tdy_newName" class="inp" placeholder="اسم جديد..." style="flex:1;font-size:13px;height:36px" onkeydown="if(event.key==='Enter'){event.preventDefault();todayAddNewName();}">
+              <button class="btn btn-ghost" onclick="todayAddNewName()" style="height:36px;padding:0 12px">+</button>
+              <button class="btn btn-ghost" onclick="todayVoiceInput('tdy_newName')" title="إدخال صوتي" style="height:36px;padding:0 10px">🎤</button>
+            </div>
+          </div>
+
+          <!-- استلم الإيراد -->
+          <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:var(--tx3);margin-bottom:4px">🧑‍💼 استلم الإيراد</div>
+            <select id="tdy_receivedBy" class="inp" style="height:40px">
+              <option value="">— اختر —</option>
+              <option value="يزن">يزن</option>
+              <option value="عبدالرحمن">عبدالرحمن</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- مشتريات اليوم -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-y">🛒</span>مشتريات اليوم</div></div>
+        <div class="card-body" style="padding:14px">
+          <div id="tdy_purchList"></div>
+          <button class="btn btn-ghost btn-full" onclick="todayAddPurchRow()" style="margin-top:8px">➕ إضافة مشترى</button>
+        </div>
+      </div>
+
+      <!-- ملخص + حفظ -->
+      <div class="card" style="position:sticky;bottom:8px;z-index:50;background:linear-gradient(180deg,var(--surf),var(--surf2))">
+        <div class="card-body" style="padding:12px">
+          <div id="tdy_summary" style="font-size:13px;text-align:center;color:var(--tx2);margin-bottom:10px">—</div>
+          <button class="btn btn-p btn-full" onclick="todaySaveAll()" style="font-size:16px;height:50px;font-weight:700">💾 حفظ كل بيانات اليوم</button>
+        </div>
+      </div>
     </div>
 
     <!-- REVENUE -->
@@ -3747,7 +3819,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v30';
+      const CACHE_NAME = 'rayhana-v31';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -6071,7 +6143,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v30',
+    version:'v31',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -6084,7 +6156,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v30_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v31_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
@@ -12151,6 +12223,517 @@ saveAll = function(){
 if(typeof supabase !== 'undefined'){
   setTimeout(supaInit, 500);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   v31: التقويم الأردني — عطل رسمية + هجرية + توقعات
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// عطل ميلادية ثابتة (شهر-يوم)
+var JO_HOLIDAYS_GREG = {
+  '01-01': { name: 'رأس السنة الميلادية', emoji: '🎉', closed: false },
+  '05-01': { name: 'عيد العمال', emoji: '⚒️', closed: true },
+  '05-25': { name: 'عيد الاستقلال الأردني', emoji: '🇯🇴', closed: true },
+  '12-25': { name: 'عيد الميلاد المجيد', emoji: '🎄', closed: false }
+};
+
+// عطل هجرية — نحدّدها بـ (شهر-يوم) في التقويم الإسلامي
+var JO_HOLIDAYS_HIJRI = [
+  { m: 1, d: 1, name: 'رأس السنة الهجرية', emoji: '🌙', closed: true },
+  { m: 1, d: 10, name: 'عاشوراء', emoji: '🕋', closed: false },
+  { m: 3, d: 12, name: 'المولد النبوي الشريف', emoji: '🕌', closed: true },
+  { m: 7, d: 27, name: 'الإسراء والمعراج', emoji: '✨', closed: false },
+  { m: 9, d: 1, name: 'بداية شهر رمضان', emoji: '🌙', closed: false },
+  { m: 10, d: 1, name: 'عيد الفطر (اليوم الأول)', emoji: '🎊', closed: true },
+  { m: 10, d: 2, name: 'عيد الفطر (اليوم الثاني)', emoji: '🎊', closed: true },
+  { m: 10, d: 3, name: 'عيد الفطر (اليوم الثالث)', emoji: '🎊', closed: true },
+  { m: 12, d: 9, name: 'يوم عرفة', emoji: '🕋', closed: false },
+  { m: 12, d: 10, name: 'عيد الأضحى المبارك (اليوم الأول)', emoji: '🐑', closed: true },
+  { m: 12, d: 11, name: 'عيد الأضحى (اليوم الثاني)', emoji: '🐑', closed: true },
+  { m: 12, d: 12, name: 'عيد الأضحى (اليوم الثالث)', emoji: '🐑', closed: true },
+  { m: 12, d: 13, name: 'عيد الأضحى (اليوم الرابع)', emoji: '🐑', closed: true }
+];
+
+// تحويل تاريخ ميلادي إلى هجري {y, m, d}
+function gregToHijri(date){
+  try {
+    var parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
+      year: 'numeric', month: 'numeric', day: 'numeric'
+    }).formatToParts(date);
+    var hp = {};
+    parts.forEach(function(p){
+      if(p.type === 'year') hp.y = parseInt(p.value);
+      else if(p.type === 'month') hp.m = parseInt(p.value);
+      else if(p.type === 'day') hp.d = parseInt(p.value);
+    });
+    return hp;
+  } catch(e){
+    // fallback: islamic بدون umalqura
+    try {
+      var parts2 = new Intl.DateTimeFormat('en-u-ca-islamic', {
+        year: 'numeric', month: 'numeric', day: 'numeric'
+      }).formatToParts(date);
+      var hp2 = {};
+      parts2.forEach(function(p){
+        if(p.type === 'year') hp2.y = parseInt(p.value);
+        else if(p.type === 'month') hp2.m = parseInt(p.value);
+        else if(p.type === 'day') hp2.d = parseInt(p.value);
+      });
+      return hp2;
+    } catch(e2){ return null; }
+  }
+}
+
+// تنسيق هجري عربي
+var HIJRI_MONTHS = ['','محرم','صفر','ربيع الأول','ربيع الآخر','جمادى الأولى','جمادى الآخرة','رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'];
+function formatHijri(date){
+  var h = gregToHijri(date);
+  if(!h) return '';
+  return h.d + ' ' + (HIJRI_MONTHS[h.m] || '') + ' ' + h.y + ' هـ';
+}
+
+// يفحص إذا كان التاريخ عطلة (ميلادية أو هجرية)
+function getHolidayInfo(date){
+  var mm = String(date.getMonth() + 1).padStart(2, '0');
+  var dd = String(date.getDate()).padStart(2, '0');
+  var key = mm + '-' + dd;
+  if(JO_HOLIDAYS_GREG[key]) return JO_HOLIDAYS_GREG[key];
+  var h = gregToHijri(date);
+  if(h){
+    for(var i = 0; i < JO_HOLIDAYS_HIJRI.length; i++){
+      var hh = JO_HOLIDAYS_HIJRI[i];
+      if(h.m === hh.m && h.d === hh.d) return hh;
+    }
+  }
+  return null;
+}
+
+// يجد أقرب عطلة قادمة خلال N يوم
+function getUpcomingHoliday(fromDate, withinDays){
+  withinDays = withinDays || 14;
+  for(var i = 1; i <= withinDays; i++){
+    var d = new Date(fromDate.getTime() + i * 86400000);
+    var info = getHolidayInfo(d);
+    if(info){
+      return { date: d, daysUntil: i, info: info };
+    }
+  }
+  return null;
+}
+
+// ينشئ HTML لشارة العطلة (لرأس التطبيق + شاشة اليوم)
+function buildHolidayBadge(date){
+  date = date || new Date();
+  var today = getHolidayInfo(date);
+  var tomorrow = getHolidayInfo(new Date(date.getTime() + 86400000));
+  var upcoming = getUpcomingHoliday(date, 7);
+
+  if(today){
+    var bg = today.closed ? 'linear-gradient(135deg,#1A5C28,#2A7A3A)' : 'linear-gradient(135deg,#C17F24,#D97706)';
+    return '<div style="background:' + bg + ';color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;text-align:center;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15)">' +
+           today.emoji + ' ' + esc(today.name) +
+           (today.closed ? ' · 🚫 المحل عادةً مغلق' : '') +
+           '</div>';
+  }
+  if(tomorrow){
+    return '<div style="background:linear-gradient(135deg,#7C3AED,#A855F7);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;text-align:center;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.15)">' +
+           '⏰ غداً: ' + tomorrow.emoji + ' ' + esc(tomorrow.name) +
+           '</div>';
+  }
+  if(upcoming && upcoming.daysUntil <= 7){
+    return '<div style="background:linear-gradient(135deg,#0EA5E9,#0284C7);color:#fff;padding:10px 14px;border-radius:10px;font-weight:600;text-align:center;font-size:13px">' +
+           '📅 بعد ' + upcoming.daysUntil + ' يوم: ' + upcoming.info.emoji + ' ' + esc(upcoming.info.name) +
+           '</div>';
+  }
+  return '';
+}
+
+// يحقن شارة المناسبة في رأس التطبيق (تحت الـ header مباشرة)
+function injectHolidayBadge(){
+  try {
+    var existing = document.getElementById('rhHolidayBadge');
+    if(existing) existing.remove();
+    var html = buildHolidayBadge();
+    if(!html) return;
+    var holder = document.createElement('div');
+    holder.id = 'rhHolidayBadge';
+    holder.style.cssText = 'padding:6px 10px 0';
+    holder.innerHTML = html;
+    var app = document.getElementById('app');
+    var main = app ? app.querySelector('.main') : null;
+    if(main) main.insertBefore(holder, main.firstChild);
+  } catch(e){ console.warn('injectHolidayBadge:', e); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   v31: شاشة "اليوم" — إدخال سريع
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var _todayDayNum = 0; // اليوم الحالي من الشهر النشط
+var _todayPurchRows = []; // مشتريات اليوم المعلَّقة
+
+function todayPgInit(){
+  var today = new Date();
+  _todayDayNum = today.getDate();
+
+  // عرض التاريخ
+  var bigEl = document.getElementById('todayDateBig');
+  if(bigEl){
+    var arDays = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+    var arMonths = MN; // من المتغيرات الموجودة
+    bigEl.textContent = arDays[today.getDay()] + ' · ' + today.getDate() + ' ' + arMonths[today.getMonth()] + ' ' + today.getFullYear();
+  }
+  var hijriEl = document.getElementById('todayHijri');
+  if(hijriEl) hijriEl.textContent = '🕋 ' + formatHijri(today);
+
+  // شارة العطلة في شاشة اليوم
+  var badgeEl = document.getElementById('todayHolidayBadge');
+  if(badgeEl){
+    var badge = buildHolidayBadge(today);
+    badgeEl.innerHTML = badge;
+    badgeEl.style.display = badge ? 'block' : 'none';
+  }
+
+  // تحميل بيانات اليوم الحالي إن وُجدت
+  var d = G();
+  var sale = (d.sales || []).find(function(s){ return s.day === _todayDayNum; }) || {};
+  var cashEl = document.getElementById('tdy_cash');
+  var visaEl = document.getElementById('tdy_visa');
+  var pmtsEl = document.getElementById('tdy_pmts');
+  var recvEl = document.getElementById('tdy_receivedBy');
+  if(cashEl) cashEl.value = sale.cash || '';
+  if(visaEl) visaEl.value = sale.visa || '';
+  if(pmtsEl) pmtsEl.value = sale.pmts || '';
+  if(recvEl) recvEl.value = sale.receivedBy || '';
+
+  // بناء الـ chips من ملاحظات اليوم + الأيام السابقة
+  todayBuildChips(sale.notes || '');
+
+  // تحميل مشتريات اليوم
+  _todayPurchRows = [];
+  var todayStr = today.toISOString().slice(0, 10);
+  (d.purchases || []).forEach(function(p, idx){
+    if(p.date === todayStr){
+      _todayPurchRows.push(Object.assign({_origIdx: idx}, p));
+    }
+  });
+  todayRenderPurch();
+  todayUpdSummary();
+}
+
+// chips ذكية: تجمع أسماء آخر 30 يوم من ملاحظات الإيرادات
+function todayBuildChips(currentNotes){
+  var chipsEl = document.getElementById('tdy_chips');
+  if(!chipsEl) return;
+
+  // الأسماء المُختارة لليوم
+  var selected = currentNotes ? currentNotes.split(/[+,،]|\s+و\s+/g)
+    .map(function(n){ return n.replace(/\s+/g,' ').trim(); })
+    .filter(Boolean) : [];
+
+  // جمع كل الأسماء من الأشهر الأخيرة (آخر 60 يوم)
+  var allNames = {};
+  var monthKeys = Object.keys(S.months || {}).sort().slice(-3);
+  monthKeys.forEach(function(k){
+    var m = S.months[k];
+    if(!m || !m.sales) return;
+    m.sales.forEach(function(s){
+      if(!s.notes) return;
+      var names = String(s.notes).split(/[+,،]|\s+و\s+/g)
+        .map(function(n){ return n.replace(/\s+/g,' ').trim(); })
+        .filter(function(n){ return n && n.length >= 2 && !/^\d+$/.test(n); });
+      names.forEach(function(n){ allNames[n] = (allNames[n] || 0) + 1; });
+    });
+  });
+
+  // ترتيب حسب التكرار
+  var sortedNames = Object.keys(allNames).sort(function(a, b){
+    return allNames[b] - allNames[a];
+  }).slice(0, 20); // أعلى 20 اسم
+
+  // ضمان وجود المحدّدين حتى لو غير شائعين
+  selected.forEach(function(n){
+    if(sortedNames.indexOf(n) === -1) sortedNames.unshift(n);
+  });
+
+  chipsEl.innerHTML = '';
+  sortedNames.forEach(function(name){
+    var isSel = selected.indexOf(name) !== -1;
+    var chip = document.createElement('button');
+    chip.type = 'button';
+    chip.textContent = (isSel ? '✓ ' : '') + name;
+    chip.dataset.name = name;
+    chip.dataset.selected = isSel ? '1' : '0';
+    chip.style.cssText = 'padding:6px 12px;border-radius:18px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid ' +
+      (isSel ? 'var(--primary)' : 'var(--br)') +
+      ';background:' + (isSel ? 'var(--primary-bg)' : 'var(--surf2)') +
+      ';color:' + (isSel ? 'var(--primary)' : 'var(--tx2)') +
+      ';transition:all .15s';
+    chip.onclick = function(){
+      var s = this.dataset.selected === '1';
+      this.dataset.selected = s ? '0' : '1';
+      this.textContent = (s ? '' : '✓ ') + this.dataset.name;
+      this.style.borderColor = s ? 'var(--br)' : 'var(--primary)';
+      this.style.background = s ? 'var(--surf2)' : 'var(--primary-bg)';
+      this.style.color = s ? 'var(--tx2)' : 'var(--primary)';
+      todayUpdSummary();
+    };
+    chipsEl.appendChild(chip);
+  });
+}
+
+function todayGetSelectedNames(){
+  var chipsEl = document.getElementById('tdy_chips');
+  if(!chipsEl) return [];
+  return Array.from(chipsEl.querySelectorAll('button[data-selected="1"]'))
+    .map(function(b){ return b.dataset.name; });
+}
+
+function todayAddNewName(){
+  var inp = document.getElementById('tdy_newName');
+  if(!inp || !inp.value.trim()) return;
+  var name = inp.value.trim();
+  var chipsEl = document.getElementById('tdy_chips');
+  if(!chipsEl) return;
+  // إن وُجد بالفعل، فقط حدّده
+  var existing = chipsEl.querySelector('button[data-name="' + name + '"]');
+  if(existing){
+    if(existing.dataset.selected !== '1') existing.click();
+    inp.value = '';
+    return;
+  }
+  // إضافة جديد مُحدَّد
+  var chip = document.createElement('button');
+  chip.type = 'button';
+  chip.textContent = '✓ ' + name;
+  chip.dataset.name = name;
+  chip.dataset.selected = '1';
+  chip.style.cssText = 'padding:6px 12px;border-radius:18px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--primary);background:var(--primary-bg);color:var(--primary)';
+  chip.onclick = function(){
+    var s = this.dataset.selected === '1';
+    this.dataset.selected = s ? '0' : '1';
+    this.textContent = (s ? '' : '✓ ') + this.dataset.name;
+    this.style.borderColor = s ? 'var(--br)' : 'var(--primary)';
+    this.style.background = s ? 'var(--surf2)' : 'var(--primary-bg)';
+    this.style.color = s ? 'var(--tx2)' : 'var(--primary)';
+    todayUpdSummary();
+  };
+  chipsEl.insertBefore(chip, chipsEl.firstChild);
+  inp.value = '';
+  todayUpdSummary();
+}
+
+function todayAddPurchRow(item){
+  item = item || { sId: '', sName: '', cat: 'COGS', desc: '', amt: '', buyer: '' };
+  _todayPurchRows.push(item);
+  todayRenderPurch();
+}
+
+function todayDelPurchRow(idx){
+  _todayPurchRows.splice(idx, 1);
+  todayRenderPurch();
+  todayUpdSummary();
+}
+
+function todayUpdPurchRow(idx, field, val){
+  if(!_todayPurchRows[idx]) return;
+  _todayPurchRows[idx][field] = val;
+  if(field === 'sId'){
+    var supp = (S.suppliers || []).find(function(s){ return s.id === val; });
+    _todayPurchRows[idx].sName = supp ? supp.name : '';
+  }
+  todayUpdSummary();
+}
+
+function todayRenderPurch(){
+  var list = document.getElementById('tdy_purchList');
+  if(!list) return;
+  if(_todayPurchRows.length === 0){
+    list.innerHTML = '<div class="alert al-i" style="margin:4px 0">لا توجد مشتريات اليوم بعد. اضغط "إضافة مشترى".</div>';
+    return;
+  }
+  var html = '';
+  _todayPurchRows.forEach(function(p, i){
+    var suppOptions = '<option value="">— مورد —</option>' +
+      (S.suppliers || []).map(function(s){
+        return '<option value="' + s.id + '"' + (p.sId === s.id ? ' selected' : '') + '>' + esc(s.name) + '</option>';
+      }).join('');
+    html += '<div style="display:grid;grid-template-columns:1fr 80px 80px 28px;gap:5px;margin-bottom:6px;align-items:center;padding:8px;background:var(--surf2);border-radius:8px;border:1px solid var(--br)">' +
+      '<div style="display:flex;flex-direction:column;gap:4px">' +
+        '<select class="inp" style="font-size:12px;height:32px;padding:2px 6px" onchange="todayUpdPurchRow(' + i + ',\'sId\',this.value)">' + suppOptions + '</select>' +
+        '<input type="text" class="inp" placeholder="وصف" value="' + esc(p.desc || '') + '" style="font-size:12px;height:30px;padding:2px 6px" oninput="todayUpdPurchRow(' + i + ',\'desc\',this.value)">' +
+      '</div>' +
+      '<input type="number" step="0.001" min="0" class="inp" placeholder="مبلغ" value="' + (p.amt || '') + '" inputmode="decimal" style="font-size:14px;font-weight:700;text-align:center;height:68px" oninput="todayUpdPurchRow(' + i + ',\'amt\',this.value)">' +
+      '<select class="inp" style="font-size:12px;height:68px;text-align:center" onchange="todayUpdPurchRow(' + i + ',\'buyer\',this.value)">' +
+        '<option value="">— مشتري —</option>' +
+        '<option value="يزن"' + (p.buyer === 'يزن' ? ' selected' : '') + '>يزن</option>' +
+        '<option value="عبدالرحمن"' + (p.buyer === 'عبدالرحمن' ? ' selected' : '') + '>عبدالرحمن</option>' +
+      '</select>' +
+      '<button class="btn" style="background:var(--rd);color:#fff;width:28px;height:68px;padding:0;border:none;border-radius:6px;font-size:18px;cursor:pointer" onclick="todayDelPurchRow(' + i + ')">×</button>' +
+    '</div>';
+  });
+  list.innerHTML = html;
+}
+
+function todayUpdSummary(){
+  var sumEl = document.getElementById('tdy_summary');
+  if(!sumEl) return;
+  var cash = parseFloat(document.getElementById('tdy_cash').value) || 0;
+  var visa = parseFloat(document.getElementById('tdy_visa').value) || 0;
+  var pmts = parseFloat(document.getElementById('tdy_pmts').value) || 0;
+  var purchT = _todayPurchRows.reduce(function(s, p){ return s + (parseFloat(p.amt) || 0); }, 0);
+  var netSales = cash + visa;
+  var profit = netSales - purchT;
+  var names = todayGetSelectedNames();
+  sumEl.innerHTML =
+    '<div>إيراد: <b style="color:var(--gn)">' + n3(netSales) + '</b> - مشتريات: <b style="color:var(--rd)">' + n3(purchT) + '</b> = صافي: <b style="color:var(--primary)">' + n3(profit) + '</b> JD</div>' +
+    (names.length ? '<div style="font-size:11px;color:var(--tx3);margin-top:3px">👥 ' + esc(names.join(' + ')) + '</div>' : '');
+}
+
+function todaySaveAll(){
+  if(CR !== 'manager'){ toast('⚠️ صلاحية المدير'); return; }
+  if(isLocked()){ toast('🔒 الشهر مغلق'); return; }
+
+  var today = new Date();
+  var todayStr = today.toISOString().slice(0, 10);
+  var dayNum = today.getDate();
+  var activeMonthKey = today.toISOString().slice(0, 7);
+
+  // تحقّق أن الشهر النشط = الشهر الحالي
+  if(S.activeKey !== activeMonthKey){
+    if(!confirm('الشهر النشط هو ' + S.activeKey + ' وليس ' + activeMonthKey + '. سأبدّل للشهر الحالي. متابعة؟')){ return; }
+    S.activeKey = activeMonthKey;
+    getMonth(activeMonthKey);
+  }
+
+  var d = G();
+  // 1. حفظ الإيراد
+  var sale = (d.sales || []).find(function(s){ return s.day === dayNum; });
+  if(!sale){
+    if(!d.sales) d.sales = [];
+    sale = { day: dayNum, cash: 0, visa: 0, pmts: 0, notes: '' };
+    d.sales.push(sale);
+    d.sales.sort(function(a, b){ return a.day - b.day; });
+  }
+  sale.cash = parseFloat(document.getElementById('tdy_cash').value) || 0;
+  sale.visa = parseFloat(document.getElementById('tdy_visa').value) || 0;
+  sale.pmts = parseFloat(document.getElementById('tdy_pmts').value) || 0;
+  sale.receivedBy = document.getElementById('tdy_receivedBy').value || '';
+  var names = todayGetSelectedNames();
+  sale.notes = names.join(' + ');
+
+  // 2. حفظ المشتريات الجديدة
+  if(!d.purchases) d.purchases = [];
+  // احذف القديمة لهذا اليوم أولاً (إن كانت موجودة سابقاً من todayPgInit)
+  d.purchases = d.purchases.filter(function(p, idx){
+    return p.date !== todayStr || _todayPurchRows.some(function(r){ return r._origIdx === idx; });
+  });
+  // أضف الجديدة فقط
+  _todayPurchRows.forEach(function(r){
+    var amt = parseFloat(r.amt) || 0;
+    if(amt <= 0 || !r.sId) return; // تخطّى الفارغة
+    var supp = (S.suppliers || []).find(function(s){ return s.id === r.sId; });
+    var existing = r._origIdx !== undefined ? d.purchases[r._origIdx] : null;
+    if(existing){
+      existing.sId = r.sId;
+      existing.sName = supp ? supp.name : r.sName;
+      existing.cat = r.cat || 'COGS';
+      existing.desc = r.desc || '';
+      existing.amt = amt;
+      existing.buyer = r.buyer || '';
+    } else {
+      d.purchases.push({
+        date: todayStr,
+        sId: r.sId,
+        sName: supp ? supp.name : '',
+        cat: r.cat || 'COGS',
+        desc: r.desc || '',
+        amt: amt,
+        inv: '',
+        buyer: r.buyer || ''
+      });
+    }
+  });
+
+  saveAll();
+  try { renderRevTable(); renderPurch(); updateDash(); } catch(e){}
+  toast('💾 تم حفظ بيانات اليوم بنجاح');
+  todayPgInit(); // أعد التحميل لتعكس التغييرات
+}
+
+// إدخال صوتي للحقل المحدّد
+function todayVoiceInput(targetId){
+  var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRec){
+    toast('⚠️ المتصفح لا يدعم التعرّف الصوتي');
+    return;
+  }
+  var rec = new SpeechRec();
+  rec.lang = 'ar-JO';
+  rec.continuous = false;
+  rec.interimResults = false;
+  toast('🎤 تحدّث الآن...');
+  rec.onresult = function(e){
+    var transcript = e.results[0][0].transcript.trim();
+    var target = document.getElementById(targetId);
+    if(target){
+      target.value = transcript;
+      target.focus();
+      // محاولة إضافة فورية إذا كان حقل اسم جديد
+      if(targetId === 'tdy_newName') todayAddNewName();
+    }
+  };
+  rec.onerror = function(e){ toast('❌ خطأ في التعرّف: ' + e.error); };
+  rec.start();
+}
+
+// تشغيل تلقائي عند فتح تبويب "اليوم"
+(function(){
+  var oldPg = window.pg;
+  if(typeof oldPg === 'function'){
+    window.pg = function(id, btn){
+      oldPg(id, btn);
+      if(id === 'today') setTimeout(todayPgInit, 50);
+    };
+  }
+})();
+
+// شارة المناسبة عند تسجيل الدخول
+(function(){
+  var oldDoLogin = window.doLogin;
+  if(typeof oldDoLogin === 'function'){
+    window.doLogin = function(role){
+      oldDoLogin(role);
+      setTimeout(injectHolidayBadge, 1500);
+    };
+  }
+})();
+
+// تلوين الأيام في جدول الإيرادات حسب التقويم
+(function(){
+  var oldRender = window.renderRevTable;
+  if(typeof oldRender !== 'function') return;
+  window.renderRevTable = function(){
+    oldRender.apply(this, arguments);
+    try {
+      var [y, m] = S.activeKey.split('-');
+      var rows = document.querySelectorAll('#revBody tr');
+      rows.forEach(function(tr, i){
+        var dayNum = i + 1;
+        var date = new Date(parseInt(y), parseInt(m) - 1, dayNum);
+        if(isNaN(date.getTime())) return;
+        var info = getHolidayInfo(date);
+        if(info){
+          tr.style.background = info.closed ? 'rgba(193,127,36,.08)' : 'rgba(14,165,233,.06)';
+          var firstTd = tr.querySelector('td');
+          if(firstTd && !firstTd.querySelector('.hol-mark')){
+            firstTd.insertAdjacentHTML('beforeend',
+              ' <span class="hol-mark" title="' + esc(info.name) + '" style="font-size:11px">' + info.emoji + '</span>');
+          }
+        }
+      });
+    } catch(e){ console.warn('rev holiday paint:', e); }
+  };
+})();
 
 </script>
 </body>
