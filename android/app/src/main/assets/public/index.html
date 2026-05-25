@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V32 PRO</title>
+<title>ريحانة V33 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1887,7 +1887,7 @@ body.dark .ss-card{background:var(--surf)}
         </a>
       </div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v32</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v33</div>
   </div>
 </div>
 
@@ -3841,7 +3841,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v32';
+      const CACHE_NAME = 'rayhana-v33';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -5478,9 +5478,12 @@ function renderObligList(){
   const c=$("obligList");if(!c)return;
   const locked=isLocked();
   c.innerHTML=G().obligations.map((o,i)=>`<div class="obl-row ${o.paid?"paid":""}">
-    <div class="obl-info"><div class="obl-name">${o.name}</div><div class="obl-meta"><span class="num">${n3(o.amt)}</span> JD${o.due?" | "+o.due:""}</div></div>
+    <div class="obl-info">
+      <div class="obl-name">${esc(o.name)}</div>
+      <div class="obl-meta"><span class="num">${n3(o.amt)}</span> JD${o.due?" | "+esc(o.due):""}${o.paid&&o.paidBy?' | 💵 دفعه <strong style="color:var(--gn)">'+esc(o.paidBy)+'</strong>':''}</div>
+    </div>
     <span class="badge ${o.paid?"bg-ok":"bg-e"}">${o.paid?"✅ مدفوع":"❌ غير مدفوع"}</span>
-    <button class="obl-toggle ${o.paid?"ps":""}" onclick="toggleOblig(${i})" ${locked?"disabled":""} title="${locked?"الشهر مغلق":""}">${o.paid?"✅":"❌"}</button>
+    <button class="obl-toggle ${o.paid?"ps":""}" onclick="toggleOblig(${i})" ${locked?"disabled":""} title="${locked?"الشهر مغلق":(o.paid?"اضغط لإلغاء الدفع":"اضغط لتأكيد الدفع")}">${o.paid?"✅":"❌"}</button>
     <div style="display:flex;gap:5px"><button class="btn btn-ghost btn-xs" onclick="editOblig(${i})">✏️</button><button class="btn btn-r btn-xs del-btn" onclick="delOblig(${i})">🗑️</button></div>
   </div>`).join("");
   const obls=G().obligations;
@@ -5491,14 +5494,31 @@ function renderObligList(){
 }
 function toggleOblig(i){
   if(isLocked()){toast("🔒 الشهر مغلق");return;}
-  const o=G().obligations[i];o.paid=!o.paid;
+  const o=G().obligations[i];
+  // v33: عند التحويل لـ "مدفوع" نسأل عن من دفع
+  if(!o.paid){
+    askPaidBy('من دفع "'+o.name+'"؟', function(payer){
+      if(!payer) return;
+      o.paid = true;
+      o.paidBy = payer;
+      o.paidAt = new Date().toISOString();
+      renderObligList(); updateDash(); calcCash(); updateRpt(); saveAll();
+      log('تسديد التزام — '+o.name+' بواسطة '+payer);
+      toast('✅ '+o.name+' — دفعه '+payer);
+    });
+    return;
+  }
+  // إلغاء الدفع
+  o.paid = false;
+  delete o.paidBy;
+  delete o.paidAt;
   renderObligList();
-  updateDash();  // ✅ تحديث فوري للوحة التحكم
-  calcCash();    // ✅ تحديث فوري للصندوق
-  updateRpt();   // ✅ تحديث فوري للتقارير
+  updateDash();
+  calcCash();
+  updateRpt();
   saveAll();
-  log(`${o.paid?"تسديد":"إلغاء"} التزام — ${o.name}`);
-  toast(o.paid?`✅ ${o.name} — مدفوع`:`❌ ${o.name} — غير مدفوع`);
+  log('إلغاء التزام — '+o.name);
+  toast('❌ '+o.name+' — غير مدفوع');
 }
 function editOblig(i){const o=G().obligations[i];$("oblTit").textContent="✏️ تعديل الالتزام";$("oblEI").value=i;$("oName").value=o.name;$("oAmt").value=o.amt;$("oDue").value=o.due||"";openMo("moOblig");}
 function saveOblig(){
@@ -5517,7 +5537,7 @@ function delOblig(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير"
 /* SALARIES */
 function initSalTables(){
   const d=G(),mb=$("mSalBody");
-  if(mb){mb.innerHTML="";S.monthlyEmps.forEach(e=>{const sal=d.mSal[e.id]||{base:0,allow:0,ded:0,paid:false};const isPaid=sal.paid||false;const tr=document.createElement("tr");tr.innerHTML=`<td style="font-weight:700">${e.name}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_b" value="${sal.base||""}" placeholder="0" onchange="calcSal()"></td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_a" value="${sal.allow||""}" placeholder="0" onchange="calcSal()"></td><td class="td-y num" id="ms_${e.id}_g">${n3((sal.base||0)+(sal.allow||0))}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_d" value="${sal.ded||""}" placeholder="0" onchange="calcSal()"></td><td class="td-r num" id="ms_${e.id}_av">${n3(pendAdv(e.id))}</td><td class="td-g num" id="ms_${e.id}_n">${n3((sal.base||0)+(sal.allow||0)-(sal.ded||0)-pendAdv(e.id))}</td><td style="text-align:center"><button class="obl-toggle ${isPaid?'ps':''}" id="salpay_${e.id}" onclick="toggleSalPaid('${e.id}')" style="width:44px;height:36px;font-size:18px" title="${isPaid?'مدفوع — اضغط للإلغاء':'غير مدفوع — اضغط للتأكيد'}">${isPaid?'✅':'⏳'}</button></td>`;mb.appendChild(tr);});}
+  if(mb){mb.innerHTML="";S.monthlyEmps.forEach(e=>{const sal=d.mSal[e.id]||{base:0,allow:0,ded:0,paid:false};const isPaid=sal.paid||false;const paidByLabel=isPaid&&sal.paidBy?'<div style="font-size:10px;color:var(--gn);margin-top:2px">💵 '+esc(sal.paidBy)+'</div>':'';const tr=document.createElement("tr");tr.innerHTML=`<td style="font-weight:700">${esc(e.name)}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_b" value="${sal.base||""}" placeholder="0" onchange="calcSal()"></td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_a" value="${sal.allow||""}" placeholder="0" onchange="calcSal()"></td><td class="td-y num" id="ms_${e.id}_g">${n3((sal.base||0)+(sal.allow||0))}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_d" value="${sal.ded||""}" placeholder="0" onchange="calcSal()"></td><td class="td-r num" id="ms_${e.id}_av">${n3(pendAdv(e.id))}</td><td class="td-g num" id="ms_${e.id}_n">${n3((sal.base||0)+(sal.allow||0)-(sal.ded||0)-pendAdv(e.id))}</td><td style="text-align:center"><button class="obl-toggle ${isPaid?'ps':''}" id="salpay_${e.id}" onclick="toggleSalPaid('${e.id}')" style="width:44px;height:36px;font-size:18px" title="${isPaid?'مدفوع — اضغط للإلغاء':'غير مدفوع — اضغط للتأكيد'}">${isPaid?'✅':'⏳'}</button>${paidByLabel}</td>`;mb.appendChild(tr);});}
   buildAttGrid();calcSal();
 }
 const pendAdv=empId=>G().advances.filter(a=>a.empId===empId&&(a.status==="مستحقة"||a.status==="مسددة جزئياً")).reduce((s,a)=>s+(a.amt||0),0);
@@ -5614,26 +5634,94 @@ function calcSal(){
   T("dwtotal",n3(dwT)+" JD");saveAll();
 }
 
-/* TOGGLE SALARY PAID — V24-3 FIX */
+/* TOGGLE SALARY PAID — V33: يسأل عن من دفع */
 function toggleSalPaid(empId){
   if(isLocked()){toast("🔒 الشهر مغلق");return;}
   var d=G();
   if(!d.mSal[empId])d.mSal[empId]={base:0,allow:0,ded:0,paid:false};
-  d.mSal[empId].paid=!d.mSal[empId].paid;
-  var isPaid=d.mSal[empId].paid;
-  var btn=document.getElementById("salpay_"+empId);
-  if(btn){
-    btn.textContent=isPaid?"✅":"⏳";
-    btn.className="obl-toggle"+(isPaid?" ps":"");
-    btn.title=isPaid?"مدفوع — اضغط للإلغاء":"غير مدفوع — اضغط للتأكيد";
+  var empName=S.monthlyEmps.find(function(e){return e.id===empId;});
+  var nameStr=empName?empName.name:empId;
+
+  // إذا كان غير مدفوع — اسأل عن من دفع
+  if(!d.mSal[empId].paid){
+    askPaidBy('من دفع راتب '+nameStr+'؟', function(payer){
+      if(!payer) return;
+      d.mSal[empId].paid = true;
+      d.mSal[empId].paidBy = payer;
+      d.mSal[empId].paidAt = new Date().toISOString();
+      _applySalPaidUI(empId, true);
+      var paidCount=S.monthlyEmps.filter(function(e){return(G().mSal[e.id]||{}).paid;}).length;
+      T("ms-paid-count",paidCount+"/"+S.monthlyEmps.length+" مدفوع");
+      toast('✅ راتب '+nameStr+' — دفعه '+payer);
+      log('دفع راتب '+nameStr+' بواسطة '+payer);
+      try{ initSalTables(); updateDash(); calcCash(); updateRpt(); saveAll(); }catch(e){}
+    });
+    return;
   }
-  // تحديث عداد المدفوع في footer
+
+  // إلغاء الدفع
+  d.mSal[empId].paid = false;
+  delete d.mSal[empId].paidBy;
+  delete d.mSal[empId].paidAt;
+  _applySalPaidUI(empId, false);
   var paidCount=S.monthlyEmps.filter(function(e){return(G().mSal[e.id]||{}).paid;}).length;
   T("ms-paid-count",paidCount+"/"+S.monthlyEmps.length+" مدفوع");
-  var empName=S.monthlyEmps.find(function(e){return e.id===empId;});
-  toast((isPaid?"✅ تم تسجيل دفع راتب ":"⏳ تم إلغاء تسجيل دفع راتب ")+(empName?empName.name:empId));
-  log((isPaid?"تسجيل دفع راتب ":"إلغاء دفع راتب ")+(empName?empName.name:empId));
+  toast('⏳ تم إلغاء دفع راتب '+nameStr);
+  log('إلغاء دفع راتب '+nameStr);
   updateDash();updateRpt();saveAll();
+}
+
+// v33: helper لتحديث زر دفع الراتب — مستخرج للقابلية للقراءة
+function _applySalPaidUI(empId, isPaid){
+  var btn = document.getElementById('salpay_' + empId);
+  if(btn){
+    btn.textContent = isPaid ? '✅' : '⏳';
+    btn.className = 'obl-toggle' + (isPaid ? ' ps' : '');
+    btn.title = isPaid ? 'مدفوع — اضغط للإلغاء' : 'غير مدفوع — اضغط للتأكيد';
+  }
+}
+
+// v33: modal لاختيار من دفع — يُستخدم في الالتزامات والرواتب
+// callback(payer) — payer هو 'يزن' أو 'عبدالرحمن' أو نص حر، null للإلغاء
+function askPaidBy(title, callback){
+  // إغلاق أي modal سابق
+  var existing = document.getElementById('askPaidByModal');
+  if(existing) existing.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'askPaidByModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML =
+    '<div style="background:var(--surf);border-radius:14px;padding:18px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4);direction:rtl">' +
+      '<div style="font-size:15px;font-weight:700;color:var(--tx);margin-bottom:14px;text-align:center">' + esc(title) + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px">' +
+        '<button class="askpb-btn" data-payer="يزن" style="padding:13px;border-radius:10px;border:1.5px solid var(--br);background:var(--surf2);color:var(--tx);font-weight:700;cursor:pointer;font-size:14px;font-family:inherit">👤 يزن</button>' +
+        '<button class="askpb-btn" data-payer="عبدالرحمن" style="padding:13px;border-radius:10px;border:1.5px solid var(--br);background:var(--surf2);color:var(--tx);font-weight:700;cursor:pointer;font-size:14px;font-family:inherit">👤 عبدالرحمن</button>' +
+        '<div style="display:flex;gap:6px;margin-top:4px">' +
+          '<input type="text" id="askpbCustom" placeholder="اسم آخر..." class="inp" style="flex:1;height:38px;font-size:13px">' +
+          '<button id="askpbCustomBtn" class="btn btn-p" style="height:38px;padding:0 14px">إضافة</button>' +
+        '</div>' +
+        '<button id="askpbCancel" style="padding:11px;border-radius:10px;border:none;background:transparent;color:var(--tx3);cursor:pointer;font-size:13px;margin-top:6px">إلغاء</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(modal);
+
+  function close(payer){
+    modal.remove();
+    if(typeof callback === 'function') callback(payer);
+  }
+  modal.querySelectorAll('.askpb-btn').forEach(function(b){
+    b.onclick = function(){ close(this.dataset.payer); };
+  });
+  document.getElementById('askpbCustomBtn').onclick = function(){
+    var v = (document.getElementById('askpbCustom').value || '').trim();
+    if(v) close(v); else document.getElementById('askpbCustom').focus();
+  };
+  document.getElementById('askpbCustom').onkeydown = function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('askpbCustomBtn').click(); }
+  };
+  document.getElementById('askpbCancel').onclick = function(){ close(null); };
+  modal.onclick = function(e){ if(e.target === modal) close(null); };
 }
 
 /* ADVANCES */
@@ -6165,7 +6253,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v32',
+    version:'v33',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -6178,7 +6266,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v32_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v33_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
@@ -12257,6 +12345,81 @@ saveAll = function(){
 if(typeof supabase !== 'undefined'){
   setTimeout(supaInit, 500);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   v33: نسخ احتياطي تلقائي يومي إلى Downloads
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var DAILY_BACKUP_KEY = 'rh_last_daily_backup';
+
+// يتحقّق ويُجري نسخ احتياطي يومي إذا مرّ أكثر من 20 ساعة منذ آخر نسخة
+function checkDailyBackup(){
+  try {
+    var last = parseInt(safeLS.getItem(DAILY_BACKUP_KEY) || '0', 10);
+    var now = Date.now();
+    var hoursSinceLast = (now - last) / (1000 * 60 * 60);
+    // 20 ساعة بدل 24 لضمان نسخة كل يوم حتى لو فُتح متأخراً
+    if(hoursSinceLast < 20) return false;
+    // قم بالنسخ الاحتياطي
+    runDailyBackup();
+    safeLS.setItem(DAILY_BACKUP_KEY, String(now));
+    return true;
+  } catch(e){
+    console.warn('checkDailyBackup:', e);
+    return false;
+  }
+}
+
+function runDailyBackup(){
+  try {
+    var raw = safeLS.getItem(SK);
+    if(!raw) return;
+    // ابني payload مع كل البيانات (نفس exportJSON لكن بصيغة backup يومي)
+    var data = {
+      version: 'v33',
+      type: 'daily_auto_backup',
+      backupAt: new Date().toISOString(),
+      device: navigator.userAgent.slice(0, 60),
+      activeKey: S.activeKey,
+      months: S.months,
+      monthlyEmps: S.monthlyEmps,
+      dailyEmps: S.dailyEmps,
+      lockedMonths: S.lockedMonths || [],
+      suppliers: S.suppliers || []
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var today = new Date();
+    var dateStr = today.getFullYear() + '-' +
+      String(today.getMonth() + 1).padStart(2, '0') + '-' +
+      String(today.getDate()).padStart(2, '0');
+    var filename = 'rayhana-auto-backup-' + dateStr + '.json';
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }, 1000);
+    // toast غير مزعج
+    setTimeout(function(){ toast('💾 تم حفظ نسخة احتياطية يومية في Downloads/'); }, 1500);
+    log('نسخ احتياطي يومي تلقائي: ' + filename);
+  } catch(e){
+    console.warn('runDailyBackup:', e);
+  }
+}
+
+// يُشغَّل بعد تسجيل الدخول بـ 5 ثوانٍ
+(function(){
+  var oldDoLogin = window.doLogin;
+  if(typeof oldDoLogin === 'function'){
+    window.doLogin = function(role){
+      oldDoLogin(role);
+      setTimeout(checkDailyBackup, 5000);
+    };
+  }
+})();
 
 /* ═══════════════════════════════════════════════════════════════════════════
    v31: التقويم الأردني — عطل رسمية + هجرية + توقعات
