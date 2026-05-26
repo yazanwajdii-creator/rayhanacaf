@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V40 PRO</title>
+<title>ريحانة V41 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -113,11 +113,15 @@ body.dark .welcome-card{background:linear-gradient(135deg,#0A2A14 0%,#1A4A28 50%
 .gsearch:focus-within{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.25);box-shadow:0 0 0 3px rgba(0,112,242,.2)}
 .gsearch input{background:transparent;border:none;color:#fff;font-size:12px;flex:1;outline:none;font-family:'IBM Plex Sans Arabic',sans-serif}
 .gsearch input::placeholder{color:rgba(255,255,255,.3)}
-.tb-right{display:flex;align-items:center;gap:4px;flex-shrink:0}
-.tbtn{width:32px;height:32px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(255,255,255,.85);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s}
+/* v40.1: gap أصغر + overflow حماية */
+.tb-right{display:flex;align-items:center;gap:3px;flex-shrink:0;max-width:60vw}
+.uchip{font-size:11px!important;padding:3px 6px!important}
+/* v40.1: الأزرار أصغر لتناسب الشاشات الصغيرة بدون تداخل */
+.tbtn{width:28px;height:28px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:rgba(255,255,255,.85);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0}
 .tbtn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.2)}
 .tbtn:active{transform:scale(.92)}
-.msel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;height:32px;transition:all .18s}
+/* v40.1: msel أصغر — كان عرضه كبير ويتداخل مع الأيقونات */
+.msel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:3px 5px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;height:28px;max-width:92px;transition:all .18s}
 .msel:hover{background:rgba(255,255,255,.14)}
 .msel option{background:#0F2D18;color:#fff}
 .uchip{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:3px 10px;height:32px;font-size:12px;color:rgba(255,255,255,.8);cursor:pointer;transition:all .18s}
@@ -467,15 +471,45 @@ body.dark .df-inp,body.dark .df-inp-d{background:var(--surf2);border-color:var(-
 body.dark .date-filter-bar{background:var(--surf2);border-color:var(--br)}
 
 /* DARK MODE - Premium Night Theme */
+/* v40.1: Dark Mode محسَّن — تباين أعلى، ألوان أنعم، أعمق */
 body.dark{
-  --bg:#1A1D21;--surf:#22262B;--surf2:#282D33;--surf3:#2E343A;--br:#3A4149;--br2:#4A535C;
-  --tx:#E8E6E3;--tx2:#B8B4AF;--tx3:#8A8580;--tx4:#5A5752;
-  --sap:#60A5FA;--sap-d:#3B82F6;--sap-l:rgba(96,165,250,.1);--sap-m:rgba(96,165,250,.2);
-  --bll:rgba(74,144,164,.12);--gnl:rgba(46,139,87,.12);--ywl:rgba(212,160,23,.12);--rdl:rgba(199,84,80,.12);
-  --gnb:rgba(46,139,87,.2);--ywb:rgba(212,160,23,.2);--rdb:rgba(199,84,80,.2);--blb:rgba(74,144,164,.2);
-  --gnd:#5AC18E;--ywd:#E8C547;--rdd:#E8A5A5;--bld:#7BC4D4;
-  --purl:rgba(123,107,141,.12);
+  --bg:#0F1419;--surf:#1A1F26;--surf2:#222831;--surf3:#2A323D;--br:#33404C;--br2:#465463;
+  --tx:#F0EEEA;--tx2:#C8C4BE;--tx3:#9A958E;--tx4:#6A655F;
+  --sap:#3B82F6;--sap-d:#2563EB;--sap-l:rgba(59,130,246,.12);--sap-m:rgba(59,130,246,.22);
+  --bll:rgba(74,144,164,.14);--gnl:rgba(34,197,94,.14);--ywl:rgba(234,179,8,.14);--rdl:rgba(239,68,68,.14);
+  --gnb:rgba(34,197,94,.28);--ywb:rgba(234,179,8,.28);--rdb:rgba(239,68,68,.28);--blb:rgba(74,144,164,.28);
+  --gnd:#4ADE80;--ywd:#FBBF24;--rdd:#FB7185;--bld:#7DD3FC;
+  --purl:rgba(168,85,247,.14);
+  --gn:#22C55E;--rd:#EF4444;--yw:#EAB308;--bl:#3B82F6;
+  --gold:#FCD34D;--gold2:#FBBF24;
 }
+/* عناصر إضافية محسَّنة في dark mode */
+body.dark{ background:var(--bg);color:var(--tx); }
+body.dark .topbar{background:linear-gradient(135deg,#0A0E13,#141A21);border-bottom:1px solid var(--br)}
+body.dark .nav-tabs{background:var(--surf2)}
+body.dark .ntab{color:var(--tx2)}
+body.dark .ntab.on{background:var(--sap-l);color:var(--sap);border-color:var(--sap-m)}
+body.dark .btn-p{background:linear-gradient(135deg,#2563EB,#3B82F6);box-shadow:0 4px 12px rgba(59,130,246,.25)}
+body.dark .btn-r{background:linear-gradient(135deg,#DC2626,#EF4444);box-shadow:0 4px 12px rgba(239,68,68,.25)}
+body.dark .alert.al-ok{background:var(--gnl);border-color:var(--gnb);color:var(--gnd)}
+body.dark .alert.al-w{background:var(--ywl);border-color:var(--ywb);color:var(--ywd)}
+body.dark .alert.al-i{background:var(--bll);border-color:var(--blb);color:var(--bld)}
+body.dark .alert.al-e{background:var(--rdl);border-color:var(--rdb);color:var(--rdd)}
+body.dark .msel{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
+body.dark .msel option{background:var(--surf);color:var(--tx)}
+body.dark .tbtn{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08);color:var(--tx2)}
+body.dark .tbtn:hover{background:rgba(255,255,255,.1)}
+body.dark .badge.bg-ok{background:var(--gnl);color:var(--gnd);border:1px solid var(--gnb)}
+body.dark .badge.bg-e{background:var(--rdl);color:var(--rdd);border:1px solid var(--rdb)}
+body.dark .badge.bg-w{background:var(--ywl);color:var(--ywd);border:1px solid var(--ywb)}
+body.dark .badge.bg-i{background:var(--bll);color:var(--bld);border:1px solid var(--blb)}
+body.dark .rh-brand-mark{background:#22262B;border-color:rgba(252,211,77,.3)}
+body.dark .rh-brand-name{color:#FCD34D}
+body.dark .rh-brand-sub{color:#FBBF24}
+body.dark #pinScreen{background:linear-gradient(160deg,#0F1419 0%,#1A1F26 50%,#0F1419 100%)}
+body.dark #pwdInput{background:rgba(255,255,255,.05)!important;border-color:rgba(252,211,77,.2)!important;color:var(--tx)!important}
+body.dark .pin-ver{color:rgba(252,211,77,.5)}
+body.dark .fab-btn{background:var(--surf2);border-color:var(--br);color:var(--tx)}
 body.dark .card,body.dark .obl-row,body.dark .att-card,body.dark .sup-card,body.dark .kpi-tile{background:var(--surf);border-color:var(--br)}
 body.dark .card-hd{background:var(--surf2);border-color:var(--br)}
 body.dark th{background:linear-gradient(135deg,#0A0604,#0F172A)}
@@ -1838,7 +1872,7 @@ body.dark .ss-card{background:var(--surf)}
         </a>
       </div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v40</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v41</div>
   </div>
 </div>
 
@@ -2710,6 +2744,21 @@ body.dark .ss-card{background:var(--surf)}
 
     <!-- SALARIES -->
     <div id="sal" class="pg">
+      <!-- v40.1: بطاقة إدارة الموظفين — حذف/إضافة -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-y">👥</span>إدارة الموظفين</div></div>
+        <div class="card-body" style="padding:11px">
+          <div id="empMgrList"></div>
+          <div style="display:flex;gap:6px;margin-top:10px">
+            <input type="text" id="empNewName" class="inp" placeholder="اسم الموظف الجديد" style="flex:1;height:36px;font-size:13px">
+            <select id="empNewType" class="inp" style="width:90px;height:36px;font-size:13px">
+              <option value="monthly">شهري</option>
+              <option value="daily">يومي</option>
+            </select>
+            <button class="btn btn-p" onclick="addEmployee()" style="height:36px;padding:0 12px;font-size:13px">➕ إضافة</button>
+          </div>
+        </div>
+      </div>
       <div class="card">
         <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">💼</span>رواتب الموظفين الشهريين</div></div>
         <div class="card-body" style="padding:11px">
@@ -3801,7 +3850,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v40';
+      const CACHE_NAME = 'rayhana-v41';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -5810,8 +5859,79 @@ function saveOblig(){
 }
 function delOblig(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}var ob=G().obligations[i];if(!ob)return;if(!confirm(`حذف "${ob.name}"؟`))return;undoSnapshot('حذف التزام: '+ob.name);log('حذف التزام — '+ob.name+' '+n3(ob.amt)+' JD',{action:'delete',entity:'obligation',amount:ob.amt,before:ob});G().obligations.splice(i,1);renderObligList();updateDash();calcCash();updateRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 
+/* v40.1: إدارة الموظفين (إضافة + حذف) — كانت مفقودة تماماً */
+function renderEmpMgr(){
+  var c = document.getElementById('empMgrList');
+  if(!c) return;
+  var html = '';
+  if(S.monthlyEmps && S.monthlyEmps.length){
+    html += '<div style="font-size:11px;color:var(--tx3);margin-bottom:6px;font-weight:700">📋 شهريون (' + S.monthlyEmps.length + ')</div>';
+    S.monthlyEmps.forEach(function(e, i){
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surf2);border-radius:7px;margin-bottom:5px;border:1px solid var(--br)">' +
+        '<span style="font-weight:600">' + esc(e.name) + '</span>' +
+        '<button class="btn btn-r btn-xs del-btn" onclick="delEmployee(\'monthly\',' + i + ')" title="حذف">🗑️</button>' +
+      '</div>';
+    });
+  }
+  if(S.dailyEmps && S.dailyEmps.length){
+    html += '<div style="font-size:11px;color:var(--tx3);margin:10px 0 6px;font-weight:700">⏰ يوميون (' + S.dailyEmps.length + ')</div>';
+    S.dailyEmps.forEach(function(e, i){
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surf2);border-radius:7px;margin-bottom:5px;border:1px solid var(--br)">' +
+        '<span style="font-weight:600">' + esc(e.name) + '</span>' +
+        '<button class="btn btn-r btn-xs del-btn" onclick="delEmployee(\'daily\',' + i + ')" title="حذف">🗑️</button>' +
+      '</div>';
+    });
+  }
+  if(!html) html = '<div class="alert al-i" style="margin:4px 0">لا يوجد موظفون. أضف أحداً أدناه.</div>';
+  c.innerHTML = html;
+  applyRoles();
+}
+
+function addEmployee(){
+  if(!_requireManager()) return;
+  var name = (document.getElementById('empNewName')||{}).value || '';
+  var type = (document.getElementById('empNewType')||{}).value || 'monthly';
+  name = name.trim();
+  if(!name){ toast('⚠️ أدخل اسم الموظف'); return; }
+  // فحص التكرار
+  var existing = [...(S.monthlyEmps||[]), ...(S.dailyEmps||[])].find(function(e){ return e.name === name; });
+  if(existing){ toast('⚠️ موظف بنفس الاسم موجود'); return; }
+  undoSnapshot('إضافة موظف: ' + name);
+  var emp = { id: 'e' + Date.now(), name: name };
+  if(type === 'monthly'){
+    if(!S.monthlyEmps) S.monthlyEmps = [];
+    S.monthlyEmps.push(emp);
+  } else {
+    if(!S.dailyEmps) S.dailyEmps = [];
+    S.dailyEmps.push(emp);
+  }
+  document.getElementById('empNewName').value = '';
+  renderEmpMgr();
+  try { initSalTables(); } catch(e){}
+  saveAll();
+  toast('✅ تم إضافة ' + name);
+  log('إضافة موظف ' + (type==='monthly'?'شهري':'يومي') + ' — ' + name, {action:'create', entity:'employee'});
+}
+
+function delEmployee(type, idx){
+  if(!_requireManager()) return;
+  var list = type === 'monthly' ? S.monthlyEmps : S.dailyEmps;
+  if(!list || !list[idx]) return;
+  var emp = list[idx];
+  if(!confirm('حذف الموظف "' + emp.name + '"؟\n\nسيُحذف من قائمة الموظفين فقط — البيانات التاريخية (الرواتب/الحضور) ستبقى محفوظة في الأشهر السابقة.')) return;
+  undoSnapshot('حذف موظف: ' + emp.name);
+  log('حذف موظف — ' + emp.name, {action:'delete', entity:'employee', before:emp});
+  list.splice(idx, 1);
+  renderEmpMgr();
+  try { initSalTables(); } catch(e){}
+  saveAll();
+  toast('🗑️ حُذف ' + emp.name + ' · اضغط ↶ للتراجع');
+}
+
 /* SALARIES */
 function initSalTables(){
+  // v40.1: نُحدّث قائمة الإدارة كذلك
+  try { renderEmpMgr(); } catch(e){}
   const d=G(),mb=$("mSalBody");
   if(mb){mb.innerHTML="";S.monthlyEmps.forEach(e=>{const sal=d.mSal[e.id]||{base:0,allow:0,ded:0,paid:false};const isPaid=sal.paid||false;const paidByLabel=isPaid&&sal.paidBy?'<div style="font-size:10px;color:var(--gn);margin-top:2px">💵 '+esc(sal.paidBy)+'</div>':'';const tr=document.createElement("tr");tr.innerHTML=`<td style="font-weight:700">${esc(e.name)}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_b" value="${sal.base||""}" placeholder="0" onchange="calcSal()"></td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_a" value="${sal.allow||""}" placeholder="0" onchange="calcSal()"></td><td class="td-y num" id="ms_${e.id}_g">${n3((sal.base||0)+(sal.allow||0))}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_d" value="${sal.ded||""}" placeholder="0" onchange="calcSal()"></td><td class="td-r num" id="ms_${e.id}_av">${n3(pendAdv(e.id))}</td><td class="td-g num" id="ms_${e.id}_n">${n3((sal.base||0)+(sal.allow||0)-(sal.ded||0)-pendAdv(e.id))}</td><td style="text-align:center"><button class="obl-toggle ${isPaid?'ps':''}" id="salpay_${e.id}" onclick="toggleSalPaid('${e.id}')" style="width:44px;height:36px;font-size:18px" title="${isPaid?'مدفوع — اضغط للإلغاء':'غير مدفوع — اضغط للتأكيد'}">${isPaid?'✅':'⏳'}</button>${paidByLabel}</td>`;mb.appendChild(tr);});}
   buildAttGrid();calcSal();
@@ -6574,7 +6694,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v40',
+    version:'v41',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -6587,7 +6707,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v40_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v41_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
