@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V39 PRO</title>
+<title>ريحانة V40 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1838,7 +1838,7 @@ body.dark .ss-card{background:var(--surf)}
         </a>
       </div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v39</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v40</div>
   </div>
 </div>
 
@@ -3801,7 +3801,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v39';
+      const CACHE_NAME = 'rayhana-v40';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -4099,7 +4099,34 @@ function loadScript(url){
 function toggleDark(){document.body.classList.toggle("dark");safeLS.setItem("rh_dark",document.body.classList.contains("dark")?"1":"0");}
 if(safeLS.getItem("rh_dark")==="1")document.body.classList.add("dark");
 function openMo(id){$(id).classList.add("open");document.body.style.overflow="hidden";}
-function cmo(id){$(id).classList.remove("open");document.body.style.overflow="";}
+// v39.2 [إصلاح UI #3]: cmo يُعيد ضبط edit-state بناءً على الـ modal
+// كان: إغلاق modal بـ X/خارج النقر يترك pEditIdx/suppEI/oblEI مضبوطة
+// → الإضافة التالية تكتب فوق السجل المحرَّر سابقاً (خسارة بيانات صامتة)
+function cmo(id){
+  var el = $(id);
+  if(!el) return;
+  el.classList.remove("open");
+  document.body.style.overflow="";
+  // إعادة ضبط حالة التحرير حسب الـ modal
+  try {
+    if(id === 'moPurch'){
+      var pe = document.getElementById('pEditIdx'); if(pe) pe.value = '-1';
+      // تنظيف الصورة وقائمة البنود
+      var pIm = document.getElementById('pImgPreview'); if(pIm) pIm.innerHTML = '';
+      window._pImgB64 = null;
+      if(typeof clearItemRows === 'function') try { clearItemRows(); } catch(e){}
+      var pT = document.getElementById('purchTit'); if(pT) pT.textContent = '🛒 إضافة فاتورة';
+    } else if(id === 'moSupp'){
+      var se = document.getElementById('suppEI'); if(se) se.value = '';
+      var sT = document.getElementById('suppTit'); if(sT) sT.textContent = '📦 إضافة مورد';
+    } else if(id === 'moOblig'){
+      var oe = document.getElementById('oblEI'); if(oe) oe.value = '';
+      var oT = document.getElementById('oblTit'); if(oT) oT.textContent = '📋 إضافة التزام';
+    } else if(id === 'moAdv'){
+      ['aAmt','aNote'].forEach(function(f){ var x = document.getElementById(f); if(x) x.value=''; });
+    }
+  } catch(e){ console.warn('cmo cleanup:', e); }
+}
 function moOut(e,id){if(e.target===$(id))cmo(id);}
 ["click","touchstart","keydown","scroll"].forEach(e=>document.addEventListener(e,resetInact,{passive:true}));
 
@@ -4223,7 +4250,36 @@ function renderLog(){
 function clearLog(){if(!confirm("مسح السجل؟"))return;safeLS.removeItem(LK);renderLog();toast("🗑️ تم المسح");}
 
 /* LOGIN SYSTEM */
-function applyRoles(){const m=CR==="manager";document.querySelectorAll(".del-btn").forEach(e=>{e.style.opacity=m?"1":"0.3";e.style.pointerEvents=m?"":"none";});}
+// v39.2 [إصلاح UI #6]: applyRoles كامل — لكل عمليات الحذف والتعديل والدفع
+// كان يعطّل .del-btn فقط — لكن editX/toggleSalPaid/toggleOblig متاحة للجميع
+function applyRoles(){
+  var m = CR === "manager";
+  // أزرار الحذف
+  document.querySelectorAll(".del-btn").forEach(function(e){
+    e.style.opacity = m ? "1" : "0.3";
+    e.style.pointerEvents = m ? "" : "none";
+    e.title = m ? '' : 'صلاحية المدير فقط';
+  });
+  // أزرار التعديل + الدفع (الـ obl-toggle)
+  document.querySelectorAll(".obl-toggle, .salpay-btn").forEach(function(e){
+    e.style.opacity = m ? "1" : "0.3";
+    e.style.pointerEvents = m ? "" : "none";
+    e.title = m ? (e.title || '') : 'صلاحية المدير فقط';
+  });
+  // أي زر معلَّم data-manager-only
+  document.querySelectorAll("[data-manager-only]").forEach(function(e){
+    e.style.opacity = m ? "1" : "0.3";
+    e.style.pointerEvents = m ? "" : "none";
+  });
+}
+// Helper: استخدمه داخل أي دالة تعديل/حذف/دفع
+function _requireManager(){
+  if(CR !== 'manager'){
+    toast('⚠️ صلاحية المدير مطلوبة');
+    return false;
+  }
+  return true;
+}
 function lockApp(){
   CR=null;CRN="";
   var app=document.getElementById("app");
@@ -5133,6 +5189,8 @@ function renderPurch(){
   renderCatSum();renderItemsRpt();
 }
 function editPurch(i){
+  if(!_requireManager()) return;
+  if(isLocked()){ toast('🔒 الشهر مغلق'); return; }
   var p=G().purchases[i];
   if(!p)return;
   // ملء الـ modal بالبيانات الحالية
@@ -5677,7 +5735,7 @@ function hmDayClick(day) {
 /* SUPPLIERS */
 const SICO={"مواد غذائية ومواد خام":"🥗","مشروبات ومواد القهوة":"☕","مواد التعبئة والتغليف":"📦","مواد النظافة والتعقيم":"🧹","مستلزمات التشغيل":"⚙️","خدمات وصيانة":"🔧","أخرى":"📋"};
 function renderSuppList(){const c=$("suppList");if(!c)return;if(!S.suppliers.length){c.innerHTML='<div class="alert al-i">لا يوجد موردون</div>';return;}c.innerHTML=S.suppliers.map((s,i)=>`<div class="sup-card"><div class="sup-ico">${SICO[s.cat]||"📦"}</div><div class="sup-info"><div class="sup-name">${s.name}</div><div class="sup-cat">${s.cat}${s.note?" — "+s.note:""}</div></div><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-xs" onclick="editSupp(${i})">✏️</button><button class="btn btn-r btn-xs del-btn" onclick="delSupp(${i})">🗑️</button></div></div>`).join("");applyRoles();}
-function editSupp(i){const s=S.suppliers[i];$("suppTit").textContent="✏️ تعديل المورد";$("suppEI").value=i;$("sName").value=s.name;$("sCat").value=s.cat;$("sNote").value=s.note||"";openMo("moSupp");}
+function editSupp(i){if(!_requireManager())return;const s=S.suppliers[i];if(!s)return;$("suppTit").textContent="✏️ تعديل المورد";$("suppEI").value=i;$("sName").value=s.name;$("sCat").value=s.cat;$("sNote").value=s.note||"";openMo("moSupp");}
 function saveSupp(){const n=$("sName").value.trim(),c=$("sCat").value,nt=$("sNote").value.trim();if(!n){toast("⚠️ أدخل اسم المورد");return;}const ei=$("suppEI").value;if(ei!==""){S.suppliers[parseInt(ei)]={...S.suppliers[parseInt(ei)],name:n,cat:c,note:nt};}else{S.suppliers.push({id:"s"+Date.now(),name:n,cat:c,note:nt});}buildPurchSupp();renderSuppList();renderSuppRpt();cmo("moSupp");$("suppEI").value="";$("suppTit").textContent="📦 إضافة مورد";["sName","sNote"].forEach(id=>$(id).value="");saveAll();toast("✅ تم الحفظ");}
 function delSupp(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}var sp=S.suppliers[i];if(!sp)return;if(!confirm(`حذف المورد "${sp.name}"؟`))return;undoSnapshot('حذف مورد: '+sp.name);log('حذف مورد — '+sp.name,{action:'delete',entity:'supplier',before:sp});S.suppliers.splice(i,1);buildPurchSupp();renderSuppList();renderSuppRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 function renderSuppRpt(){
@@ -5738,7 +5796,7 @@ function toggleOblig(i){
   log('إلغاء التزام — '+o.name);
   toast('❌ '+o.name+' — غير مدفوع');
 }
-function editOblig(i){const o=G().obligations[i];$("oblTit").textContent="✏️ تعديل الالتزام";$("oblEI").value=i;$("oName").value=o.name;$("oAmt").value=o.amt;$("oDue").value=o.due||"";openMo("moOblig");}
+function editOblig(i){if(!_requireManager())return;if(isLocked()){toast('🔒 الشهر مغلق');return;}const o=G().obligations[i];if(!o)return;$("oblTit").textContent="✏️ تعديل الالتزام";$("oblEI").value=i;$("oName").value=o.name;$("oAmt").value=o.amt;$("oDue").value=o.due||"";openMo("moOblig");}
 function saveOblig(){
   if(isLocked()){toast("🔒 الشهر مغلق");return;}
   const nm=$("oName").value.trim(),amt=parseFloat($("oAmt").value)||0,due=$("oDue").value;
@@ -5757,6 +5815,7 @@ function initSalTables(){
   const d=G(),mb=$("mSalBody");
   if(mb){mb.innerHTML="";S.monthlyEmps.forEach(e=>{const sal=d.mSal[e.id]||{base:0,allow:0,ded:0,paid:false};const isPaid=sal.paid||false;const paidByLabel=isPaid&&sal.paidBy?'<div style="font-size:10px;color:var(--gn);margin-top:2px">💵 '+esc(sal.paidBy)+'</div>':'';const tr=document.createElement("tr");tr.innerHTML=`<td style="font-weight:700">${esc(e.name)}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_b" value="${sal.base||""}" placeholder="0" onchange="calcSal()"></td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_a" value="${sal.allow||""}" placeholder="0" onchange="calcSal()"></td><td class="td-y num" id="ms_${e.id}_g">${n3((sal.base||0)+(sal.allow||0))}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_d" value="${sal.ded||""}" placeholder="0" onchange="calcSal()"></td><td class="td-r num" id="ms_${e.id}_av">${n3(pendAdv(e.id))}</td><td class="td-g num" id="ms_${e.id}_n">${n3((sal.base||0)+(sal.allow||0)-(sal.ded||0)-pendAdv(e.id))}</td><td style="text-align:center"><button class="obl-toggle ${isPaid?'ps':''}" id="salpay_${e.id}" onclick="toggleSalPaid('${e.id}')" style="width:44px;height:36px;font-size:18px" title="${isPaid?'مدفوع — اضغط للإلغاء':'غير مدفوع — اضغط للتأكيد'}">${isPaid?'✅':'⏳'}</button>${paidByLabel}</td>`;mb.appendChild(tr);});}
   buildAttGrid();calcSal();
+  applyRoles(); // v39.2: حماية أدوار بعد كل re-render
 }
 const pendAdv=empId=>G().advances.filter(a=>a.empId===empId&&(a.status==="مستحقة"||a.status==="مسددة جزئياً")).reduce((s,a)=>s+(a.amt||0),0);
 // حساب إجمالي أجر موظفة يومية مع مراعاة الأجر المخصص لكل يوم
@@ -6316,6 +6375,13 @@ document.addEventListener('visibilitychange', function() {
 
 window.addEventListener('beforeunload', function() {
   if (CR) {
+    // v39.2 [إصلاح Sync #7]: flush الـ debounce قبل الإغلاق
+    // إذا كان debounce 2s نشطاً، التغييرات الأخيرة قد تفقد قبل وصولها للسحابة
+    if(window._supaDebounce){
+      clearTimeout(window._supaDebounce);
+      window._supaDebounce = null;
+      try { if(typeof syncEnqueuePush === 'function') syncEnqueuePush(); } catch(e){}
+    }
     saveAll();
   }
 });
@@ -6508,7 +6574,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v39',
+    version:'v40',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -6521,7 +6587,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v39_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v40_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
@@ -6686,8 +6752,12 @@ function exportPDF(){
     return;
   }
   // المكتبات جاهزة — نفّذ التصدير
-  const rptTab=document.querySelectorAll('.ntab')[3];
-  pg('rpt',rptTab);
+  // v39.2 [إصلاح UI #11]: لا نعتمد على فهرس ثابت — نبحث بالاسم
+  // كان index 3 = المشتريات، التقارير index = 9 (بعد إضافة تبويبات v31)
+  var rptTab = Array.from(document.querySelectorAll('.ntab')).find(function(b){
+    return (b.getAttribute('onclick') || '').indexOf("pg('rpt'") > -1;
+  });
+  pg('rpt', rptTab);
   updateRpt();
   toast('⏳ جاري إنشاء PDF — انتظر...');
   setTimeout(function(){
@@ -7277,6 +7347,12 @@ function salLawChg(empId,field,val){
 window._pImgB64 = null;
 function pImgSelected(input){
   var file=input.files&&input.files[0];if(!file)return;
+  // v39.2 [إصلاح UI #7]: فحص MIME (الـ accept="image/*" مجرد تلميح، Android يسمح بأي ملف)
+  if(!file.type || !file.type.startsWith('image/')){
+    toast('⚠️ يجب اختيار صورة فقط (نوع الملف: ' + (file.type || 'غير معروف') + ')');
+    input.value = ''; // مسح التحديد
+    return;
+  }
   if(file.size>4*1024*1024){toast('⚠️ الصورة أكبر من 4MB — اختر صورة أصغر');return;}
   var reader=new FileReader();
   reader.onload=function(e){
@@ -7285,6 +7361,10 @@ function pImgSelected(input){
     if(prev)prev.innerHTML='<img src="'+e.target.result+'" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;border:1px solid var(--br)">';
     var st=document.getElementById('pImgStatus');if(st)st.textContent='✅ تم اختيار الصورة';
     var btn=document.getElementById('pImgClearBtn');if(btn)btn.style.display='';
+  };
+  reader.onerror=function(){
+    toast('⚠️ فشل قراءة الصورة');
+    input.value = '';
   };
   reader.readAsDataURL(file);
 }
@@ -9775,8 +9855,11 @@ function hideShortcuts() {
 }
 
 document.addEventListener('keydown', function(e) {
-  // تجاهل إذا كان المستخدم يكتب في حقل
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  // v39.2 [إصلاح UI #9]: تجاهل إذا كان المستخدم يكتب في أي حقل
+  // كان يستثني INPUT/TEXTAREA فقط — لكن SELECT و contenteditable يفلتان
+  var tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
+      (e.target && e.target.isContentEditable)) return;
   
   // Ctrl + S للحفظ
   if (e.ctrlKey && e.key === 's') {
@@ -12884,14 +12967,36 @@ async function syncWorkerTick(){
     }
 
     // 3. ارفع snapshot مع updated_at الجديد
+    // v39.2 [إصلاح Sync #5]: CAS atomic — استخدم UPDATE مع شرط updated_at
+    // لو جهاز آخر كتب بين SELECT و UPDATE، نسحب ثم نُعيد المحاولة
     var newUpdatedAt = new Date().toISOString();
-    var res = await SUPA
-      .from(SUPA_TABLE)
-      .upsert({
-        key: SUPA_ROW,
-        value: head.snapshot,
-        updated_at: newUpdatedAt
-      });
+    var res;
+    if(cloudUpdatedAt && headRes.data){
+      // الصف موجود — UPDATE مع شرط (atomic compare-and-swap)
+      res = await SUPA
+        .from(SUPA_TABLE)
+        .update({ value: head.snapshot, updated_at: newUpdatedAt })
+        .eq('key', SUPA_ROW)
+        .eq('updated_at', cloudUpdatedAt) // ← شرط CAS الحقيقي
+        .select();
+      if(!res.error && (!res.data || res.data.length === 0)){
+        // CAS فشل: جهاز آخر كتب بعد SELECT
+        // أعد المحاولة في الـ tick التالي بعد pull
+        console.warn('[Sync] CAS فشل — جهاز آخر كتب. سيُعاد المحاولة');
+        _queueBumpAttempts();
+        setTimeout(syncWorkerTick, 1000);
+        return; // سيُحرَّر busy في finally
+      }
+    } else {
+      // الصف غير موجود — INSERT (upsert)
+      res = await SUPA
+        .from(SUPA_TABLE)
+        .upsert({
+          key: SUPA_ROW,
+          value: head.snapshot,
+          updated_at: newUpdatedAt
+        });
+    }
     if(res.error) throw new Error(res.error.message);
 
     // 4. نجح — احذف من القائمة، حدّث lastKnown
@@ -12967,6 +13072,18 @@ function syncEnqueuePush(){
 async function syncPullSafe(opts){
   opts = opts || {};
   if(!SUPA) throw new Error('Supabase not connected');
+  // v39.2 [إصلاح Migration #6]: lock حقيقي حول pull (كان flag ميت)
+  // يمنع push يحصل بالتوازي ويُربك الـ state
+  if(_supaPullInProgress){
+    console.warn('[Sync] pull متقدّم — تخطّي');
+    return false;
+  }
+  if(_supaPushInProgress){
+    console.warn('[Sync] push جارٍ — تأجيل pull لحظة');
+    await new Promise(function(r){ setTimeout(r, 500); });
+  }
+  _supaPullInProgress = true;
+  try {
   supaSetStatus('loading', '⬇️ جاري التحميل من السحابة...');
   var res = await SUPA
     .from(SUPA_TABLE)
@@ -13105,6 +13222,10 @@ async function syncPullSafe(opts){
   }
   log('pull آمن من Supabase · ' + when + (rejectedReplacement.length ? ' · رفضنا استبدال: ' + rejectedReplacement.join(',') : ''));
   return true;
+  } finally {
+    // v39.2: ضمان إغلاق الـ lock حتى لو حدث خطأ
+    _supaPullInProgress = false;
+  }
 }
 
 // === Hook: استبدل supaSync القديم بالواجهة الجديدة ===
@@ -13666,6 +13787,10 @@ function todaySaveAll(){
     if(!confirm('الشهر النشط هو ' + S.activeKey + ' وليس ' + activeMonthKey + '. سأبدّل للشهر الحالي. متابعة؟')){ return; }
     S.activeKey = activeMonthKey;
     getMonth(activeMonthKey);
+    // v39.2 [إصلاح UI #8]: حدّث الـ month selector ليعكس التبديل
+    try { if(typeof buildMonthSel === 'function') buildMonthSel(); } catch(e){}
+    var mSel = document.getElementById('monthSel');
+    if(mSel) mSel.value = activeMonthKey;
   }
 
   var d = G();
