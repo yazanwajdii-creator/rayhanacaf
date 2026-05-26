@@ -4104,8 +4104,87 @@ function getMonth(key){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* LOG */
-function log(d){try{const ls=JSON.parse(safeLS.getItem(LK)||"[]");ls.unshift({t:new Date().toLocaleString("ar-JO"),u:CRN||"نظام",r:CR||"sys",d});if(ls.length>500)ls.splice(500);safeLS.setItem(LK,JSON.stringify(ls));}catch(e){}}
-function renderLog(){const c=$("auditList");if(!c)return;try{const ls=JSON.parse(safeLS.getItem(LK)||"[]");if(!ls.length){c.innerHTML='<div class="alert al-i" style="margin:12px">لا توجد سجلات</div>';return;}c.innerHTML=ls.map(l=>`<div class="log-item"><span class="log-t">${l.t}</span><span class="log-u lu-${l.r==="manager"?"m":l.r==="accountant"?"a":"s"}">${l.u}</span><span style="flex:1">${l.d}</span></div>`).join("");}catch(e){}}
+// v38: log محسَّن — يحفظ action type + before/after + entity للبحث والفلتر
+function log(d, meta){
+  try {
+    const ls = JSON.parse(safeLS.getItem(LK)||"[]");
+    var entry = {
+      t: new Date().toLocaleString("ar-JO"),
+      ts: Date.now(),
+      u: CRN || "نظام",
+      r: CR || "sys",
+      d: d
+    };
+    if(meta && typeof meta === 'object'){
+      if(meta.action) entry.action = meta.action; // create/update/delete/pay
+      if(meta.entity) entry.entity = meta.entity; // purchase/supplier/obligation/salary
+      if(meta.id !== undefined) entry.id = meta.id;
+      if(meta.before !== undefined) entry.before = meta.before;
+      if(meta.after !== undefined) entry.after = meta.after;
+      if(meta.amount !== undefined) entry.amount = meta.amount;
+    }
+    ls.unshift(entry);
+    if(ls.length > 1000) ls.splice(1000); // v38: زدنا الحدّ من 500 إلى 1000
+    safeLS.setItem(LK, JSON.stringify(ls));
+  } catch(e){}
+}
+
+// v38: renderLog محسَّن — فلتر + بحث + تلوين حسب نوع العملية
+function renderLog(){
+  var c = $("auditList");
+  if(!c) return;
+  try {
+    var ls = JSON.parse(safeLS.getItem(LK)||"[]");
+    if(!ls.length){
+      c.innerHTML = '<div class="alert al-i" style="margin:12px">لا توجد سجلات</div>';
+      return;
+    }
+    // فلتر من المربع لو موجود
+    var filter = ((document.getElementById('logFilter')||{}).value || '').trim().toLowerCase();
+    var actionFilter = ((document.getElementById('logActionFilter')||{}).value || '');
+    var filtered = ls.filter(function(l){
+      if(actionFilter && l.action !== actionFilter) return false;
+      if(!filter) return true;
+      var hay = (l.d + ' ' + (l.u||'') + ' ' + (l.action||'') + ' ' + (l.entity||'')).toLowerCase();
+      return hay.indexOf(filter) > -1;
+    });
+
+    // عرض إجمالي + جدول
+    var html = '<div style="padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surf2);border-radius:8px;margin-bottom:10px">' +
+      '<input type="text" id="logFilter" class="inp" placeholder="🔍 بحث في السجل..." value="' + esc(filter) + '" oninput="renderLog()" style="flex:1;min-width:140px;height:36px;font-size:13px">' +
+      '<select id="logActionFilter" onchange="renderLog()" class="inp" style="width:auto;height:36px;font-size:12px">' +
+        '<option value="">— كل العمليات —</option>' +
+        '<option value="create"' + (actionFilter==='create'?' selected':'') + '>➕ إنشاء</option>' +
+        '<option value="update"' + (actionFilter==='update'?' selected':'') + '>✏️ تعديل</option>' +
+        '<option value="delete"' + (actionFilter==='delete'?' selected':'') + '>🗑️ حذف</option>' +
+        '<option value="pay"' + (actionFilter==='pay'?' selected':'') + '>💵 دفع</option>' +
+        '<option value="unpay"' + (actionFilter==='unpay'?' selected':'') + '>↶ إلغاء دفع</option>' +
+        '<option value="undo"' + (actionFilter==='undo'?' selected':'') + '>↶ تراجع</option>' +
+      '</select>' +
+      '<span style="font-size:11px;color:var(--tx3)">' + filtered.length + ' / ' + ls.length + '</span>' +
+    '</div>';
+
+    var actionIcons = {
+      create: '➕', update: '✏️', delete: '🗑️', pay: '💵', unpay: '↶', undo: '↶'
+    };
+    var actionColors = {
+      create: 'var(--gn)', update: 'var(--bl)', delete: 'var(--rd)', pay: 'var(--gn)', unpay: 'var(--ywd)', undo: 'var(--tx3)'
+    };
+    html += filtered.map(function(l){
+      var icon = actionIcons[l.action] || '•';
+      var color = actionColors[l.action] || 'var(--tx2)';
+      return '<div class="log-item" style="border-right:3px solid ' + color + ';padding-right:8px">' +
+        '<span style="margin-left:4px">' + icon + '</span>' +
+        '<span class="log-t">' + esc(l.t) + '</span>' +
+        '<span class="log-u lu-' + (l.r==="manager"?"m":l.r==="accountant"?"a":"s") + '">' + esc(l.u) + '</span>' +
+        '<span style="flex:1">' + esc(l.d) +
+          (l.amount !== undefined ? ' <strong style="color:' + color + '">(' + n3(l.amount) + ' JD)</strong>' : '') +
+        '</span>' +
+      '</div>';
+    }).join('');
+    c.innerHTML = html;
+  } catch(e){ console.warn('renderLog:', e); }
+}
 function clearLog(){if(!confirm("مسح السجل؟"))return;safeLS.removeItem(LK);renderLog();toast("🗑️ تم المسح");}
 
 /* LOGIN SYSTEM */
@@ -4240,16 +4319,181 @@ function pg(id,btn){
 }
 
 /* SEARCH */
+// v38: بحث ذكي بالعربية — يفهم الأسئلة + يبحث في الكيانات
 function doSearch(q){
-  const res=$("sres");if(!q||q.length<2){res.classList.remove("open");return;}
-  const r=[];
-  S.suppliers.filter(s=>s.name.includes(q)||s.cat.includes(q)).forEach(s=>r.push({ico:"📦",text:s.name,sub:s.cat,act:"pg('supp',document.querySelectorAll('.ntab')[3])"}));
-  G().purchases.filter(p=>p.sName.includes(q)||(p.desc||"").includes(q)).forEach(p=>r.push({ico:"🛒",text:p.sName,sub:`${n3(p.amt)} JD`,act:"pg('purch',document.querySelectorAll('.ntab')[2])"}));
-  [...S.monthlyEmps,...S.dailyEmps].filter(e=>e.name.includes(q)).forEach(e=>r.push({ico:"👤",text:e.name,sub:"موظف",act:"pg('sal',document.querySelectorAll('.ntab')[5])"}));
-  G().obligations.filter(o=>o.name.includes(q)).forEach(o=>r.push({ico:"📋",text:o.name,sub:`${n3(o.amt)} JD ${o.paid?"✅":"❌"}`,act:"pg('oblig',document.querySelectorAll('.ntab')[4])"}));
-  if(!r.length){res.innerHTML='<div class="sri">لا نتائج</div>';res.classList.add("open");return;}
-  res.innerHTML=r.slice(0,7).map(x=>`<div class="sri" onclick="${x.act};closeSearch()"><span>${x.ico}</span><div style="flex:1"><div style="font-size:13px;font-weight:600">${esc(x.text)}</div><div style="font-size:11px;color:var(--tx3)">${esc(x.sub)}</div></div></div>`).join("");
+  const res=$("sres");
+  if(!q || q.length < 2){ res.classList.remove("open"); return; }
+  var qLow = q.toLowerCase().trim();
+  var results = [];
+
+  // === 1. كشف نية السؤال (Intent) ===
+  // أسئلة المبالغ والمجاميع
+  var intentMatch = _detectQueryIntent(qLow);
+  if(intentMatch){
+    results.push(intentMatch);
+  }
+
+  // === 2. بحث في الكيانات ===
+  S.suppliers.filter(s => s.name.includes(q) || s.cat.includes(q)).forEach(s =>
+    results.push({ ico: "📦", text: s.name, sub: s.cat, act: "pg('supp',document.querySelectorAll('.ntab')[4])" })
+  );
+
+  // مشتريات في كل الأشهر
+  var allMonthKeys = Object.keys(S.months || {});
+  allMonthKeys.forEach(function(k){
+    var month = S.months[k];
+    if(!month || !month.purchases) return;
+    month.purchases.forEach(function(p){
+      if((p.sName || '').includes(q) || (p.desc || '').includes(q)){
+        results.push({
+          ico: "🛒",
+          text: p.sName + (p.desc ? ' — ' + p.desc : ''),
+          sub: n3(p.amt) + ' JD · ' + p.date + (p.buyer ? ' · ' + p.buyer : ''),
+          act: "switchMonth('" + k + "');pg('purch',document.querySelectorAll('.ntab')[3])"
+        });
+      }
+    });
+  });
+
+  // موظفون
+  [...S.monthlyEmps, ...S.dailyEmps].filter(e => e.name.includes(q)).forEach(e =>
+    results.push({ ico: "👤", text: e.name, sub: "موظف", act: "pg('sal',document.querySelectorAll('.ntab')[6])" })
+  );
+
+  // التزامات
+  G().obligations.filter(o => o.name.includes(q)).forEach(o =>
+    results.push({
+      ico: "📋",
+      text: o.name,
+      sub: n3(o.amt) + ' JD ' + (o.paid ? '✅' + (o.paidBy ? ' (' + o.paidBy + ')' : '') : '❌'),
+      act: "pg('oblig',document.querySelectorAll('.ntab')[5])"
+    })
+  );
+
+  // أسماء في ملاحظات الإيرادات (العاملات الجزئيات)
+  var notesNames = new Set();
+  allMonthKeys.forEach(function(k){
+    var month = S.months[k];
+    if(!month || !month.sales) return;
+    month.sales.forEach(function(s){
+      if(!s.notes) return;
+      var names = String(s.notes).split(/[+,،]|\s+و\s+/g).map(function(n){return n.trim();}).filter(Boolean);
+      names.forEach(function(n){
+        if(n.includes(q) && n.length >= 2 && !/^\d+$/.test(n)){
+          notesNames.add(n);
+        }
+      });
+    });
+  });
+  Array.from(notesNames).slice(0, 3).forEach(function(name){
+    results.push({
+      ico: "👥",
+      text: name,
+      sub: 'اسم في ملاحظات الإيراد',
+      act: "pg('sal',document.querySelectorAll('.ntab')[6]);setTimeout(function(){var b=Array.from(document.querySelectorAll('button')).find(function(x){return x.textContent.includes('عرض / تحديث التقرير');});if(b)b.click();},150)"
+    });
+  });
+
+  if(!results.length){
+    res.innerHTML = '<div class="sri">لا نتائج — جرّب: "كم ربحت" أو اسم مورد</div>';
+    res.classList.add("open");
+    return;
+  }
+  res.innerHTML = results.slice(0, 8).map(function(x){
+    return '<div class="sri" onclick="' + x.act + ';closeSearch()">' +
+           '<span>' + x.ico + '</span>' +
+           '<div style="flex:1"><div style="font-size:13px;font-weight:600">' + esc(x.text) + '</div>' +
+           '<div style="font-size:11px;color:var(--tx3)">' + (x.sub ? esc(x.sub) : '') + '</div></div></div>';
+  }).join('');
   res.classList.add("open");
+}
+
+// v38: كشف نية السؤال الذكي
+function _detectQueryIntent(q){
+  try {
+    var t = totals();
+
+    // أسئلة الربح
+    if(/كم.*رب|الرب[حه]|صافي.*دخل|أرباح/.test(q)){
+      return {
+        ico: '💰',
+        text: 'صافي الربح: ' + n3(t.profit) + ' JD',
+        sub: 'هامش ' + t.margin.toFixed(1) + '% · هذا الشهر',
+        act: "pg('dash',document.querySelector('.ntab'))"
+      };
+    }
+
+    // أسئلة الإيراد
+    if(/كم.*إيراد|كم.*دخل|الإيراد|الدخل|المبيعات/.test(q)){
+      return {
+        ico: '📈',
+        text: 'الإيراد: ' + n3(t.rev) + ' JD',
+        sub: 'نقدي ' + n3(t.cash) + ' + فيزا ' + n3(t.visa) + ' + مدفوعات ' + n3(t.pmts),
+        act: "pg('rev',document.querySelectorAll('.ntab')[2])"
+      };
+    }
+
+    // أسئلة المصاريف
+    if(/كم.*مصروف|كم.*صرف|التكاليف|المصروفات|تكلفة/.test(q)){
+      return {
+        ico: '📉',
+        text: 'إجمالي التكاليف: ' + n3(t.totalExp) + ' JD',
+        sub: 'COGS ' + n3(t.bycat.COGS) + ' · رواتب مدفوعة ' + n3(t.mSalPaid) + ' · التزامات مدفوعة ' + n3(t.oblPaid),
+        act: "pg('purch',document.querySelectorAll('.ntab')[3])"
+      };
+    }
+
+    // أعلى مورد
+    if(/أعلى.*مور[د]|أكثر.*مور[د]|أكبر.*مور[د]|من.*دفعت|أين.*صرفت/.test(q)){
+      var bySupp = {};
+      G().purchases.forEach(function(p){
+        var k = p.sName || 'بدون اسم';
+        bySupp[k] = (bySupp[k] || 0) + (p.amt || 0);
+      });
+      var top = Object.keys(bySupp).sort(function(a, b){ return bySupp[b] - bySupp[a]; })[0];
+      if(top){
+        return {
+          ico: '🏆',
+          text: 'أعلى مورد: ' + top,
+          sub: n3(bySupp[top]) + ' JD هذا الشهر',
+          act: "pg('supp',document.querySelectorAll('.ntab')[4])"
+        };
+      }
+    }
+
+    // عدد الأيام النشطة
+    if(/كم.*يوم|الأيام.*نشط|أيام.*شغل/.test(q)){
+      return {
+        ico: '📅',
+        text: 'أيام التشغيل: ' + t.daysActive + ' يوم',
+        sub: 'متوسط ' + n3(t.avgDaily) + ' JD/يوم',
+        act: "pg('rev',document.querySelectorAll('.ntab')[2])"
+      };
+    }
+
+    // الرواتب
+    if(/رواتب|الراتب|كم.*راتب/.test(q)){
+      return {
+        ico: '💼',
+        text: 'الرواتب: ' + n3(t.mSalPaid) + ' JD مدفوع',
+        sub: 'مستحق ' + n3(t.mSalAccrued) + ' JD · إجمالي ' + n3(t.mSalG),
+        act: "pg('sal',document.querySelectorAll('.ntab')[6])"
+      };
+    }
+
+    // الالتزامات
+    if(/التزامات|إيجار|قسط|مستحق/.test(q)){
+      var unpaid = G().obligations.filter(function(o){ return !o.paid && o.amt > 0; });
+      return {
+        ico: '📋',
+        text: unpaid.length + ' التزام غير مدفوع',
+        sub: n3(unpaid.reduce(function(s, o){ return s + o.amt; }, 0)) + ' JD مجموع · ' + n3(t.oblPaid) + ' JD مدفوع',
+        act: "pg('oblig',document.querySelectorAll('.ntab')[5])"
+      };
+    }
+
+    return null;
+  } catch(e){ console.warn('_detectQueryIntent:', e); return null; }
 }
 function closeSearch(){$("sres").classList.remove("open");$("gSearch").value="";}
 
@@ -5010,7 +5254,7 @@ function clearItemRows(){
   if(amt){amt.readOnly=false;amt.style.color='';amt.title='';}
 }
 
-function delPurch(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}var p=G().purchases[i];if(!confirm("حذف فاتورة "+(p?p.sName+' ('+n3(p.amt)+' JD)':'?')+"؟"))return;undoSnapshot('حذف مشترى: '+(p?p.sName+' '+n3(p.amt):''));G().purchases.splice(i,1);renderPurch();renderSuppRpt();updateDash();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
+function delPurch(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}var p=G().purchases[i];if(!p)return;if(!confirm("حذف فاتورة "+p.sName+' ('+n3(p.amt)+' JD)؟'))return;undoSnapshot('حذف مشترى: '+p.sName+' '+n3(p.amt));log('حذف مشترى — '+p.sName+' '+n3(p.amt)+' JD',{action:'delete',entity:'purchase',amount:p.amt,before:p});G().purchases.splice(i,1);renderPurch();renderSuppRpt();updateDash();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 function renderCatSum(){
   const c=$("catSum");if(!c)return;
   const purchases=G().purchases;
@@ -5399,7 +5643,7 @@ const SICO={"مواد غذائية ومواد خام":"🥗","مشروبات و�
 function renderSuppList(){const c=$("suppList");if(!c)return;if(!S.suppliers.length){c.innerHTML='<div class="alert al-i">لا يوجد موردون</div>';return;}c.innerHTML=S.suppliers.map((s,i)=>`<div class="sup-card"><div class="sup-ico">${SICO[s.cat]||"📦"}</div><div class="sup-info"><div class="sup-name">${s.name}</div><div class="sup-cat">${s.cat}${s.note?" — "+s.note:""}</div></div><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-xs" onclick="editSupp(${i})">✏️</button><button class="btn btn-r btn-xs del-btn" onclick="delSupp(${i})">🗑️</button></div></div>`).join("");applyRoles();}
 function editSupp(i){const s=S.suppliers[i];$("suppTit").textContent="✏️ تعديل المورد";$("suppEI").value=i;$("sName").value=s.name;$("sCat").value=s.cat;$("sNote").value=s.note||"";openMo("moSupp");}
 function saveSupp(){const n=$("sName").value.trim(),c=$("sCat").value,nt=$("sNote").value.trim();if(!n){toast("⚠️ أدخل اسم المورد");return;}const ei=$("suppEI").value;if(ei!==""){S.suppliers[parseInt(ei)]={...S.suppliers[parseInt(ei)],name:n,cat:c,note:nt};}else{S.suppliers.push({id:"s"+Date.now(),name:n,cat:c,note:nt});}buildPurchSupp();renderSuppList();renderSuppRpt();cmo("moSupp");$("suppEI").value="";$("suppTit").textContent="📦 إضافة مورد";["sName","sNote"].forEach(id=>$(id).value="");saveAll();toast("✅ تم الحفظ");}
-function delSupp(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}var nm=S.suppliers[i]?S.suppliers[i].name:'?';if(!confirm(`حذف المورد "${nm}"؟`))return;undoSnapshot('حذف مورد: '+nm);S.suppliers.splice(i,1);buildPurchSupp();renderSuppList();renderSuppRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
+function delSupp(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}var sp=S.suppliers[i];if(!sp)return;if(!confirm(`حذف المورد "${sp.name}"؟`))return;undoSnapshot('حذف مورد: '+sp.name);log('حذف مورد — '+sp.name,{action:'delete',entity:'supplier',before:sp});S.suppliers.splice(i,1);buildPurchSupp();renderSuppList();renderSuppRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 function renderSuppRpt(){
   const c=$("suppRpt");if(!c)return;
   const sm={};G().purchases.forEach(p=>{if(!sm[p.sName])sm[p.sName]={t:0,n:0};sm[p.sName].t+=p.amt;sm[p.sName].n++;});
@@ -5470,7 +5714,7 @@ function saveOblig(){
   ["oName","oAmt","oDue"].forEach(id=>{const e=$(id);if(e)e.value="";});
   renderObligList();updateDash();calcCash();updateRpt();cmo("moOblig");saveAll();toast("✅ تم الحفظ");
 }
-function delOblig(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}var nm=G().obligations[i]?G().obligations[i].name:'?';if(!confirm(`حذف "${nm}"؟`))return;undoSnapshot('حذف التزام: '+nm);G().obligations.splice(i,1);renderObligList();updateDash();calcCash();updateRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
+function delOblig(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}var ob=G().obligations[i];if(!ob)return;if(!confirm(`حذف "${ob.name}"؟`))return;undoSnapshot('حذف التزام: '+ob.name);log('حذف التزام — '+ob.name+' '+n3(ob.amt)+' JD',{action:'delete',entity:'obligation',amount:ob.amt,before:ob});G().obligations.splice(i,1);renderObligList();updateDash();calcCash();updateRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 
 /* SALARIES */
 function initSalTables(){
@@ -5697,7 +5941,7 @@ function renderAdvLedger(){
   }).join("");
 }
 function updAdvStat(i,status){G().advances[i].status=status;renderAdv();renderAdvLedger();S.monthlyEmps.forEach(e=>{const pa=pendAdv(e.id);T(`ms_${e.id}_av`,n3(pa));const base=pf(`ms_${e.id}_b`),allow=pf(`ms_${e.id}_a`),ded=pf(`ms_${e.id}_d`);T(`ms_${e.id}_n`,n3(Math.max(0,base+allow-ded-pa)));});updateDash();saveAll();toast("✅ تم التحديث");}
-function delAdv(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}var a=G().advances[i];if(!confirm("حذف سلفة "+(a?a.empName+' '+n3(a.amt):'?')+"؟"))return;undoSnapshot('حذف سلفة: '+(a?a.empName+' '+n3(a.amt):''));G().advances.splice(i,1);renderAdv();renderAdvLedger();initSalTables();updateDash();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
+function delAdv(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}var a=G().advances[i];if(!a)return;if(!confirm("حذف سلفة "+a.empName+' '+n3(a.amt)+'؟'))return;undoSnapshot('حذف سلفة: '+a.empName+' '+n3(a.amt));log('حذف سلفة — '+a.empName+' '+n3(a.amt)+' JD',{action:'delete',entity:'advance',amount:a.amt,before:a});G().advances.splice(i,1);renderAdv();renderAdvLedger();initSalTables();updateDash();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 
 /* CASH BOX — تحديث فوري عند تغيير الالتزامات */
 function calcCash(){
