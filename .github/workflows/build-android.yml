@@ -135,19 +135,56 @@ jobs:
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 30
 
-      - name: Publish APK to v38 release
+      - name: Publish APK to v39 release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v38
-          name: ريحانة كافيه v38.0.0
+          tag_name: v39
+          name: ريحانة كافيه v39.0.0
           prerelease: false
           files: android/app/build/outputs/apk/debug/*.apk
           body: |
-            ## ريحانة كافيه — الإصدار v38.0.0
+            ## ريحانة كافيه — الإصدار v39.0.0
 
-            ### 🐛 إصلاح حرج
-            - حُذف checksum check الكاذب — كان يرفض بيانات السحابة السليمة لأن JSON.stringify ينتج ترتيب مفاتيح مختلف بعد رحلة JSONB
-            - **الآن:** فحص بنيوي فقط (months/sales/suppliers مصفوفات) — أكثر مرونة وموثوق
+            ### 🚨 إصلاحات فقدان البيانات (الأهم!)
+            بعد تدقيق منهجي بـ 5 وكلاء، اكتُشفت 40+ ثغرة، 5 منها سبب مباشر لفقدان بياناتك:
+
+            **A. الجذر الأكبر:** `saveAll` override كان يستبدل الدالة الأصلية دون استدعائها → يُسقط:
+            - IDB backup (الأمان الأخير لاسترداد البيانات)
+            - `itemCatalog`, `purchaseTemplates`, `budgets` (تختفي عند الحفظ)
+            - `savedAt` (Supabase conflict detection يخسر دائماً)
+            - QuotaExceededError (لا تحذير لو ذاكرة LS امتلأت)
+
+            **B.** `idbRecoverIfNeeded` كان ينسخ LS تالف إلى IDB → يدمّر النسخة الاحتياطية
+
+            **C.** `loadStore` كان يبتلع JSON.parse errors → التطبيق يبدو فارغاً → auto-save يكتب فوق IDB
+
+            **D.** `validateSnapshot` صارم زائد + check `||[]` no-op → يرفض بيانات سليمة
+
+            **E.** `syncPullSafe` كان يستبدل الأشهر كلياً (`S.months = snap.months`) — لو السحابة فيها بيانات أقل، تختفي بياناتك المحلية
+
+            ### ☁️ إصلاحات السحابة
+            - **استُرجعت البيانات الناقصة في Supabase**: أبريل (0→56 مشترى)، مايو (0→38)، موردين (10→15)
+            - **دمج آمن بدلاً من استبدال وحشي**: لو السحابة فيها بيانات أقل من المحلي، يُحتفظ بالمحلي ويُرفع للسحابة
+            - **يحتفظ بأشهر محلية غير موجودة في السحابة**: لا حذف صامت
+            - **دمج الموردين بالـ id**: لا تكرار، لا فقد
+
+            ### 🔧 إصلاحات تقنية
+            - `buildSnapshot` يشمل الآن `itemCatalog`, `purchaseTemplates`, `budgets`
+            - Deep clone في buildSnapshot → لا تتأثر بحالة state أثناء الرفع
+            - `validateSnapshot` يقبل sales فارغة + check حقيقي للأنواع
+            - Legacy key scan: لو غُيِّر `SK` مستقبلاً، يبحث في `rh_v5`, `rh_v4`, `rh_v3` قبل البذرة
+            - `loadStore` على parse error → تنبيه واضح + يمنع saveAll من الكتابة فوق التالف
+            - `S.activeKey` يُحفظ تلقائياً عند تغييره عند التحميل
+
+            ### التحقق
+            - ✅ 130/130 اختبار Jest
+            - ✅ JS كامل يُعرَب في V8
+            - ✅ السحابة الآن تحتوي 4 أشهر كاملة
+
+            ### التثبيت:
+            1. حمّل `rayhana-cafe-v39.0.0-debug.apk`
+            2. ثبّت فوق الإصدار السابق
+            3. كلمة المرور: **1234**
 
             ### ↶↷ تراجع/إعادة شامل (Undo/Redo)
             - زر ↶ في رأس التطبيق (مع Ctrl+Z)
