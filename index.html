@@ -3420,14 +3420,16 @@ create policy "allow_all" on rh_store
   <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="addAdv()">✅ تسجيل</button><button class="btn btn-ghost" style="flex:1" onclick="cmo('moAdv')">إلغاء</button></div>
 </div></div>
 
-<div class="mo-ov" id="moPwd" onclick="moOut(event,'moPin')">
-<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moPin')">×</button>
+<!-- v39 [إصلاح UI #1]: كان onclick="cmo('moPin')" لكن id الـ overlay = moPwd
+     → زر الإغلاق وزر إلغاء كانا عاطلين، المستخدم يعلق في الـ modal -->
+<div class="mo-ov" id="moPwd" onclick="moOut(event,'moPwd')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moPwd')">×</button>
   <div class="mo-title">🔑 تغيير كلمة المرور</div>
   <div class="fg"><label>كلمة المرور الحالية</label><input type="password" class="fi" id="pwdOld" placeholder="كلمة المرور الحالية"></div>
   <div class="fg"><label>كلمة المرور الجديدة</label><input type="password" class="fi" id="pwdNew" placeholder="4 أحرف على الأقل"></div>
   <div class="fg"><label>تأكيد كلمة المرور</label><input type="password" class="fi" id="pwdConf" placeholder="أعد الإدخال"></div>
   <div id="pwdChgErr" style="color:var(--rd);font-size:12px;min-height:16px;margin-bottom:8px"></div>
-  <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="changePwd()">✅ تغيير</button><button class="btn btn-ghost" style="flex:1" onclick="cmo('moPin')">إلغاء</button></div>
+  <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="changePwd()">✅ تغيير</button><button class="btn btn-ghost" style="flex:1" onclick="cmo('moPwd')">إلغاء</button></div>
 </div></div>
 
 <!-- V22: مودال النسخ الاحتياطية -->
@@ -4602,8 +4604,9 @@ function updSale(day,field,val){
   if(field==="notes"||field==="receivedBy"){
     s[field]=String(val||"");
   } else {
+    // v39 [إصلاح UI #5]: منع القيم السالبة (الـ HTML min="0" مجرد تلميح)
     var v=parseFloat(val);
-    s[field]=isNaN(v)?0:v;
+    s[field] = isNaN(v) ? 0 : Math.max(0, v);
   }
   var ns=(s.cash||0)+(s.visa||0);
   var tot=ns+(s.pmts||0);
@@ -4653,24 +4656,24 @@ function autoAttFromNotes(day, notes) {
 }
 
 function updateDailyWageTotal() {
-  // Safe salary update that reads from data not DOM
+  // v39 [إصلاح حساب #3]: نستخدم _dwTotal الذي يحترم rateOverrides لكل يوم
+  // كان `rate × days` يُسقط تعديلات الأجر اليومية المخصّصة
   try {
     var d = G();
     var dwT = 0;
     S.dailyEmps.forEach(function(e) {
       var w = d.dWages[e.id] || {};
-      var rate = w.rate || 0;
       var days = (w.att || []).length;
-      dwT += rate * days;
-      // Update UI if visible
+      var empTotal = _dwTotal(w);
+      dwT += empTotal;
       var tEl = document.getElementById("att_t_"+e.id);
       var sEl = document.getElementById("att_s_"+e.id);
-      if(tEl) tEl.textContent = n3(rate*days) + " JD";
+      if(tEl) tEl.textContent = n3(empTotal) + " JD";
       if(sEl) sEl.textContent = days + " يوم";
     });
     var dwEl = document.getElementById("dwtotal");
     if(dwEl) dwEl.textContent = n3(dwT) + " JD";
-  } catch(err) {}
+  } catch(err) { console.warn('updateDailyWageTotal:', err); }
 }
 function calcRevTots(){
   const d=G();let tC=0,tV=0,tP=0;
@@ -6605,20 +6608,61 @@ function exportExcel(){
   d.obligations.forEach(o=>ob.push([o.name,o.amt||0,o.paid?"مدفوع":"غير مدفوع",o.due||""]));
   ob.push(["الإجمالي",d.obligations.reduce((s,o)=>s+(o.amt||0),0),"",""]);
   const wsOb=XLSX.utils.aoa_to_sheet(ob);wsOb["!cols"]=[{wch:26},{wch:12},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,wsOb,"الالتزامات");
-  const sl=[["ريحانة كافيه — الرواتب والأجور"],[],["الموظف","النوع","الأساسي","البدلات","الاستقطاعات","أيام الحضور","الإجمالي"]];
-  S.monthlyEmps.forEach(e=>{const s=d.mSal[e.id]||{};sl.push([e.name,"شهري",s.base||0,s.allow||0,s.ded||0,"—",(s.base||0)+(s.allow||0)-(s.ded||0)]);});
-  S.dailyEmps.forEach(e=>{const w=d.dWages[e.id]||{};const dy=(w.att||[]).length;sl.push([e.name,"يومي",w.rate||0,0,0,dy,(w.rate||0)*dy]);});
-  const wsSl=XLSX.utils.aoa_to_sheet(sl);wsSl["!cols"]=[{wch:14},{wch:10},{wch:12},{wch:12},{wch:12},{wch:12},{wch:14}];XLSX.utils.book_append_sheet(wb,wsSl,"الرواتب");
+  // v39 [إصلاح حساب #1]: ورقة الرواتب تخصم السلف + تحترم rateOverrides + تُظهر حالة الدفع
+  // كان لـ هاني: Excel يُظهر 150 JD صافي، UI يُظهر 55 JD — فرق 95 JD
+  const sl=[["ريحانة كافيه — الرواتب والأجور"],[],["الموظف","النوع","الأساسي","البدلات","استقطاعات+سلف","أيام الحضور","الصافي","الحالة","دفعه"]];
+  S.monthlyEmps.forEach(function(e){
+    var s = d.mSal[e.id] || {};
+    var adv = pendAdv(e.id);
+    var net = Math.max(0, (s.base||0) + (s.allow||0) - (s.ded||0) - adv);
+    sl.push([e.name, "شهري", s.base||0, s.allow||0, (s.ded||0) + adv, "—", net, s.paid?"مدفوع":"مستحق", s.paid?(s.paidBy||""):""]);
+  });
+  S.dailyEmps.forEach(function(e){
+    var w = d.dWages[e.id] || {};
+    var dy = (w.att || []).length;
+    sl.push([e.name, "يومي", w.rate||0, 0, 0, dy, _dwTotal(w), "—", ""]);
+  });
+  const wsSl=XLSX.utils.aoa_to_sheet(sl);
+  wsSl["!cols"]=[{wch:14},{wch:10},{wch:12},{wch:12},{wch:14},{wch:12},{wch:14},{wch:10},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,wsSl,"الرواتب");
   const av=[["ريحانة كافيه — السلف"],[],["الموظف","التاريخ","المبلغ","الحالة","الملاحظة"]];
   d.advances.forEach(a=>av.push([a.empName,a.date,a.amt,a.status,a.note||""]));
   const wsAv=XLSX.utils.aoa_to_sheet(av);wsAv["!cols"]=[{wch:14},{wch:14},{wch:12},{wch:16},{wch:26}];XLSX.utils.book_append_sheet(wb,wsAv,"السلف");
-  const is=[["ريحانة كافيه — قائمة الدخل"],[`${mn} ${y}`],[],["البند","المبلغ (JD)"],
-    ["الإيرادات",""],["نقدي",t.cash],["فيزا",t.visa],["صافي البيع",t.netSales],["مدفوعات",t.pmts],["إجمالي الإيرادات",t.rev],[],
-    ["COGS",t.bycat.COGS],["مجمل الربح",t.grossP],[],["المصاريف التشغيلية",""],
-    ...d.obligations.filter(o=>o.amt>0).map(o=>[o.name+(o.paid?" ✅":" ❌"),o.amt]),
-    ["رواتب مدفوعة ✅",t.mSalPaid],["رواتب مستحقة ⏳",t.mSalAccrued],["أجور يومية (توثيق)",t.dwTotal],["OPS",t.bycat.OPS],["ADM",t.bycat.ADM],["MKT",t.bycat.MKT],
-    ["إجمالي التكاليف",t.totalExp],[],["صافي الدخل",t.profit],["هامش الربح",t.margin.toFixed(2)+"%"]
+  // v39 [إصلاح حساب #5]: تفصيل واضح بين المدفوع (يُحتسب) وغير المدفوع (للعلم)
+  // كانت كل الالتزامات تُعرض بصرف النظر عن الدفع، لكن totalExp يحسب المدفوع فقط
+  // → فارق ظاهري في "إجمالي التكاليف" يربك المستخدم
+  var oblPaidLines = d.obligations.filter(function(o){ return o.paid && o.amt > 0; });
+  var oblUnpaidLines = d.obligations.filter(function(o){ return !o.paid && o.amt > 0; });
+  const is = [["ريحانة كافيه — قائمة الدخل"], [`${mn} ${y}`], [],
+    ["البند", "المبلغ (JD)"],
+    ["═══ الإيرادات ═══", ""],
+    ["نقدي", t.cash], ["فيزا", t.visa], ["صافي البيع", t.netSales],
+    ["مدفوعات أجور يومية (من النقدي)", t.pmts],
+    ["إجمالي الإيرادات", t.rev], [],
+    ["═══ تكلفة البضاعة ═══", ""],
+    ["COGS", t.bycat.COGS],
+    ["مجمل الربح", t.grossP], [],
+    ["═══ المصاريف المدفوعة (تُحتسب) ═══", ""]
   ];
+  oblPaidLines.forEach(function(o){
+    is.push([o.name + (o.paidBy ? " (دفعه " + o.paidBy + ")" : ""), o.amt]);
+  });
+  is.push(["رواتب مدفوعة", t.mSalPaid]);
+  is.push(["OPS تشغيلية", t.bycat.OPS]);
+  is.push(["ADM إدارية", t.bycat.ADM]);
+  is.push(["MKT تسويقية", t.bycat.MKT]);
+  is.push(["إجمالي التكاليف", t.totalExp]);
+  is.push([]);
+  if (oblUnpaidLines.length > 0 || t.mSalAccrued > 0) {
+    is.push(["═══ التزامات معلَّقة (للعلم فقط — لا تُحتسب) ═══", ""]);
+    oblUnpaidLines.forEach(function(o){ is.push([o.name + " (غير مدفوع)", o.amt]); });
+    if (t.mSalAccrued > 0) is.push(["رواتب مستحقة (غير مدفوعة)", t.mSalAccrued]);
+    is.push(["أجور يومية (مخصومة سلفاً من النقدي)", t.dwTotal]);
+    is.push([]);
+  }
+  is.push(["═══ الربحية ═══", ""]);
+  is.push(["صافي الدخل", t.profit]);
+  is.push(["هامش الربح", t.margin.toFixed(2) + "%"]);
   const wsIs=XLSX.utils.aoa_to_sheet(is);wsIs["!cols"]=[{wch:36},{wch:16}];XLSX.utils.book_append_sheet(wb,wsIs,"قائمة الدخل");
   XLSX.writeFile(wb,`ريحانة_كافيه_${mn}_${y}.xlsx`);toast("📗 تم تصدير Excel");log(`تصدير Excel — ${mn} ${y}`);
 }
@@ -11850,30 +11894,42 @@ setTimeout(createAutoBackup, 5000);
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* V24-3 PRO: تحليل الاتجاهات والتوقعات                                        */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+// v39 [إصلاح حساب #4]: ملخّص شهر بنفس معادلة totals() — يضمن اتساق الأرقام
+// كانت الـ trend cards/comparison تعتبر المصاريف = purchases فقط
+// → خطأ مقداره 2000 JD لـ Feb لأن oblPaid و mSalPaid لم يُحسبا
+function _monthSummary(d) {
+  if (!d) return { revenue: 0, expenses: 0, profit: 0 };
+  var cash = 0, visa = 0;
+  (d.sales || []).forEach(function(s) { cash += s.cash || 0; visa += s.visa || 0; });
+  var netSales = cash + visa;
+  var purchases = 0;
+  (d.purchases || []).forEach(function(p) { purchases += p.amt || 0; });
+  var oblPaid = (d.obligations || []).filter(function(o){return o.paid;}).reduce(function(s,o){return s+(o.amt||0);},0);
+  // الرواتب المدفوعة فقط — نفس totals()
+  var mSalPaid = 0;
+  (S.monthlyEmps || []).forEach(function(e) {
+    var sal = (d.mSal || {})[e.id] || {};
+    if (!sal.paid) return;
+    var gross = (sal.base || 0) + (sal.allow || 0);
+    var adv = (d.advances || []).filter(function(a){return a.empId === e.id && (a.status === 'مستحقة' || a.status === 'مسددة جزئياً');}).reduce(function(s,a){return s + (a.amt || 0);}, 0);
+    mSalPaid += Math.max(0, gross - (sal.ded || 0) - adv);
+  });
+  var expenses = purchases + oblPaid + mSalPaid;
+  return { revenue: netSales, expenses: expenses, profit: netSales - expenses };
+}
+
 function analyzeTrends() {
   var months = [];
   var keys = Object.keys(S.months || {}).sort();
-  
-  // جمع بيانات آخر 6 أشهر
+
+  // جمع بيانات آخر 6 أشهر بنفس معادلة totals()
   keys.slice(-6).forEach(function(k) {
-    var d = S.months[k];
-    if (!d) return;
-    
-    var cash = 0, visa = 0, pmts = 0, purchases = 0;
-    (d.sales || []).forEach(function(s) {
-      cash += s.cash || 0;
-      visa += s.visa || 0;
-      pmts += s.pmts || 0;
-    });
-    (d.purchases || []).forEach(function(p) {
-      purchases += p.amt || 0;
-    });
-    
+    var summary = _monthSummary(S.months[k]);
     months.push({
       key: k,
-      revenue: cash + visa,
-      expenses: purchases,
-      profit: (cash + visa) - purchases
+      revenue: summary.revenue,
+      expenses: summary.expenses,
+      profit: summary.profit
     });
   });
   
@@ -11968,13 +12024,10 @@ function renderMonthComparison() {
     return;
   }
   
+  // v39 [إصلاح حساب #4]: نفس معادلة totals() — المصاريف تشمل oblPaid + mSalPaid
   var data = keys.map(function(k) {
-    var d = S.months[k];
-    var cash = 0, visa = 0, purchases = 0;
-    (d.sales || []).forEach(function(s) { cash += s.cash || 0; visa += s.visa || 0; });
-    (d.purchases || []).forEach(function(p) { purchases += p.amt || 0; });
-    var rev = cash + visa;
-    return { key: k, revenue: rev, expenses: purchases, profit: rev - purchases };
+    var s = _monthSummary(S.months[k]);
+    return { key: k, revenue: s.revenue, expenses: s.expenses, profit: s.profit };
   });
   
   var maxVal = Math.max.apply(null, data.map(function(d) { return Math.max(d.revenue, d.expenses); })) || 1;
@@ -12021,36 +12074,38 @@ function renderEmployeeReport() {
   var html = '<div class="card" style="margin:0"><div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">👥</span>تقرير الموظفين</div></div>';
   html += '<div class="card-body">';
   
-  // الموظفين الشهريين
+  // الموظفين الشهريين — v39 [إصلاح حساب #2]: خصم السلف + إظهار حالة الدفع
   if (S.monthlyEmps && S.monthlyEmps.length > 0) {
     html += '<div style="font-size:12px;font-weight:700;color:var(--tx3);margin-bottom:10px">📋 الموظفين الشهريين</div>';
     S.monthlyEmps.forEach(function(e) {
       var sal = d.mSal[e.id] || {};
       var gross = (sal.base || 0) + (sal.allow || 0);
-      var net = gross - (sal.ded || 0);
-      
+      var adv = pendAdv(e.id);
+      var net = Math.max(0, gross - (sal.ded || 0) - adv);
+
       html += '<div class="employee-report-card">';
       html += '<div class="emp-report-header">';
       html += '<div style="display:flex;align-items:center;gap:10px"><div class="emp-avatar">👤</div>';
-      html += '<div><div class="emp-name">' + e.name + '</div><div class="emp-role">راتب شهري</div></div></div>';
+      html += '<div><div class="emp-name">' + esc(e.name) + '</div><div class="emp-role">راتب شهري' + (sal.paid ? ' · ✅ مدفوع' : ' · ⏳ مستحق') + '</div></div></div>';
       html += '</div>';
       html += '<div class="emp-stats-grid">';
       html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--bl)">' + n3(sal.base || 0) + '</div><div class="emp-stat-label">الأساسي</div></div>';
       html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--gn)">' + n3(sal.allow || 0) + '</div><div class="emp-stat-label">البدلات</div></div>';
+      html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--rd)">' + n3((sal.ded || 0) + adv) + '</div><div class="emp-stat-label">خصم + سلف</div></div>';
       html += '<div class="emp-stat"><div class="emp-stat-value" style="color:var(--gold)">' + n3(net) + '</div><div class="emp-stat-label">الصافي</div></div>';
       html += '</div></div>';
     });
   }
-  
-  // الموظفين اليوميين
+
+  // الموظفين اليوميين — v39 [إصلاح حساب #3]: _dwTotal بدل rate*days
   if (S.dailyEmps && S.dailyEmps.length > 0) {
     html += '<div style="font-size:12px;font-weight:700;color:var(--tx3);margin:16px 0 10px">⏰ الموظفين اليوميين</div>';
     S.dailyEmps.forEach(function(e) {
       var w = d.dWages[e.id] || {};
       var days = (w.att || []).length;
-      var total = (w.rate || 0) * days;
-      var daysInMonth = new Date(S.activeKey.split('-')[0], S.activeKey.split('-')[1], 0).getDate();
-      var attendance = ((days / daysInMonth) * 100).toFixed(0);
+      var total = _dwTotal(w);
+      var daysInMonth = daysIn(S.activeKey);
+      var attendance = daysInMonth > 0 ? ((days / daysInMonth) * 100).toFixed(0) : '0';
       
       html += '<div class="employee-report-card">';
       html += '<div class="emp-report-header">';
