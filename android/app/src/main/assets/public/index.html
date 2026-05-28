@@ -2424,25 +2424,27 @@ body.dark .ss-card{background:var(--surf)}
             <button onclick="closeAISettings()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--tx3)">✕</button>
           </div>
           <div style="padding:16px">
-            <!-- Gemini — الأولوية الأولى -->
-            <div style="margin-bottom:14px;padding:12px;background:var(--gnl);border-radius:10px;border:1px solid var(--gnb)">
-              <label style="display:block;font-size:12px;font-weight:700;color:var(--gn);margin-bottom:6px">🟢 Groq API Key — مجاني ✅ (الأولوية)</label>
-              <input type="password" id="groqApiKeyInput" class="inp inp-r" placeholder="gsk_xxxxxxxxxxxx..." style="text-align:left;direction:ltr">
-              <div style="font-size:10px;color:var(--tx3);margin-top:4px">احصل عليه مجاناً من <strong>console.groq.com</strong> ← Get API Key</div>
-              <button class="btn btn-g btn-sm" onclick="saveGroqSettings()" style="margin-top:8px;width:100%">💾 حفظ Groq</button>
-            </div>
-            <!-- Claude — اختياري -->
-            <div style="margin-bottom:14px">
-              <label style="display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:6px">🔵 Claude API Key (اختياري — مدفوع)</label>
+            <!-- Claude — الأولوية الأولى (v42.1) -->
+            <div style="margin-bottom:14px;padding:12px;background:var(--bll);border-radius:10px;border:1.5px solid var(--blb)">
+              <label style="display:block;font-size:12px;font-weight:700;color:var(--bld);margin-bottom:6px">🔵 Claude API Key — المستشار الأقوى ✨ (الأولوية)</label>
               <input type="password" id="claudeApiKeyInput" class="inp inp-r" placeholder="sk-ant-api03-..." style="text-align:left;direction:ltr">
+              <div style="font-size:10px;color:var(--tx3);margin-top:4px">احصل عليه من <strong>console.anthropic.com</strong> ← API Keys ← Create Key</div>
+              <div style="font-size:10px;color:var(--tx3);margin-top:3px">يستخدم Claude Sonnet 4.6 — تحليل عميق وأسئلة مفتوحة بالعربية</div>
               <div style="display:flex;gap:8px;margin-top:8px">
-                <button class="btn btn-p btn-sm" style="flex:1" onclick="saveAISettings()">💾 حفظ Claude</button>
+                <button class="btn btn-p btn-sm" style="flex:1" onclick="saveAISettings()">💾 حفظ وربط Claude</button>
                 <button class="btn btn-ghost btn-sm" onclick="clearAIKey()">🗑️</button>
               </div>
             </div>
+            <!-- Groq — بديل مجاني -->
+            <div style="margin-bottom:14px;padding:12px;background:var(--gnl);border-radius:10px;border:1px solid var(--gnb)">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--gn);margin-bottom:6px">🟢 Groq API Key — بديل مجاني (اختياري)</label>
+              <input type="password" id="groqApiKeyInput" class="inp inp-r" placeholder="gsk_xxxxxxxxxxxx..." style="text-align:left;direction:ltr">
+              <div style="font-size:10px;color:var(--tx3);margin-top:4px">مجاني من <strong>console.groq.com</strong> — يُستخدم فقط لو لم يوجد مفتاح Claude</div>
+              <button class="btn btn-g btn-sm" onclick="saveGroqSettings()" style="margin-top:8px;width:100%">💾 حفظ Groq</button>
+            </div>
             <div style="padding:10px;background:var(--surf3);border-radius:8px;font-size:11px;color:var(--tx2)">
               <div id="aiCurrentStatus" style="font-weight:600;margin-bottom:4px">الحالة: جاري التحقق...</div>
-              <div>بدون مفتاح: ردود محلية محدودة | مع Gemini: AI حقيقي مجاني</div>
+              <div>الأولوية: Claude ← Groq ← محلي. مفتاحك يُحفظ على جهازك فقط (لا يُرسل لأحد غير Anthropic).</div>
             </div>
           </div>
         </div>
@@ -8814,18 +8816,19 @@ function clearAIKey() {
 }
 
 function updateAIStatus(hasKey) {
+  // v42.1: Claude أولاً
   var statusText = document.getElementById('aiStatusText');
   var statusDot = document.querySelector('.ai-status-dot');
-  var geminiKey = safeLS.getItem('rh_groq_key') || '';
+  var groqKey = safeLS.getItem('rh_groq_key') || '';
   var claudeKey = safeLS.getItem('rh_claude_key') || '';
-  var hasGemini = geminiKey.startsWith('gsk_');
   var hasClaude = claudeKey.startsWith('sk-');
-  if (hasGemini) {
+  var hasGroq = groqKey.startsWith('gsk_');
+  if (hasClaude) {
+    if (statusText) statusText.textContent = '🔵 Claude AI (Sonnet 4.6)';
+    if (statusDot) statusDot.style.background = '#3B82F6';
+  } else if (hasGroq) {
     if (statusText) statusText.textContent = '🟢 Groq AI (مجاني)';
     if (statusDot) statusDot.style.background = '#10B981';
-  } else if (hasClaude) {
-    if (statusText) statusText.textContent = '🔵 Claude AI';
-    if (statusDot) statusDot.style.background = '#3B82F6';
   } else {
     if (statusText) statusText.textContent = '🟡 محلي (بدون AI)';
     if (statusDot) statusDot.style.background = '#F59E0B';
@@ -8870,8 +8873,8 @@ function sendAIMessage() {
     context = { month: S.activeKey, revenue: 0, expenses: 0, profit: 0, margin: 0, avgDaily: 0, activeDays: 0, totalDays: 30 };
   }
   
-  // V25: ترتيب الأولوية: Groq (مجاني) → Claude → محلي
-  var geminiKey = safeLS.getItem('rh_groq_key') || '';
+  // v42.1: ترتيب الأولوية الجديد: Claude (أنت) أولاً → Groq → محلي
+  var groqKey = safeLS.getItem('rh_groq_key') || '';
   var claudeKey = safeLS.getItem('rh_claude_key') || '';
 
   var responseTimeout = setTimeout(function() {
@@ -8881,17 +8884,36 @@ function sendAIMessage() {
       aiLoading = false;
       if (sendBtn) sendBtn.disabled = false;
     }
-  }, 18000);
+  }, 30000); // 30s — Claude قد يأخذ وقتاً للتحليل العميق
 
-  // Gemini أولاً (مجاني)
-  if (geminiKey && geminiKey.startsWith('gsk_')) {
+  function _aiDone(){ aiLoading = false; if(sendBtn) sendBtn.disabled = false; }
+
+  // Claude أولاً (أنت) — إذا أدخل المستخدم مفتاح Anthropic
+  if (claudeKey && (claudeKey.startsWith('sk-ant-') || claudeKey.startsWith('sk-'))) {
+    callClaudeAPI(question, context, claudeKey)
+      .then(function(response) {
+        clearTimeout(responseTimeout);
+        if (thinkingMsg) thinkingMsg.remove();
+        addAIMessage(response, 'assistant');
+        _aiDone();
+      })
+      .catch(function(err) {
+        clearTimeout(responseTimeout);
+        if (thinkingMsg) thinkingMsg.remove();
+        // أظهر سبب الفشل الحقيقي (مفتاح خاطئ، رصيد، إلخ) ثم محلي
+        var msg = (err && err.message) ? err.message : 'خطأ غير معروف';
+        addAIMessage('⚠️ تعذّر الاتصال بـ Claude: ' + msg + '\n\nإليك تحليلاً محلياً:', 'assistant');
+        try { addAIMessage(getEnhancedLocalAIResponse(question, context), 'assistant'); } catch(e) {}
+        _aiDone();
+      });
+  } else if (groqKey && groqKey.startsWith('gsk_')) {
+    // Groq (مجاني) كبديل
     callGroqAPI(question, context)
       .then(function(response) {
         clearTimeout(responseTimeout);
         if (thinkingMsg) thinkingMsg.remove();
         addAIMessage(response, 'assistant');
-        aiLoading = false;
-        if (sendBtn) sendBtn.disabled = false;
+        _aiDone();
       })
       .catch(function(err) {
         console.warn('Groq error, trying local:', err);
@@ -8899,42 +8921,23 @@ function sendAIMessage() {
         if (thinkingMsg) thinkingMsg.remove();
         try { addAIMessage(getEnhancedLocalAIResponse(question, context), 'assistant'); }
         catch(e) { addAIMessage('⚠️ حدث خطأ. جرب مرة أخرى.', 'assistant'); }
-        aiLoading = false;
-        if (sendBtn) sendBtn.disabled = false;
-      });
-  } else if (claudeKey && claudeKey.startsWith('sk-')) {
-    // Claude كـ fallback
-    callClaudeAPI(question, context, claudeKey)
-      .then(function(response) {
-        clearTimeout(responseTimeout);
-        if (thinkingMsg) thinkingMsg.remove();
-        addAIMessage(response, 'assistant');
-        aiLoading = false;
-        if (sendBtn) sendBtn.disabled = false;
-      })
-      .catch(function(err) {
-        clearTimeout(responseTimeout);
-        if (thinkingMsg) thinkingMsg.remove();
-        try { addAIMessage(getEnhancedLocalAIResponse(question, context), 'assistant'); }
-        catch(e) { addAIMessage('⚠️ حدث خطأ. جرب مرة أخرى.', 'assistant'); }
-        aiLoading = false;
-        if (sendBtn) sendBtn.disabled = false;
+        _aiDone();
       });
   } else {
-    // استخدام النظام المحلي المحسّن
+    // النظام المحلي المحسّن + دعوة لربط Claude
     setTimeout(function() {
       clearTimeout(responseTimeout);
       if (thinkingMsg) thinkingMsg.remove();
       try {
         var response = getEnhancedLocalAIResponse(question, context);
         addAIMessage(response, 'assistant');
+        addAIMessage('💡 لتفعيل Claude الحقيقي (تحليل أعمق وأسئلة مفتوحة): اذهب لتبويب ☁️ السحابة ← مفتاح Claude API.', 'assistant');
       } catch(e) {
         console.warn('AI Response Error:', e);
         addAIMessage('☕ **مستشار ريحانة**\n\nيمكنني مساعدتك في:\n• كيف أداء الشهر؟\n• قارن بالشهر السابق\n• حلل التكاليف\n• أعطني نصائح', 'assistant');
       }
-      aiLoading = false;
-      if (sendBtn) sendBtn.disabled = false;
-    }, 500);
+      _aiDone();
+    }, 400);
   }
 }
 
@@ -9120,6 +9123,8 @@ async function callClaudeAPI(question, context, apiKey) {
     (ctx.goal > 0 ? '\n- الهدف الشهري: ' + n3(ctx.goal) + ' JD' : '') +
     '\n\nسؤال العميل: ' + question;
   
+  // v42.1: نموذج حديث (Sonnet 4.6) + effort منخفض لردود سريعة في الدردشة
+  // معالجة أخطاء حقيقية: 401 مفتاح خاطئ، 429 تجاوز الحد، 400 طلب خاطئ
   var response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -9129,19 +9134,32 @@ async function callClaudeAPI(question, context, apiKey) {
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 800,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1200,
       system: systemPrompt,
+      output_config: { effort: 'low' }, // ردود سريعة للدردشة
+      thinking: { type: 'disabled' },
       messages: [{ role: 'user', content: userPrompt }]
     })
   });
-  
+
   if (!response.ok) {
-    throw new Error('API Error: ' + response.status);
+    var errText = '';
+    try { var errData = await response.json(); errText = errData.error ? errData.error.message : ''; } catch(e){}
+    if (response.status === 401) throw new Error('مفتاح API غير صحيح — تحقق منه في تبويب السحابة');
+    if (response.status === 429) throw new Error('تجاوزت حد الطلبات — انتظر دقيقة');
+    if (response.status === 400) throw new Error('طلب غير صحيح' + (errText ? ': ' + errText : ''));
+    if (response.status === 529) throw new Error('الخدمة مشغولة — حاول بعد قليل');
+    throw new Error('خطأ ' + response.status + (errText ? ': ' + errText : ''));
   }
-  
+
   var data = await response.json();
-  return data.content[0].text;
+  if (data.content && data.content.length) {
+    // اجمع كل نصوص الرد (قد تكون عدة blocks)
+    var txt = data.content.filter(function(b){ return b.type === 'text'; }).map(function(b){ return b.text; }).join('\n');
+    return txt || '⚠️ رد فارغ من Claude';
+  }
+  throw new Error('رد غير متوقع من Claude');
 }
 
 // النظام المحلي المحسّن
