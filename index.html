@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V41 PRO</title>
+<title>ريحانة V42 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1872,7 +1872,7 @@ body.dark .ss-card{background:var(--surf)}
         </a>
       </div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v41</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v42</div>
   </div>
 </div>
 
@@ -3850,7 +3850,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v41';
+      const CACHE_NAME = 'rayhana-v42';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -5669,19 +5669,26 @@ function _autoFillFromCatalog(idx, name) {
 function saveAsTemplate() {
   var active = _itemRows.filter(Boolean).filter(function(r) { return r.name && r.name.trim(); });
   if (!active.length) { toast('⚠️ لا توجد بنود لحفظها كقالب'); return; }
-  var name = prompt('اسم القالب (مثال: طلب السكر الأسبوعي):', '');
-  if (!name || !name.trim()) return;
-  if (!S.purchaseTemplates) S.purchaseTemplates = [];
-  S.purchaseTemplates.push({
-    id: 't' + Date.now(),
-    name: name.trim(),
-    suppId: document.getElementById('pSupp') ? document.getElementById('pSupp').value : '',
-    suppName: document.getElementById('pSupp') ? (document.getElementById('pSupp').selectedOptions[0] || {}).text || '' : '',
-    cat: document.getElementById('pCat') ? document.getElementById('pCat').value : 'COGS',
-    items: active.map(function(r) { return Object.assign({}, r); }),
+  // v41.1: نافذة مخصّصة بدل prompt()
+  askInput({
+    title: 'حفظ كقالب',
+    sub: 'اسم القالب (مثال: طلب السكر الأسبوعي)',
+    type: 'text',
+    placeholder: 'اسم القالب'
+  }, function(name){
+    if (!name || !name.trim()) return;
+    if (!S.purchaseTemplates) S.purchaseTemplates = [];
+    S.purchaseTemplates.push({
+      id: 't' + Date.now(),
+      name: name.trim(),
+      suppId: document.getElementById('pSupp') ? document.getElementById('pSupp').value : '',
+      suppName: document.getElementById('pSupp') ? (document.getElementById('pSupp').selectedOptions[0] || {}).text || '' : '',
+      cat: document.getElementById('pCat') ? document.getElementById('pCat').value : 'COGS',
+      items: active.map(function(r) { return Object.assign({}, r); }),
+    });
+    saveAll();
+    toast('✅ تم حفظ القالب "' + name.trim() + '"');
   });
-  saveAll();
-  toast('✅ تم حفظ القالب "' + name.trim() + '"');
 }
 function openTemplateSelect() {
   var tmpl = S.purchaseTemplates || [];
@@ -5962,13 +5969,20 @@ function setAttDayRate(empId,day){
   if(!d.dWages[empId].rateOverrides)d.dWages[empId].rateOverrides={};
   const base=d.dWages[empId].rate||0;
   const cur=d.dWages[empId].rateOverrides[day]!==undefined?d.dWages[empId].rateOverrides[day]:base;
-  const val=prompt(`أجر اليوم ${day} (JD) — الأساسي: ${base} JD:`,cur);
-  if(val===null)return;
-  const rate=parseFloat(val);
-  if(isNaN(rate)||rate<0){toast('⚠️ أدخل رقماً صحيحاً');return;}
-  if(rate===base){delete d.dWages[empId].rateOverrides[day];}
-  else{d.dWages[empId].rateOverrides[day]=rate;}
-  buildAttGrid();calcSal();saveAll();
+  // v41.1: نافذة مخصّصة بدل prompt() الأصلي
+  askInput({
+    title: 'أجر اليوم ' + day,
+    sub: 'الأجر الأساسي: ' + base + ' JD — أدخل أجراً مخصّصاً لهذا اليوم',
+    type: 'number',
+    value: cur,
+    placeholder: '0'
+  }, function(rate){
+    if(rate === null) return;
+    if(rate === base){ delete d.dWages[empId].rateOverrides[day]; }
+    else { d.dWages[empId].rateOverrides[day] = rate; }
+    buildAttGrid(); calcSal(); saveAll();
+    toast('✅ أجر اليوم ' + day + ' = ' + n3(rate) + ' JD');
+  });
 }
 function buildAttGrid(){
   const c=$("attGrid");if(!c)return;
@@ -6028,7 +6042,11 @@ function calcSal(){
     const att=d.dWages[e.id].att||[],tot=_dwTotal(d.dWages[e.id]);dwT+=tot;
     T(`att_s_${e.id}`,`${att.length} يوم`);T(`att_t_${e.id}`,`${n3(tot)} JD`);
   });
-  T("dwtotal",n3(dwT)+" JD");saveAll();
+  T("dwtotal",n3(dwT)+" JD");
+  // v41.1 [سلاسة]: debounce الحفظ — كان يحفظ JSON كامل في كل ضغطة مفتاح
+  // الآن: يحدّث الحالة فوراً، يحفظ بعد 800ms من آخر تعديل
+  if(window._calcSalSaveTimer) clearTimeout(window._calcSalSaveTimer);
+  window._calcSalSaveTimer = setTimeout(function(){ try { saveAll(); } catch(e){} }, 800);
 }
 
 /* TOGGLE SALARY PAID — V33: يسأل عن من دفع */
@@ -6080,6 +6098,53 @@ function _applySalPaidUI(empId, isPaid){
 
 // v33: modal لاختيار من دفع — يُستخدم في الالتزامات والرواتب
 // callback(payer) — payer هو 'يزن' أو 'عبدالرحمن' أو نص حر، null للإلغاء
+// v41.1: نافذة إدخال مخصّصة (رقم/نص) — بديل prompt() الأصلي القبيح
+// prompt() يُظهر 'تعرض الصفحة في file://' في Android WebView
+function askInput(opts, callback){
+  opts = opts || {};
+  var existing = document.getElementById('askInputModal');
+  if(existing) existing.remove();
+  var isNum = opts.type === 'number';
+  var modal = document.createElement('div');
+  modal.id = 'askInputModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML =
+    '<div style="background:var(--surf);border-radius:14px;padding:18px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.45);direction:rtl">' +
+      '<div style="font-size:15px;font-weight:700;color:var(--tx);margin-bottom:6px">' + esc(opts.title || 'إدخال') + '</div>' +
+      (opts.sub ? '<div style="font-size:12px;color:var(--tx3);margin-bottom:12px">' + esc(opts.sub) + '</div>' : '<div style="margin-bottom:12px"></div>') +
+      '<input type="' + (isNum ? 'number' : 'text') + '" id="askInputField" class="inp" ' +
+        (isNum ? 'step="0.001" min="0" inputmode="decimal" ' : '') +
+        'value="' + esc(String(opts.value !== undefined ? opts.value : '')) + '" ' +
+        'placeholder="' + esc(opts.placeholder || '') + '" ' +
+        'style="width:100%;height:44px;font-size:16px;text-align:center;font-weight:700">' +
+      '<div style="display:flex;gap:8px;margin-top:14px">' +
+        '<button id="askInputOk" class="btn btn-p" style="flex:1;height:42px">حفظ</button>' +
+        '<button id="askInputCancel" class="btn btn-ghost" style="flex:1;height:42px">إلغاء</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(modal);
+  var field = document.getElementById('askInputField');
+  setTimeout(function(){ field.focus(); field.select(); }, 80);
+
+  function close(val){ modal.remove(); if(typeof callback === 'function') callback(val); }
+  document.getElementById('askInputOk').onclick = function(){
+    var v = field.value;
+    if(isNum){
+      var n = parseFloat(v);
+      if(isNaN(n) || n < 0){ field.style.borderColor = 'var(--rd)'; return; }
+      close(n);
+    } else {
+      close(String(v || '').trim());
+    }
+  };
+  document.getElementById('askInputCancel').onclick = function(){ close(null); };
+  modal.onclick = function(e){ if(e.target === modal) close(null); };
+  field.onkeydown = function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('askInputOk').click(); }
+    if(e.key === 'Escape'){ close(null); }
+  };
+}
+
 function askPaidBy(title, callback){
   // إغلاق أي modal سابق
   var existing = document.getElementById('askPaidByModal');
@@ -6694,7 +6759,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v41',
+    version:'v42',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -6707,7 +6772,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v41_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v42_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
@@ -7381,11 +7446,19 @@ function renderInvList(){
 }
 function invAdj(idx,dir){
   if(!S.inventory||!S.inventory[idx])return;
-  var step=parseFloat(prompt('\u0643\u0645\u064a\u0629 \u0627\u0644\u062a\u0639\u062f\u064a\u0644\u061f','1'))||1;
-  if(isNaN(step)||step<=0)return;
-  S.inventory[idx].qty=Math.max(0,+(S.inventory[idx].qty+dir*step).toFixed(3));
-  renderInvList();saveAll();
-  log('\u0645\u062e\u0632\u0648\u0646 \u2014 '+S.inventory[idx].name+' \u2192 '+S.inventory[idx].qty+' '+S.inventory[idx].unit);
+  // v41.1: \u0646\u0627\u0641\u0630\u0629 \u0645\u062e\u0635\u0651\u0635\u0629 \u0628\u062f\u0644 prompt()
+  askInput({
+    title: (dir > 0 ? '\u0632\u064a\u0627\u062f\u0629' : '\u0625\u0646\u0642\u0627\u0635') + ' \u0645\u062e\u0632\u0648\u0646: ' + S.inventory[idx].name,
+    sub: '\u0643\u0645\u064a\u0629 \u0627\u0644\u062a\u0639\u062f\u064a\u0644',
+    type: 'number',
+    value: 1,
+    placeholder: '1'
+  }, function(step){
+    if(step === null || isNaN(step) || step <= 0) return;
+    S.inventory[idx].qty = Math.max(0, +(S.inventory[idx].qty + dir*step).toFixed(3));
+    renderInvList(); saveAll();
+    log('\u0645\u062e\u0632\u0648\u0646 \u2014 ' + S.inventory[idx].name + ' \u2192 ' + S.inventory[idx].qty + ' ' + S.inventory[idx].unit);
+  });
 }
 function invDel(idx){
   if(!confirm('\u062d\u0630\u0641 \u0627\u0644\u0635\u0646\u0641\u061f'))return;
