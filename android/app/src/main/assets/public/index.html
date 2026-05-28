@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ريحانة كافيه">
 <link rel="manifest" href="./manifest.json">
-<title>ريحانة V42 PRO</title>
+<title>ريحانة V43 PRO</title>
 <!-- preconnect: تسريع DNS/TLS لكل مصادر خارجية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1872,7 +1872,7 @@ body.dark .ss-card{background:var(--surf)}
         </a>
       </div>
     </div>
-    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v42</div>
+    <div style="margin-top:20px;font-size:10px;color:rgba(26,61,30,.35);letter-spacing:1px">Powered by Rayhana ERP v43</div>
   </div>
 </div>
 
@@ -3052,6 +3052,36 @@ body.dark .ss-card{background:var(--surf)}
         </div>
       </div>
 
+      <!-- v42.2: بطاقة الصورة الكاملة لآخر الشهر -->
+      <div class="card" style="margin-top:12px">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-y">🎯</span>صورة آخر الشهر — بعد سداد كل شيء</div></div>
+        <div class="card-body" style="padding:14px">
+          <div class="rpt-row rpt-row-sub">
+            <span class="rpt-row-lbl">💵 إجمالي المدفوعات اليومية للعاملات</span>
+            <span class="rpt-row-val" id="r-eom-pmts" style="font-weight:700;color:var(--ywd)">0.000 JD</span>
+          </div>
+          <div style="height:1px;background:var(--br);margin:10px 0"></div>
+          <div class="rpt-row rpt-row-sub">
+            <span class="rpt-row-lbl">صافي الربح الحالي <small>(بعد المدفوع فقط)</small></span>
+            <span class="rpt-row-val green" id="r-eom-now" style="font-weight:700">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-sub">
+            <span class="rpt-row-lbl">➖ التزامات غير مدفوعة بعد</span>
+            <span class="rpt-row-val red" id="r-eom-unpaid-obl">0.000 JD</span>
+          </div>
+          <div class="rpt-row rpt-row-sub">
+            <span class="rpt-row-lbl">➖ رواتب مستحقة لم تُدفع</span>
+            <span class="rpt-row-val red" id="r-eom-unpaid-sal">0.000 JD</span>
+          </div>
+          <div style="height:1px;background:var(--br);margin:10px 0"></div>
+          <div style="background:linear-gradient(135deg,var(--ywl),var(--surf));border:1.5px solid var(--ywb);border-radius:12px;padding:14px;text-align:center">
+            <div style="font-size:12px;color:var(--ywd);font-weight:700;margin-bottom:4px">💰 صافي الربح المتوقع بعد سداد كل الالتزامات والرواتب</div>
+            <div id="r-eom-final" style="font-size:26px;font-weight:800;font-family:'IBM Plex Mono'">0.000 JD</div>
+            <div id="r-eom-note" style="font-size:11px;color:var(--tx3);margin-top:4px">—</div>
+          </div>
+        </div>
+      </div>
+
       <!-- ══ CHART ══ -->
       <div class="card" style="margin-top:12px">
         <div class="card-hd">
@@ -3852,7 +3882,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     // إنشاء Service Worker inline
     var swCode = `
-      const CACHE_NAME = 'rayhana-v42';
+      const CACHE_NAME = 'rayhana-v43';
       const urlsToCache = [self.location.href];
 
       self.addEventListener('install', function(event) {
@@ -6350,6 +6380,29 @@ function updateRpt(){
 
   T('r-texp', n3(t.totalExp)+' JD');
 
+  // v42.2: صورة آخر الشهر — الربح بعد سداد كل الالتزامات والرواتب
+  // الالتزامات غير المدفوعة + الرواتب المستحقة (لم تُطرح بعد من الربح الحالي)
+  var unpaidObl = t.obls.filter(function(o){ return !o.paid && o.amt > 0; }).reduce(function(s,o){ return s + o.amt; }, 0);
+  var unpaidSal = t.mSalAccrued || 0;
+  var eomFinal = t.profit - unpaidObl - unpaidSal; // صافي بعد سداد كل شيء
+  T('r-eom-pmts', n3(t.pmts) + ' JD');
+  T('r-eom-now', n3(t.profit) + ' JD');
+  T('r-eom-unpaid-obl', n3(unpaidObl) + ' JD');
+  T('r-eom-unpaid-sal', n3(unpaidSal) + ' JD');
+  var eomEl = document.getElementById('r-eom-final');
+  if(eomEl){
+    eomEl.textContent = n3(eomFinal) + ' JD';
+    eomEl.style.color = eomFinal >= 0 ? 'var(--gn)' : 'var(--rd)';
+  }
+  var eomNote = document.getElementById('r-eom-note');
+  if(eomNote){
+    if(unpaidObl + unpaidSal === 0){
+      eomNote.textContent = '✅ كل الالتزامات والرواتب مدفوعة — هذا ربحك الفعلي';
+    } else {
+      eomNote.textContent = 'بعد دفع ' + n3(unpaidObl + unpaidSal) + ' JD التزامات/رواتب متبقية';
+    }
+  }
+
   // Chart total label
   T('rpt-chart-total', 'إجمالي: '+n3(t.totalExp)+' JD');
 
@@ -6761,7 +6814,7 @@ function syncAttFromAllNotes(){
 
 function exportJSON(){
   var data={
-    version:'v42',
+    version:'v43',
     activeKey:S.activeKey,
     months:S.months,
     monthlyEmps:S.monthlyEmps,
@@ -6774,7 +6827,7 @@ function exportJSON(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   var ym=S.activeKey.split('-');
-  a.download='rayhana_v42_'+ym[0]+'_'+ym[1]+'.json';
+  a.download='rayhana_v43_'+ym[0]+'_'+ym[1]+'.json';
   a.click();
   toast('💾 تم تصدير النسخة الاحتياطية');
   log('تصدير JSON — '+S.activeKey);
