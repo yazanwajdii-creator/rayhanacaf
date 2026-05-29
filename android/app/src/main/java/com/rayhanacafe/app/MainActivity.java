@@ -1,9 +1,11 @@
 package com.rayhanacafe.app;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,6 +39,9 @@ public class MainActivity extends Activity {
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
     private static final int FILE_CHOOSER_REQUEST = 1;
+    // v56: للإدخال الصوتي — تأجيل طلب صلاحية المايك من WebView حتى يوافق المستخدم على مستوى Android
+    private PermissionRequest pendingWebPermissionRequest;
+    private static final int REQ_RECORD_AUDIO = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,7 +111,22 @@ public class MainActivity extends Activity {
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(PermissionRequest request) {
-                request.grant(request.getResources());
+                // v56: للمايك — لا يكفي grant على مستوى WebView، نحتاج صلاحية Android أولاً
+                String[] resources = request.getResources();
+                boolean needsMic = false;
+                for (String r : resources) {
+                    if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(r)) {
+                        needsMic = true; break;
+                    }
+                }
+                if (needsMic && checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    // خزّن الطلب وانتظر موافقة المستخدم
+                    pendingWebPermissionRequest = request;
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_RECORD_AUDIO);
+                } else {
+                    request.grant(resources);
+                }
             }
 
             @Override
@@ -235,6 +255,25 @@ public class MainActivity extends Activity {
                     }
                 });
             }
+        }
+    }
+
+    // v56: نتيجة طلب صلاحية المايك من المستخدم
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_RECORD_AUDIO && pendingWebPermissionRequest != null) {
+            boolean granted = grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            if (granted) {
+                pendingWebPermissionRequest.grant(pendingWebPermissionRequest.getResources());
+            } else {
+                pendingWebPermissionRequest.deny();
+                Toast.makeText(this,
+                    "🎤 الإدخال الصوتي يحتاج صلاحية المايك — فعّلها من الإعدادات لاحقاً",
+                    Toast.LENGTH_LONG).show();
+            }
+            pendingWebPermissionRequest = null;
         }
     }
 

@@ -929,6 +929,11 @@ body.presentation-mode .kpi-tile{transform:scale(1.05)}
 .fab-secondary{background:var(--surf);border:1px solid var(--br);color:var(--tx)}
 .fab-tooltip{position:absolute;left:54px;background:var(--surf);padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600;white-space:nowrap;box-shadow:var(--sh1);opacity:0;pointer-events:none;transition:opacity .2s}
 .fab-btn:hover .fab-tooltip{opacity:1}
+/* v56: زر المايك العائم + نبض حال الاستماع */
+.fab-voice{color:#fff;box-shadow:0 4px 14px rgba(123,77,191,.45)}
+@keyframes voicePulse{0%{box-shadow:0 0 0 0 rgba(225,29,72,.7)}70%{box-shadow:0 0 0 18px rgba(225,29,72,0)}100%{box-shadow:0 0 0 0 rgba(225,29,72,0)}}
+.vmic:hover{transform:scale(1.05)}
+.vmic:active{transform:scale(.96)}
 @media(max-width:400px){
   .fab-container{bottom:85px;left:8px;gap:10px}
   .fab-btn{width:40px;height:40px;font-size:16px}
@@ -1905,6 +1910,11 @@ body.dark .ss-card{background:var(--surf)}
     <button class="fab-btn fab-secondary" onclick="showBackups()" title="النسخ الاحتياطية">
       📦
       <span class="fab-tooltip">نسخ احتياطية</span>
+    </button>
+    <!-- v56: إدخال صوتي/كتابي بالعربية -->
+    <button class="fab-btn fab-voice" id="voiceFab" onclick="openVoiceInput()" title="إدخال صوتي" style="background:linear-gradient(135deg,#7B4DBF,#5B2FA6);color:#fff">
+      🎙️
+      <span class="fab-tooltip">إدخال صوتي</span>
     </button>
     <button class="fab-btn fab-primary" onclick="quickAddSale()" title="إضافة سريعة">
       ➕
@@ -3735,6 +3745,34 @@ create policy "allow_all" on rh_store
   <div class="btn-row" style="margin-top:10px"><button class="btn btn-p" style="flex:1" onclick="copyBriefing()">📋 نسخ</button><button class="btn btn-g" style="flex:1" onclick="shareBriefingNative()">📤 مشاركة</button><button class="btn btn-ghost" onclick="cmo('moBriefing')">إغلاق</button></div>
 </div></div>
 
+<!-- v56: إدخال صوتي/كتابي بالعربية مع NLP يفهم النوايا (شراء/مبيعات/سلفة) -->
+<div class="mo-ov" id="moVoice" onclick="moOut(event,'moVoice')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moVoice')">×</button>
+  <div class="mo-title">🎙️ إدخال صوتي أو كتابي</div>
+
+  <div id="voiceMicArea" style="text-align:center;padding:8px 0 12px">
+    <button id="voiceMicBtn" onclick="voiceToggle()" class="vmic" style="width:84px;height:84px;border-radius:50%;border:none;background:linear-gradient(135deg,#7B4DBF,#5B2FA6);color:#fff;font-size:36px;cursor:pointer;box-shadow:0 8px 24px rgba(123,77,191,.4);transition:all .25s">🎙️</button>
+    <div id="voiceStatus" style="margin-top:8px;font-size:12px;color:var(--tx3);min-height:18px">اضغط على المايك وتكلم</div>
+  </div>
+
+  <div style="font-size:11px;color:var(--tx4);text-align:center;margin-bottom:8px">— أو اكتب الأمر مباشرة —</div>
+  <textarea id="voiceText" placeholder="مثال: اشتريت من يحيى رسمي بقيمة ١٠٠، أو: اليوم كاش ٣٠٠ وفيزا ٥٠" style="width:100%;min-height:64px;padding:10px;border-radius:10px;border:1px solid var(--br);background:var(--bg2);color:var(--tx);font-family:inherit;font-size:13px;direction:rtl;resize:vertical;box-sizing:border-box" oninput="voiceParseLive()"></textarea>
+
+  <div id="voicePreview" style="display:none;margin-top:10px;padding:12px;border-radius:10px;background:var(--bg2);border:1px solid var(--br)"></div>
+
+  <div style="font-size:10.5px;color:var(--tx4);margin-top:8px;line-height:1.6">
+    💡 أمثلة مفهومة:<br>
+    • <b>شراء</b>: "اشتريت من يحيى رسمي فواتير بقيمة مية"<br>
+    • <b>مبيعات</b>: "اليوم كاش ثلاثمية وفيزا خمسين"<br>
+    • <b>سلفة</b>: "سلفة لأحمد عشرين دينار"
+  </div>
+
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn btn-p" style="flex:1" id="voiceConfirmBtn" onclick="voiceConfirm()" disabled>✅ تأكيد وحفظ</button>
+    <button class="btn btn-ghost" onclick="cmo('moVoice')">إلغاء</button>
+  </div>
+</div></div>
+
 <!-- v39 [إصلاح UI #1]: كان onclick="cmo('moPin')" لكن id الـ overlay = moPwd
      → زر الإغلاق وزر إلغاء كانا عاطلين، المستخدم يعلق في الـ modal -->
 <div class="mo-ov" id="moPwd" onclick="moOut(event,'moPwd')">
@@ -4379,7 +4417,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v55';
+const APP_VERSION='v56';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5065,6 +5103,445 @@ function shareBriefingNative(){
   } else {
     try { window.open('https://wa.me/?text='+encodeURIComponent(text), '_blank'); } catch(e){ copyBriefing(); }
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * SECTION: VOICE INPUT (v56) — إدخال صوتي/كتابي عربي مع NLP
+ *   ▸ ARNUM   — محلّل أرقام عربية (ميتين وخمسة وعشرين → 225)
+ *   ▸ ARCMD   — محلّل أوامر (يستخرج intent + entities)
+ *   ▸ VOICE   — التقاط صوتي (Web Speech API + fallback نصّي)
+ *   ▸ EXEC    — تنفيذ الأمر (يضيف إلى purchases/sales/advances)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1) ARNUM: تطبيع نصّ عربي + قاموس أرقام منطوقة ── */
+var _AR_DIGITS = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
+                  '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
+var _AR_UNITS = {
+  'صفر':0,'لا':0,
+  'واحد':1,'واحدة':1,'وحدة':1,'وحده':1,
+  'اثنين':2,'اتنين':2,'تنين':2,'اثنان':2,'اثنتين':2,'ثنين':2,
+  'ثلاثة':3,'ثلاث':3,'تلاتة':3,'تلت':3,'تلاته':3,'ثلاثه':3,
+  'اربعة':4,'اربع':4,'اربعه':4,
+  'خمسة':5,'خمس':5,'خمسه':5,
+  'ستة':6,'ست':6,'سته':6,
+  'سبعة':7,'سبع':7,'سبعه':7,
+  'ثمانية':8,'تمانية':8,'تمن':8,'ثمن':8,'تمانيه':8,'ثمانيه':8,
+  'تسعة':9,'تسع':9,'تسعه':9,
+  'عشرة':10,'عشر':10,'عشره':10
+};
+var _AR_TEENS = {
+  'حداعش':11,'احداعش':11,'احدعشر':11,
+  'اطناعش':12,'اتناعش':12,'اطنعش':12,'اتنعش':12,
+  'تلتعش':13,'تلطعش':13,'تلتطعش':13,
+  'اربعطعش':14,'اربعتعش':14,
+  'خمسطعش':15,'خمستعش':15,
+  'ستطعش':16,'ستتعش':16,
+  'سبعطعش':17,'سبعتعش':17,
+  'تمنطعش':18,'تمنتعش':18,
+  'تسعطعش':19,'تسعتعش':19
+};
+var _AR_TENS = {
+  'عشرين':20,'عشرون':20,
+  'ثلاثين':30,'تلاتين':30,'ثلاثون':30,
+  'اربعين':40,
+  'خمسين':50,
+  'ستين':60,
+  'سبعين':70,
+  'تمانين':80,'ثمانين':80,
+  'تسعين':90
+};
+var _AR_HUNDREDS = {
+  'مية':100,'ميه':100,'مايه':100,'ميا':100,'مايا':100,'مئة':100,'مائة':100,
+  'ميتين':200,'مئتين':200,'مايتين':200,
+  'تلتمية':300,'ثلاثمية':300,'تلتميه':300,'ثلاثميه':300,'ثلاثمائة':300,'تلاتمية':300,
+  'اربعمية':400,'اربعميه':400,'اربعمائة':400,
+  'خمسمية':500,'خمسميه':500,'خمسمائة':500,
+  'ستمية':600,'ستميه':600,'ستمائة':600,
+  'سبعمية':700,'سبعميه':700,'سبعمائة':700,
+  'تمنمية':800,'ثمنمية':800,'تمانميه':800,'تمنميه':800,'ثمانمائة':800,
+  'تسعمية':900,'تسعميه':900,'تسعمائة':900
+};
+var _AR_THOUSANDS = {'الف':1000,'ألف':1000,'الفين':2000,'ألفين':2000,'الفان':2000};
+var _AR_TH_MULT = {'الاف':1000,'آلاف':1000,'تلاف':1000,'تالاف':1000};
+
+function _normalizeArabic(s){
+  if(!s) return '';
+  s = String(s);
+  s = s.replace(/[٠-٩۰-۹]/g, function(d){ return _AR_DIGITS[d] || d; });
+  s = s.replace(/[إأآا]/g,'ا');
+  s = s.replace(/ى/g,'ي');
+  s = s.replace(/ة/g,'ه'); // unify taa marbuta → haa (improves matching)
+  s = s.replace(/ؤ/g,'و').replace(/ئ/g,'ي');
+  s = s.replace(/[ً-ْٰ]/g,''); // diacritics
+  s = s.replace(/ـ/g,''); // tatweel
+  s = s.replace(/[،,]/g,' ');
+  s = s.replace(/\s+/g,' ').trim();
+  return s;
+}
+
+/* تجرّد «و»/«ب» — لكن لا تُجرّد كلمة هي بحدّ ذاتها رقم معروف («واحد»، «الف»). */
+function _stripNumPrefix(t){
+  if(!t) return '';
+  var s = String(t);
+  if(_AR_UNITS.hasOwnProperty(s) || _AR_TEENS.hasOwnProperty(s) || _AR_TENS.hasOwnProperty(s)
+      || _AR_HUNDREDS.hasOwnProperty(s) || _AR_THOUSANDS.hasOwnProperty(s) || _AR_TH_MULT.hasOwnProperty(s)){
+    return s;
+  }
+  return s.replace(/^و/,'').replace(/^ب(?=[ا-ي])/,'');
+}
+
+function _isNumberToken(t){
+  if(!t) return false;
+  var s = _stripNumPrefix(t);
+  if(!s) return false;
+  return _AR_UNITS.hasOwnProperty(s) || _AR_TEENS.hasOwnProperty(s)
+      || _AR_TENS.hasOwnProperty(s) || _AR_HUNDREDS.hasOwnProperty(s)
+      || _AR_THOUSANDS.hasOwnProperty(s) || _AR_TH_MULT.hasOwnProperty(s)
+      || /^\d+(?:\.\d+)?$/.test(s);
+}
+
+/* محلّل أرقام عربية — يفهم: رقمية، منطوقة، ومركّبة بـ"و" */
+function _parseArabicNumber(text){
+  if(text == null) return null;
+  var norm = _normalizeArabic(text);
+  if(!norm) return null;
+  if(/^[\d.]+$/.test(norm)) return parseFloat(norm);
+  var tokens = norm.split(/\s+/);
+  var total = 0, current = 0, found = false;
+  for(var i=0; i<tokens.length; i++){
+    var t = _stripNumPrefix(tokens[i]);
+    if(!t) continue;
+    if(_AR_UNITS.hasOwnProperty(t)){ current = _AR_UNITS[t]; found = true; }
+    else if(_AR_TEENS.hasOwnProperty(t)){ total += _AR_TEENS[t]; current = 0; found = true; }
+    else if(_AR_TENS.hasOwnProperty(t)){ total += _AR_TENS[t] + current; current = 0; found = true; }
+    else if(_AR_HUNDREDS.hasOwnProperty(t)){ total += _AR_HUNDREDS[t]; current = 0; found = true; }
+    else if(_AR_THOUSANDS.hasOwnProperty(t)){ total += _AR_THOUSANDS[t]; current = 0; found = true; }
+    else if(_AR_TH_MULT.hasOwnProperty(t)){ total += (current || 1) * 1000; current = 0; found = true; }
+    else if(/^\d+(?:\.\d+)?$/.test(t)){ total += parseFloat(t); found = true; }
+  }
+  total += current;
+  return found ? total : null;
+}
+
+/* ── 2) ARCMD: محلّل أوامر — يستخرج النية والكيانات ── */
+function _parseVoiceCommand(text){
+  if(!text) return { intent:'unknown', fields:{}, raw:'' };
+  var raw = String(text).trim();
+  var norm = _normalizeArabic(raw).toLowerCase();
+
+  // كشف النية
+  var intent = 'unknown';
+  if(/سلف[هة]|اعطيت.{0,15}سلف/.test(norm)) intent = 'advance';
+  else if(/اشتري|فاتور|اخذت من|استلمت من/.test(norm)) intent = 'purchase';
+  else if(/كاش|فيزا|مبيعات|بعت|باع|مدفوعات/.test(norm)) intent = 'sale';
+  else if(/دفعت.{0,15}راتب|راتب.{0,15}دفعت|سلمت.{0,15}راتب/.test(norm)) intent = 'salary';
+
+  var fields = {};
+  var tokens = norm.split(/\s+/);
+
+  // استخراج كل الأرقام (متتالية تشكّل عدداً مركّباً، مع الحفاظ على «و» الواصلة)
+  var runs = [], cur = [];
+  for(var i=0; i<tokens.length; i++){
+    var tk = tokens[i];
+    if(_isNumberToken(tk) || (cur.length && tk === 'و')){
+      cur.push(tk);
+    } else {
+      if(cur.length){ runs.push({text:cur.join(' '), endIdx:i-1}); cur = []; }
+    }
+  }
+  if(cur.length) runs.push({text:cur.join(' '), endIdx:tokens.length-1});
+  var amounts = runs.map(function(r){
+    return { val:_parseArabicNumber(r.text), endIdx:r.endIdx };
+  }).filter(function(a){ return a.val != null && a.val > 0; });
+
+  // اليوم/أمس
+  var dayNum = (new Date()).getDate();
+  if(/امس|البارح[هة]/.test(norm)) dayNum = Math.max(1, dayNum - 1);
+
+  if(intent === 'sale'){
+    // ابحث عن كاش/فيزا/مدفوعات + الرقم الذي يليه
+    function _amtAfter(keyword){
+      var m = norm.match(new RegExp(keyword + '\\s+([^\\.،,؟!]*?)(?:\\s+(?:و(?:كاش|فيزا|مدفوعات))|$)','u'));
+      if(!m) return null;
+      return _parseArabicNumber(m[1]);
+    }
+    fields.cash = _amtAfter('كاش') || _amtAfter('نقدي') || _amtAfter('نقد');
+    fields.visa = _amtAfter('فيزا') || _amtAfter('شبكه') || _amtAfter('شبكة');
+    fields.pmts = _amtAfter('مدفوعات') || _amtAfter('مدفوع');
+    fields.day = dayNum;
+    // إن لم تُذكر أي صيغة لكن يوجد رقم → اعتبره كاش
+    if(!fields.cash && !fields.visa && !fields.pmts && amounts.length){
+      fields.cash = amounts[0].val;
+    }
+  }
+
+  if(intent === 'purchase'){
+    // المورد بعد كلمة "من" (ربما مع "عند")
+    var suppM = norm.match(/من\s+(?:عند\s+)?([؀-ۿ]+(?:\s+[؀-ۿ]+)?)/);
+    if(suppM){
+      var rawSupp = suppM[1].replace(/\b(فواتير|فاتوره|فاتورة|بضاع[هة]|بقيم[هة]|قيمتها|قيمتو)\b.*$/,'').trim();
+      // قصّ عند أول رقم
+      var sTokens = rawSupp.split(/\s+/);
+      var clean = [];
+      for(var j=0; j<sTokens.length; j++){
+        if(_isNumberToken(sTokens[j].replace(/^و/,''))) break;
+        clean.push(sTokens[j]);
+      }
+      rawSupp = clean.join(' ').trim();
+      if(rawSupp){
+        fields.supplierGuess = rawSupp;
+        var sList = (typeof S !== 'undefined' && S.suppliers) ? S.suppliers : [];
+        var bestMatch = null, bestScore = 0;
+        sList.forEach(function(s){
+          var n = _normalizeArabic(s.name).toLowerCase();
+          var score = 0;
+          if(n === rawSupp) score = 100;
+          else if(n.indexOf(rawSupp) >= 0) score = 80;
+          else if(rawSupp.indexOf(n) >= 0) score = 70;
+          else {
+            // كلمة مشتركة
+            var sw = n.split(' '), tw = rawSupp.split(' ');
+            for(var k=0; k<sw.length; k++) for(var l=0; l<tw.length; l++){
+              if(sw[k].length>2 && sw[k] === tw[l]) score = Math.max(score, 60);
+            }
+          }
+          if(score > bestScore){ bestScore = score; bestMatch = s; }
+        });
+        if(bestMatch){ fields.sId = bestMatch.id; fields.sName = bestMatch.name; }
+      }
+    }
+    if(amounts.length){ fields.amt = Math.max.apply(null, amounts.map(function(a){return a.val;})); }
+    fields.date = (new Date()).toISOString().slice(0,10);
+    fields.cat = 'COGS';
+  }
+
+  if(intent === 'advance'){
+    // الاسم بعد "ل" أو "لـ"
+    var nameM = norm.match(/سلف[هة]\s+ل?([؀-ۿ]+)/) || norm.match(/ل([؀-ۿ]+)\s+سلف/);
+    if(nameM){
+      var rawName = nameM[1].trim();
+      fields.nameGuess = rawName;
+      var allEmps = [].concat(((typeof S !== 'undefined') && S.monthlyEmps) || []).concat(((typeof S !== 'undefined') && S.dailyEmps) || []);
+      var emp = allEmps.find(function(e){
+        var n = _normalizeArabic(e.name).toLowerCase();
+        return n === rawName || n.indexOf(rawName) >= 0 || rawName.indexOf(n) >= 0;
+      });
+      if(emp){ fields.empId = emp.id; fields.empName = emp.name; }
+    }
+    if(amounts.length){ fields.amt = Math.max.apply(null, amounts.map(function(a){return a.val;})); }
+    fields.date = (new Date()).toISOString().slice(0,10);
+  }
+
+  if(intent === 'salary'){
+    // الاسم بعد "ل"
+    var nm = norm.match(/ل([؀-ۿ]+)\s+(?:راتب|راتبه|راتبها)/) || norm.match(/راتب\s+([؀-ۿ]+)/);
+    if(nm){
+      var rn = nm[1].trim();
+      fields.nameGuess = rn;
+      var ems = ((typeof S !== 'undefined') && S.monthlyEmps) || [];
+      var em = ems.find(function(e){
+        var n = _normalizeArabic(e.name).toLowerCase();
+        return n === rn || n.indexOf(rn) >= 0 || rn.indexOf(n) >= 0;
+      });
+      if(em){ fields.empId = em.id; fields.empName = em.name; }
+    }
+  }
+
+  return { intent:intent, fields:fields, raw:raw, normalized:norm, amounts:amounts.map(function(a){return a.val;}) };
+}
+
+/* ── 3) VOICE: التقاط صوتي مع Web Speech API ── */
+var _voiceRec = null, _voiceListening = false, _voiceLastParsed = null;
+
+function openVoiceInput(){
+  var ta = $('voiceText'); if(ta) ta.value = '';
+  var pv = $('voicePreview'); if(pv){ pv.style.display='none'; pv.innerHTML=''; }
+  var cb = $('voiceConfirmBtn'); if(cb) cb.disabled = true;
+  _voiceLastParsed = null;
+  var stat = $('voiceStatus');
+  if(stat){
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    stat.textContent = SR ? 'اضغط على المايك وتكلم' : 'المايك غير مدعوم — اكتب الأمر في المربع تحت';
+  }
+  openMo('moVoice');
+}
+
+function voiceToggle(){
+  if(_voiceListening){ voiceStop(); } else { voiceStart(); }
+}
+
+function voiceStart(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    toast('🎤 المايك غير مدعوم على هذا الجهاز — اكتب الأمر بدلاً منه');
+    var ta = $('voiceText'); if(ta) ta.focus();
+    return;
+  }
+  try {
+    _voiceRec = new SR();
+    _voiceRec.lang = 'ar-JO';
+    _voiceRec.continuous = false;
+    _voiceRec.interimResults = true;
+    _voiceRec.maxAlternatives = 1;
+    _voiceRec.onresult = function(ev){
+      var txt = '';
+      for(var i=ev.resultIndex; i<ev.results.length; i++){
+        txt += ev.results[i][0].transcript;
+      }
+      var ta = $('voiceText'); if(ta){ ta.value = txt; voiceParseLive(); }
+    };
+    _voiceRec.onerror = function(e){
+      _voiceListening = false; _voiceMicUI(false);
+      var msg = 'تعذّر التعرّف';
+      if(e && e.error){
+        if(e.error === 'not-allowed') msg = '🚫 ارفض المايك — فعّله من إعدادات الجهاز';
+        else if(e.error === 'no-speech') msg = '🤫 لم أسمع شيئاً — حاول مجدداً';
+        else if(e.error === 'network') msg = '📶 خطأ شبكة — اكتب يدوياً';
+        else if(e.error === 'language-not-supported') msg = '🗣️ العربية غير مدعومة هنا — اكتب يدوياً';
+      }
+      var stat = $('voiceStatus'); if(stat) stat.textContent = msg;
+    };
+    _voiceRec.onend = function(){ _voiceListening = false; _voiceMicUI(false); };
+    _voiceRec.start();
+    _voiceListening = true;
+    _voiceMicUI(true);
+    var stat = $('voiceStatus'); if(stat) stat.textContent = '🔴 يستمع... تكلم الآن';
+  } catch(e){
+    console.warn('voiceStart:', e);
+    toast('⚠️ تعذّر تشغيل المايك — اكتب الأمر بدلاً منه');
+    _voiceListening = false; _voiceMicUI(false);
+  }
+}
+
+function voiceStop(){
+  try { if(_voiceRec) _voiceRec.stop(); } catch(e){}
+  _voiceListening = false; _voiceMicUI(false);
+}
+
+function _voiceMicUI(active){
+  var btn = $('voiceMicBtn');
+  if(!btn) return;
+  if(active){
+    btn.textContent = '⏹️';
+    btn.style.background = 'linear-gradient(135deg,#E11D48,#9F1239)';
+    btn.style.animation = 'voicePulse 1.2s infinite';
+  } else {
+    btn.textContent = '🎙️';
+    btn.style.background = 'linear-gradient(135deg,#7B4DBF,#5B2FA6)';
+    btn.style.animation = '';
+  }
+}
+
+function voiceParseLive(){
+  var ta = $('voiceText'); if(!ta) return;
+  var txt = ta.value.trim();
+  var pv = $('voicePreview'), cb = $('voiceConfirmBtn');
+  if(!txt){
+    if(pv){ pv.style.display='none'; pv.innerHTML=''; }
+    if(cb) cb.disabled = true;
+    _voiceLastParsed = null;
+    return;
+  }
+  var parsed = _parseVoiceCommand(txt);
+  _voiceLastParsed = parsed;
+  _voiceRenderPreview(parsed);
+}
+
+function _voiceRenderPreview(p){
+  var pv = $('voicePreview'), cb = $('voiceConfirmBtn');
+  if(!pv) return;
+  var f = p.fields || {};
+  var html = '<div style="font-size:11px;color:var(--tx4);margin-bottom:4px">📝 ما فهمته:</div>';
+  var ok = false;
+
+  if(p.intent === 'purchase'){
+    var sn = f.sName || ('<span style="color:var(--rd)">'+esc(f.supplierGuess||'مورد غير محدد')+' (غير موجود — أضفه أولاً)</span>');
+    var amt = f.amt ? '<b>'+n3(f.amt)+' JD</b>' : '<span style="color:var(--rd)">المبلغ غير محدد</span>';
+    html += '<div style="font-size:13px;line-height:1.9">🛒 <b>فاتورة شراء</b><br>المورد: '+(typeof sn==='string'?sn:esc(sn))+'<br>المبلغ: '+amt+'<br>الفئة: COGS · التاريخ: '+esc(f.date||'')+'</div>';
+    ok = !!(f.sId && f.amt > 0);
+  } else if(p.intent === 'sale'){
+    var parts = [];
+    if(f.cash > 0) parts.push('💵 كاش: <b>'+n3(f.cash)+'</b>');
+    if(f.visa > 0) parts.push('💳 فيزا: <b>'+n3(f.visa)+'</b>');
+    if(f.pmts > 0) parts.push('📤 مدفوعات: <b>'+n3(f.pmts)+'</b>');
+    html += '<div style="font-size:13px;line-height:1.9">💰 <b>إيراد يوم '+f.day+'</b><br>'+(parts.join('<br>')||'<span style="color:var(--rd)">لا أرقام واضحة</span>')+'</div>';
+    ok = (f.cash > 0 || f.visa > 0 || f.pmts > 0);
+  } else if(p.intent === 'advance'){
+    var en = f.empName || ('<span style="color:var(--rd)">'+esc(f.nameGuess||'موظف غير محدد')+' (غير موجود)</span>');
+    var aa = f.amt ? '<b>'+n3(f.amt)+' JD</b>' : '<span style="color:var(--rd)">المبلغ غير محدد</span>';
+    html += '<div style="font-size:13px;line-height:1.9">💵 <b>سلفة</b><br>الموظف/ة: '+(typeof en==='string'?en:esc(en))+'<br>المبلغ: '+aa+'<br>التاريخ: '+esc(f.date||'')+'</div>';
+    ok = !!(f.empId && f.amt > 0);
+  } else if(p.intent === 'salary'){
+    var sen = f.empName || ('<span style="color:var(--rd)">'+esc(f.nameGuess||'موظف غير محدد')+'</span>');
+    html += '<div style="font-size:13px;line-height:1.9">💼 <b>تعليم راتب كمدفوع</b><br>الموظف/ة: '+(typeof sen==='string'?sen:esc(sen))+'</div>';
+    ok = !!f.empId;
+  } else {
+    html += '<div style="font-size:13px;color:var(--rd)">⚠️ لم أفهم نوع العملية. ابدأ بـ"اشتريت" أو "اليوم كاش" أو "سلفة لـ..."</div>';
+    ok = false;
+  }
+  pv.innerHTML = html;
+  pv.style.display = 'block';
+  if(cb) cb.disabled = !ok;
+}
+
+/* ── 4) EXEC: تنفيذ الأمر ── */
+function voiceConfirm(){
+  if(!_voiceLastParsed){ return; }
+  if(isLocked && isLocked()){ toast('🔒 الشهر مغلق'); return; }
+  var p = _voiceLastParsed, f = p.fields || {};
+  try {
+    if(p.intent === 'purchase' && f.sId && f.amt > 0){
+      var sup = S.suppliers.find(function(s){ return s.id === f.sId; }) || {name:f.sName};
+      var rec = { date:f.date, sId:f.sId, sName:sup.name, cat:f.cat||'COGS', desc:'(صوتي) '+p.raw.slice(0,40), amt:f.amt, inv:'', buyer:'' };
+      if(typeof undoSnapshot === 'function') undoSnapshot('فاتورة صوتية');
+      G().purchases.push(rec);
+      if(typeof log === 'function') log('مشتريات (صوتي) — '+sup.name+' — '+n3(f.amt)+' JD',{action:'add',entity:'purchase',amount:f.amt});
+      if(typeof renderPurch === 'function') renderPurch();
+      if(typeof renderSuppRpt === 'function') renderSuppRpt();
+      if(typeof updateDash === 'function') updateDash();
+      if(typeof saveAll === 'function') saveAll();
+      cmo('moVoice');
+      toast('✅ تم تسجيل الفاتورة · اضغط ↶ للتراجع');
+      return;
+    }
+    if(p.intent === 'sale' && (f.cash > 0 || f.visa > 0 || f.pmts > 0)){
+      var d = G();
+      var row = (d.sales || []).find(function(r){ return r.day === f.day; });
+      if(!row){ row = { day:f.day, cash:0, visa:0, pmts:0, notes:'', receivedBy:'' }; d.sales.push(row); }
+      if(typeof undoSnapshot === 'function') undoSnapshot('إيراد صوتي يوم '+f.day);
+      if(f.cash > 0) row.cash = (row.cash||0) + f.cash;
+      if(f.visa > 0) row.visa = (row.visa||0) + f.visa;
+      if(f.pmts > 0) row.pmts = (row.pmts||0) + f.pmts;
+      if(typeof log === 'function') log('إيراد (صوتي) يوم '+f.day+' — كاش '+n3(f.cash||0)+' فيزا '+n3(f.visa||0));
+      if(typeof renderRevTable === 'function') renderRevTable();
+      if(typeof updateDash === 'function') updateDash();
+      if(typeof saveAll === 'function') saveAll();
+      cmo('moVoice');
+      toast('✅ تم تسجيل إيراد يوم '+f.day+' · اضغط ↶ للتراجع');
+      return;
+    }
+    if(p.intent === 'advance' && f.empId && f.amt > 0){
+      var rec2 = { date:f.date, empId:f.empId, name:f.empName, amt:f.amt, status:'مستحقة', note:'(صوتي)', paidBy:'' };
+      if(typeof undoSnapshot === 'function') undoSnapshot('سلفة صوتية');
+      G().advances.push(rec2);
+      if(typeof log === 'function') log('سلفة (صوتي) — '+f.empName+' — '+n3(f.amt)+' JD');
+      if(typeof renderAdv === 'function') renderAdv();
+      if(typeof updateDash === 'function') updateDash();
+      if(typeof saveAll === 'function') saveAll();
+      cmo('moVoice');
+      toast('✅ تم تسجيل السلفة · اضغط ↶ للتراجع');
+      return;
+    }
+    toast('⚠️ معلومات ناقصة — راجع المعاينة');
+  } catch(e){
+    console.error('voiceConfirm:', e);
+    toast('⚠️ خطأ في التنفيذ — جرّب مجدداً أو سجّل يدوياً');
+  }
+}
+
+/* expose for unit tests (Node/Jest) */
+if(typeof module !== 'undefined' && module.exports){
+  module.exports = { _parseArabicNumber:_parseArabicNumber, _parseVoiceCommand:_parseVoiceCommand, _normalizeArabic:_normalizeArabic };
 }
 
 /* REVENUE */
