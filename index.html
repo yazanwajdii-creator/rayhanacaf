@@ -3562,10 +3562,10 @@ create policy "allow_all" on rh_store
             <span class="ai-chip" id="aiCtxDays">أيام: —</span>
           </div>
           <div class="ai-quick" style="margin-bottom:10px" id="aiQuickRow">
-            <button class="ai-qbtn" onclick="askAI('حلل الأداء المالي الكامل لهذا الشهر وأعطني تقريراً شاملاً')">📈 تحليل شامل</button>
+            <button class="ai-qbtn" onclick="askAI('شخّص وضعي المالي والإداري بالكامل')">🩺 شخّص وضعي</button>
             <button class="ai-qbtn" onclick="askAI('ما هي أبرز المشاكل والمخاطر في بيانات الكافيه؟')">⚠️ المشاكل</button>
             <button class="ai-qbtn" onclick="askAI('قارن هذا الشهر بالشهر السابق وأخبرني ما الذي تغير')">⚖️ مقارنة</button>
-            <button class="ai-qbtn" onclick="askAI('كيف يمكن تقليل التكاليف وزيادة الأرباح بشكل عملي؟')">💡 تحسين الأرباح</button>
+            <button class="ai-qbtn" onclick="askAI('حلّل وضعي وأعطني خطة عملية لتحسين الأرباح')">💡 تحسين الأرباح</button>
             <button class="ai-qbtn" onclick="askAI('هل رواتب الموظفين مناسبة لحجم الإيراد؟ وهل نحتاج تعديل؟')">👷 تقييم الرواتب</button>
             <button class="ai-qbtn" onclick="askAI('توقع الإيراد المتوقع نهاية الشهر ونهاية السنة')">🎯 التوقع</button>
             <button class="ai-qbtn" onclick="askAI('هل مصروفات المشتريات والموردين معقولة؟ من أين يمكن التوفير؟')">🛒 المشتريات</button>
@@ -4344,7 +4344,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v52';
+const APP_VERSION='v53';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -9650,6 +9650,204 @@ async function callClaudeAPI(question, context, apiKey) {
 // النظام المحلي المحسّن
 // ─── مساعد محادثة بالعربية: يجيب على أسئلة محدّدة من بياناتك مباشرةً ───
 // يُستدعى أولاً؛ إن لم يطابق سؤالاً محدّداً يُعيد null فيكمل المحرك العام.
+// ═══════════════════════════════════════════════════════════════════════════
+// 🧑‍💼 المستشار المالي/الإداري الحقيقي — محرك تشخيص يفكّر بالأرقام لا قوالب جاهزة
+// يفحص بياناتك، يكتشف المشاكل، يُكمّم أثر كل مشكلة بالـJD، ويرتّبها بالأولوية،
+// ويعطي تشخيصاً + قراراً قابلاً للتنفيذ. كل ذلك أوفلاين بلا أي مفتاح.
+// المعايير العالمية لقطاع المقاهي مدمجة (COGS 28–35٪، عمالة ≤30٪، Prime ≤60٪).
+// ═══════════════════════════════════════════════════════════════════════════
+function cafeAdvisor(){
+  var c, t; try{ c=getCalc(); t=totals(); }catch(e){ return []; }
+  var F=[];
+  var ns=c.netSales||0;
+  var scale=c.activeDays>0?(c.daysInMonth/c.activeDays):1;
+  // أساس شهري عادل: نُسقِط البيع لكامل الشهر، ونُحوّل التكاليف لمكافئها الشهري.
+  // مهم: الراتب الشهري ثابت (لا يتغيّر بعدد الأيام)، أما البضاعة والأجور اليومية فتتناسب مع الأيام.
+  var projNet=ns*scale;                                  // صافي بيع شهري متوقّع
+  var cogsMonthly=(t.bycat.COGS||0)*scale;               // البضاعة تتناسب مع الأيام
+  var laborMonthly=(t.mSalG||0)+(t.dwTotal||0)*scale;    // راتب شهري ثابت + أجور يومية مُسقطة
+  var cogsRatio=projNet>0?cogsMonthly/projNet*100:0;
+  var laborRatio=projNet>0?laborMonthly/projNet*100:0;
+  var primeRatio=projNet>0?(cogsMonthly+laborMonthly)/projNet*100:0;
+  function add(sev,impact,ico,title,diag,action){F.push({sev:sev,impact:Math.max(0,impact||0),ico:ico,title:title,diag:diag,action:action});}
+
+  // 0) بيانات قليلة → لا نُحلّل بأرقام هشّة
+  if(c.activeDays<3){
+    return [{sev:'info',impact:0,ico:'📭',title:'بيانات غير كافية للتحليل',
+      diag:'أدخلت '+c.activeDays+' يوم فقط هذا الشهر.',
+      action:'أدخل إيرادات عدة أيام ومشترياتك، وسأعطيك تشخيصاً مالياً دقيقاً مرتّباً بالأولوية.'}];
+  }
+
+  // 1) خسارة صافية (أعلى أولوية)
+  if(c.profit<0){
+    add('crit',Math.abs(c.profit)*scale,'🚨','الكافيه يعمل بخسارة',
+      'صافي الخسارة حتى الآن '+n3(Math.abs(c.profit))+' JD (هامش '+c.margin.toFixed(1)+'%).',
+      'عالج أكبر بندين أدناه فوراً، وراجع تسعير المنتجات الأكثر مبيعاً.');
+  }
+
+  // 2) تكلفة البضاعة COGS (نسبة عادلة: بضاعة/بيع كلاهما لنفس الفترة)
+  if(projNet>0 && cogsRatio>35){
+    var saveCogs=cogsMonthly-0.32*projNet;
+    var sup=detectSupplierPriceAlert();
+    var cause=sup?(' السبب المرجّح: مورد «'+esc(sup.nm)+'» ارتفع متوسط فاتورته '+sup.pct.toFixed(0)+'٪ عن الشهر الماضي.'):'';
+    add(cogsRatio>45?'crit':'warn',saveCogs,'🛒','تكلفة البضاعة مرتفعة ('+cogsRatio.toFixed(0)+'٪)',
+      'المعيار الصحي 28–35٪ وأنت عند '+cogsRatio.toFixed(0)+'٪.'+cause,
+      'فاوض الموردين أو غيّر المصدر؛ خفضها إلى 32٪ يوفّر ~'+n3(saveCogs)+' JD/شهر.');
+  }
+
+  // 3) العمالة (الراتب الشهري مقابل البيع الشهري المتوقّع — لا مقابل أيام معدودة)
+  if(projNet>0 && laborRatio>30){
+    var saveLabor=laborMonthly-0.28*projNet;
+    add(laborRatio>40?'crit':'warn',saveLabor,'👥','تكلفة العمالة مرتفعة ('+laborRatio.toFixed(0)+'٪)',
+      'المعيار ≤30٪ من البيع، وأنت عند '+laborRatio.toFixed(0)+'٪ (بيع متوقّع للشهر '+n3(projNet)+').',
+      'أعد جدولة الورديات نحو أيام الذروة؛ تقريبها من 28٪ يوفّر ~'+n3(saveLabor)+' JD/شهر.');
+  }
+
+  // 4) التكلفة الأولية (Prime cost) — أهم رقم لمالك الكافيه
+  if(projNet>0 && primeRatio>60){
+    add(primeRatio>68?'crit':'warn',(cogsMonthly+laborMonthly)-0.60*projNet,'⚖️','التكلفة الأولية مرتفعة ('+primeRatio.toFixed(0)+'٪)',
+      'التكلفة الأولية = بضاعة + عمالة. المعيار ≤60٪، وأنت عند '+primeRatio.toFixed(0)+'٪ — هذا يلتهم ربحك.',
+      'لا يمكن خفض الاثنين معاً فجأة؛ ابدأ بالأكبر (بضاعة أو عمالة) من البنود أعلاه.');
+  }
+
+  // 5) هامش ربح منخفض → اقتراح رفع أسعار مُكمَّم
+  if(ns>0 && c.margin>=0 && c.margin<15){
+    add(c.margin<8?'warn':'info',0.05*projNet,'💰','هامش الربح منخفض ('+c.margin.toFixed(1)+'٪)',
+      'هامش الكافيه الصحي 15–20٪. رفع الأسعار 5٪ نادراً ما يلاحظه الزبائن.',
+      'رفع الأسعار 5٪ يضيف ~'+n3(0.05*projNet)+' JD/شهر تقريباً كاملةً إلى الربح.');
+  }
+
+  // 6) التزامات غير مدفوعة ستضرب الربح لاحقاً
+  if((c.oblUnpaid||0)>0){
+    add('warn',c.oblUnpaid,'📋','التزامات غير مسددة ('+n3(c.oblUnpaid)+' JD)',
+      'هذه لم تُطرح من الربح بعد؛ عند دفعها سينخفض ربحك المعروض بمقدارها.',
+      'خطّط للسيولة لدفعها في موعدها وتجنّب الغرامات والتأخير.');
+  }
+
+  // 7) رواتب مستحقة لم تُدفع
+  if((c.salariesAccrued||0)>0){
+    add('info',c.salariesAccrued,'💼','رواتب مستحقة ('+n3(c.salariesAccrued)+' JD)',
+      'رواتب لم تُسجَّل كمدفوعة، فهي غير مطروحة من ربح الشهر بعد.',
+      'تأكّد من تسجيلها عند الدفع لتعكس القوائم ربحك الحقيقي.');
+  }
+
+  // 8) فرق الصندوق (عجز/فائض) — مؤشر سرقة/خطأ إدخال
+  try{
+    var cf=G().cashflow||{};
+    if((cf.actual||0)>0){
+      var advAll=(G().advances||[]).filter(function(a){return a.status==='مستحقة'||a.status==='مسددة جزئياً';}).reduce(function(s,a){return s+(a.amt||0);},0);
+      var expected=(cf.opening||0)+t.cash-(t.bycat.total||0)-(t.oblPaid||0)-advAll;
+      var diff=(cf.actual||0)-expected;
+      if(Math.abs(diff)>=2){
+        add(Math.abs(diff)>20?'crit':'warn',Math.abs(diff),diff<0?'🔴':'🟡',(diff<0?'عجز':'فائض')+' في الصندوق ('+n3(Math.abs(diff))+' JD)',
+          'الرصيد الفعلي يختلف عن المتوقّع بمقدار '+n3(Math.abs(diff))+' JD.',
+          diff<0?'افحص: خطأ إدخال، نقد لم يُسلَّم، أو تسرّب — راجع مدفوعات اليوم.':'فائض غير مبرّر غالباً خطأ إدخال — تحقّق من الأرقام.');
+      }
+    }
+  }catch(e){}
+
+  // 9) المتفرقات (OTHER) مرتفعة = صرف غير مُتحكَّم به
+  var totPurch=(t.bycat.total||0);
+  if(totPurch>0 && (t.bycat.OTHER||0)/totPurch>0.10){
+    add('warn',(t.bycat.OTHER||0)*scale,'🧾','المتفرقات مرتفعة ('+((t.bycat.OTHER/totPurch)*100).toFixed(0)+'٪ من المشتريات)',
+      'مبلغ كبير مصنّف «أخرى» يعني ضعف تحكّم — لا تعرف أين يذهب المال.',
+      'افتح «التحليل الذكي ← تحليل المتفرقات» وأعد تصنيف أكبر البنود لفئاتها.');
+  }
+
+  // 10) اتجاه داخل الشهر (نصف أول مقابل نصف ثاني) — عادل
+  var days=(G().sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)>0;}).map(function(s){return (s.cash||0)+(s.visa||0);});
+  if(days.length>=6){
+    var half=Math.floor(days.length/2);
+    var a1=days.slice(0,half).reduce(function(x,y){return x+y;},0)/half;
+    var a2=days.slice(half).reduce(function(x,y){return x+y;},0)/(days.length-half);
+    if(a1>0){
+      var ch=(a2-a1)/a1*100;
+      if(ch<=-10) add('warn',Math.abs(a2-a1)*Math.max(0,c.daysInMonth-c.activeDays),'📉','المبيعات في انخفاض داخل الشهر',
+        'متوسط النصف الثاني ('+n3(a2)+') أقل من الأول ('+n3(a1)+') بـ '+Math.abs(ch).toFixed(0)+'٪.',
+        'راجع الجودة/الخدمة وفعّل عرضاً ترويجياً سريعاً لوقف التراجع.');
+      else if(ch>=15) add('good',0,'📈','المبيعات في صعود',
+        'النصف الثاني أعلى من الأول بـ '+ch.toFixed(0)+'٪ — استمر على استراتيجيتك.',
+        'وثّق ما الذي تغيّر (عرض؟ منتج؟ توقيت؟) وكرّره.');
+    }
+  }
+
+  // 11) أضعف يوم أسبوع → فرصة ترويج مُكمَّمة
+  try{
+    var st=iqWeekdayStats(); var ranked=st.map(function(s,i){return{i:i,avg:s.avg,n:s.count};}).filter(function(x){return x.n>0;}).sort(function(a,b){return b.avg-a.avg;});
+    if(ranked.length>=4){
+      var best=ranked[0], worst=ranked[ranked.length-1];
+      if(best.avg>0 && worst.avg<best.avg*0.6){
+        var gap=(best.avg-worst.avg); var weeks=4;
+        add('info',gap*0.4*weeks,'🗓️','يوم '+IQ_DAYS[worst.i]+' ضعيف جداً',
+          'متوسط '+IQ_DAYS[worst.i]+' '+n3(worst.avg)+' مقابل '+IQ_DAYS[best.i]+' '+n3(best.avg)+'.',
+          'عرض «يوم '+IQ_DAYS[worst.i]+'» أو فعالية؛ رفعه 40٪ نحو المتوسط يضيف ~'+n3(gap*0.4*weeks)+' JD/شهر.');
+      }
+    }
+  }catch(e){}
+
+  // 12) تركّز المورّدين (مخاطرة اعتماد + ورقة تفاوض)
+  try{
+    var sm={}; (G().purchases||[]).forEach(function(p){if(p.sName)sm[p.sName]=(sm[p.sName]||0)+(p.amt||0);});
+    var arr=Object.entries(sm).sort(function(a,b){return b[1]-a[1];});
+    if(arr.length && totPurch>0 && arr[0][1]/totPurch>0.5){
+      add('info',0,'🏪','اعتماد كبير على مورد واحد',
+        '«'+esc(arr[0][0])+'» يمثّل '+((arr[0][1]/totPurch)*100).toFixed(0)+'٪ من مشترياتك.',
+        'هذا خطر إن انقطع، لكنه ورقة تفاوض قوية — اطلب خصم كمية أو سعراً أفضل.');
+    }
+  }catch(e){}
+
+  // 13) المنيو — منتجات خاسرة/مسعّرة بأقل من اللازم
+  try{
+    if((S.menu||[]).length){
+      var mc=menuClassify();
+      var dogs=mc.items.filter(function(x){return x.klass==='dog';});
+      var underpriced=mc.items.filter(function(x){return x.units>0 && x.foodPct>40;});
+      if(underpriced.length){
+        var u=underpriced.sort(function(a,b){return b.foodPct-a.foodPct;})[0];
+        var newP=u.cost/0.32, gainPer=(newP-u.price), gain=gainPer*u.units;
+        add('warn',Math.max(0,gain),'☕','منتج مسعّر بأقل من تكلفته الصحية',
+          '«'+esc(u.name)+'» تكلفته '+u.foodPct.toFixed(0)+'٪ من سعره (يجب ≤32٪).',
+          'ارفع سعره إلى ~'+n3(newP)+' JD؛ يضيف ~'+n3(Math.max(0,gain))+' JD/شهر بنفس المبيعات.');
+      }
+      if(dogs.length){
+        add('info',0,'🐕','منتجات ضعيفة في المنيو',
+          dogs.length+' منتج قليل المبيع ومنخفض الربح: '+dogs.slice(0,3).map(function(x){return esc(x.name);}).join('، ')+'.',
+          'أعد تسعيرها أو احذفها لتبسيط المنيو وتقليل الهدر.');
+      }
+    }
+  }catch(e){}
+
+  // ترتيب: الحرج أولاً ثم حسب الأثر بالـJD
+  var rank={crit:0,warn:1,info:2,good:3};
+  F.sort(function(a,b){ if(rank[a.sev]!==rank[b.sev]) return rank[a.sev]-rank[b.sev]; return b.impact-a.impact; });
+  return F;
+}
+
+// تنسيق تقرير المستشار (نص عربي يصلح للشات)
+function formatAdvisorReport(opts){
+  opts=opts||{};
+  var c; try{ c=getCalc(); }catch(e){ c={netSales:0,profit:0,margin:0,activeDays:0}; }
+  var F=cafeAdvisor();
+  var mn=MN[parseInt(S.activeKey.split('-')[1])-1];
+  var head='🧑‍💼 **تشخيص المستشار — '+mn+'**\n';
+  head+='صافي البيع '+n3(c.netSales)+' · صافي الربح '+n3(c.profit)+' JD · هامش '+(c.margin||0).toFixed(1)+'٪ · صحة '+(c.healthScore||0)+'/100\n\n';
+  if(!F.length || (F.length===1 && F[0].sev==='info' && F[0].impact===0 && c.activeDays>=3 && c.profit>=0)){
+    return head+'✅ لا مشاكل جوهرية. أداؤك ضمن معايير القطاع — حافظ على الجودة وراقب تكلفة البضاعة.';
+  }
+  var crit=F.filter(function(x){return x.sev==='crit';});
+  var warn=F.filter(function(x){return x.sev==='warn';});
+  var info=F.filter(function(x){return x.sev==='info'||x.sev==='good';});
+  var out=head;
+  function block(title,arr){ if(!arr.length) return ''; var s='\n'+title+'\n'; arr.forEach(function(x,i){ s+=x.ico+' **'+x.title+'**'+(x.impact>0?' (~'+n3(x.impact)+' JD/شهر)':'')+'\n   '+x.diag+'\n   ✅ '+x.action+'\n'; }); return s; }
+  out+=block('🚨 عاجل:',crit);
+  out+=block('⚠️ مهم:',warn);
+  out+=block('💡 فرص وملاحظات:',info);
+  // إجمالي الفرصة
+  var totalImpact=F.reduce(function(s,x){return s+(x.impact||0);},0);
+  if(totalImpact>0) out+='\n💵 **مجموع الفرصة الشهرية المقدّرة: ~'+n3(totalImpact)+' JD** إن عالجت ما سبق.';
+  return out;
+}
+
 function iqAnswerSpecific(question){
   try{
     var q=(question||'').toLowerCase().replace(/[؟?.,،]/g,' ');
@@ -9657,6 +9855,11 @@ function iqAnswerSpecific(question){
     var ym=S.activeKey.split('-'); var y=parseInt(ym[0]), mo=parseInt(ym[1]); var mn=MN[mo-1];
     var net=function(s){return (s.cash||0)+(s.visa||0);};
     var active=(d.sales||[]).filter(function(s){return net(s)>0;});
+
+    // 0) نيّة استشارية → شغّل محرك التشخيص الحقيقي (لا قالب جاهز)
+    if(/(نصيح|نصائح|حلل|حلّل|تحليل|وضع|وضعي|حالت|مشكل|مشاكل|حسّن|حسن|اعمل ايه|ماذا افعل|ماذا أفعل|شو اعمل|كيف احسن|كيف أحسّن|راي|رأي|استشار|قيّم|قيم|اداء|أداء|نقاط ضعف|اين الخلل|فحص|شخّص|شخص|تشخيص|خطة)/.test(q)){
+      return formatAdvisorReport();
+    }
 
     // 1) أيام الأسبوع
     var wdMap={'الاحد':0,'الأحد':0,'الاثنين':1,'الإثنين':1,'الثنين':1,'الثلاثاء':2,'الثلاثا':2,'الثلاث':2,'الاربعاء':3,'الأربعاء':3,'الاربعا':3,'الخميس':4,'الجمعة':5,'الجمعه':5,'السبت':6};
