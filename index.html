@@ -3220,6 +3220,22 @@ body.dark .ss-card{background:var(--surf)}
         </div>
       </div>
 
+      <!-- 4.7 الميزانية والتنبيهات الاستباقية -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">📊</span>الميزانية والتنبيهات الاستباقية</div></div>
+        <div class="card-body">
+          <div style="font-size:11px;color:var(--tx3);margin-bottom:10px">حدّد ميزانية الشهر، وسينبّهك التطبيق <b>قبل</b> تجاوزها بناءً على وتيرة الصرف الحالية:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+            <div><label style="font-size:11px;color:var(--tx3)">💰 هدف الإيراد</label><input type="number" id="budgetRev" class="inp" step="1" min="0" placeholder="0" style="height:38px"></div>
+            <div><label style="font-size:11px;color:var(--tx3)">🛒 سقف تكلفة البضاعة</label><input type="number" id="budgetCOGS" class="inp" step="1" min="0" placeholder="0" style="height:38px"></div>
+            <div><label style="font-size:11px;color:var(--tx3)">💼 سقف الرواتب</label><input type="number" id="budgetSal" class="inp" step="1" min="0" placeholder="0" style="height:38px"></div>
+            <div><label style="font-size:11px;color:var(--tx3)">⚙️ سقف المصاريف العامة</label><input type="number" id="budgetOH" class="inp" step="1" min="0" placeholder="0" style="height:38px"></div>
+          </div>
+          <button class="btn btn-p btn-full" onclick="saveBudget()" style="margin-bottom:12px">💾 حفظ الميزانية</button>
+          <div id="budgetResult"></div>
+        </div>
+      </div>
+
       <!-- 5. معايير قطاع الكافيهات -->
       <div class="card">
         <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">🎯</span>معايير قطاع الكافيهات</div></div>
@@ -7983,24 +7999,43 @@ function renderBudget(){
   var c=document.getElementById('budgetResult');if(!c)return;
   var t=totals();
   var budget=(S.budgets||{})[S.activeKey]||{};
-  if(!budget.revenue&&!budget.cogs&&!budget.salaries&&!budget.overhead){c.innerHTML='<div class="alert al-i">أدخل أرقام الميزانية أعلاه واضغط حفظ لمتابعة الأداء الشهري.</div>';return;}
+  // نسبة الفترة المنقضية لإسقاط الفعلي إلى نهاية الشهر (تنبيه استباقي)
+  var dim=daysIn(S.activeKey);
+  var activeDays=(G().sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
+  var paceRatio = activeDays>0 ? dim/activeDays : 1;
+  if(!budget.revenue&&!budget.cogs&&!budget.salaries&&!budget.overhead){c.innerHTML='<div style="font-size:12px;color:var(--tx3);padding:8px;background:var(--surf3);border-radius:8px">أدخل أرقام الميزانية أعلاه واضغط حفظ لمتابعة الأداء والتنبيه الاستباقي.</div>';return;}
+  // الفعلي بالحقول الصحيحة من totals()
+  var overhead = (t.oblPaid||0)+(t.bycat.OPS||0)+(t.bycat.ADM||0)+(t.bycat.MKT||0)+(t.bycat.OTHER||0);
   var items=[
-    {lbl:'💰 الإيراد',bgt:budget.revenue||0,act:t.rev,invert:false},
-    {lbl:'🛒 تكلفة البضاعة',bgt:budget.cogs||0,act:t.purch,invert:true},
-    {lbl:'💼 الرواتب',bgt:budget.salaries||0,act:t.sal,invert:true},
-    {lbl:'⚙️ المصاريف العامة',bgt:budget.overhead||0,act:t.obl+t.adv,invert:true}
+    {lbl:'💰 الإيراد',bgt:budget.revenue||0,act:t.netSales,invert:false},
+    {lbl:'🛒 تكلفة البضاعة',bgt:budget.cogs||0,act:t.bycat.COGS||0,invert:true},
+    {lbl:'💼 الرواتب المدفوعة',bgt:budget.salaries||0,act:t.mSalPaid||0,invert:true},
+    {lbl:'⚙️ المصاريف العامة',bgt:budget.overhead||0,act:overhead,invert:true}
   ];
-  c.innerHTML=items.filter(function(i){return i.bgt>0;}).map(function(item){
+  var alerts=[];
+  var html=items.filter(function(i){return i.bgt>0;}).map(function(item){
     var pct=item.bgt>0?Math.min(130,item.act/item.bgt*100):0;
     var clr=item.invert?(pct>=110?'#DC2626':pct>=80?'#D97706':'#059669'):(pct>=100?'#059669':pct>=70?'#D97706':'#DC2626');
     var vr=item.act-item.bgt;
     var vrTxt=(vr>=0?'+':'')+n3(vr)+' JD';
-    return '<div class="budget-bar-item">'+
-      '<div class="budget-bar-lbl-row"><span class="budget-bar-lbl">'+item.lbl+'</span><span class="budget-bar-pct" style="color:'+clr+'">'+pct.toFixed(0)+'%</span></div>'+
-      '<div class="budget-progress-track"><div class="budget-progress-fill" style="width:'+Math.min(100,pct)+'%;background:'+clr+'"></div></div>'+
-      '<div class="budget-nums-row"><span>ميزانية: '+n3(item.bgt)+'</span><span>فعلي: '+n3(item.act)+'</span><span style="color:'+clr+'">'+vrTxt+'</span></div>'+
+    // تنبيه استباقي: أسقط الفعلي لنهاية الشهر
+    var proj=item.act*paceRatio;
+    if(item.invert && item.bgt>0 && proj>item.bgt*1.05 && activeDays>=3){
+      alerts.push('⚠️ '+item.lbl+': بالوتيرة الحالية ستتجاوز ميزانيتها بنهاية الشهر (متوقّع ~'+n3(proj)+' مقابل '+n3(item.bgt)+').');
+    }
+    if(!item.invert && item.bgt>0 && proj<item.bgt*0.9 && activeDays>=3){
+      alerts.push('🎯 '+item.lbl+': الوتيرة الحالية أقل من هدفك (متوقّع ~'+n3(proj)+' مقابل '+n3(item.bgt)+').');
+    }
+    return '<div style="margin-bottom:12px">'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">'+item.lbl+'</span><span style="color:'+clr+';font-weight:700">'+pct.toFixed(0)+'%</span></div>'+
+      '<div style="height:9px;background:var(--surf2);border-radius:5px;overflow:hidden"><div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+clr+';border-radius:5px;transition:width .4s"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);margin-top:3px"><span>ميزانية: '+n3(item.bgt)+'</span><span>فعلي: '+n3(item.act)+'</span><span style="color:'+clr+'">'+vrTxt+'</span></div>'+
     '</div>';
   }).join('');
+  if(alerts.length){
+    html+='<div style="margin-top:8px;padding:9px;background:rgba(217,119,6,.1);border-radius:8px;font-size:11.5px;line-height:1.7">'+alerts.map(function(a){return '<div style="margin-bottom:3px">'+a+'</div>';}).join('')+'</div>';
+  }
+  c.innerHTML=html;
 }
 
 // ════════════════════════════════════════════════
@@ -11797,6 +11832,7 @@ function renderIQ(){
   try{ renderIQSeasonal(); }catch(e){ console.warn('IQ seasonal:',e); }
   try{ renderIQAnomalies(); }catch(e){ console.warn('IQ anomalies:',e); }
   try{ renderIQMisc(); }catch(e){ console.warn('IQ misc:',e); }
+  try{ loadBudgetInputs(); renderBudget(); }catch(e){ console.warn('IQ budget:',e); }
   try{ renderIQBenchmarks(); }catch(e){ console.warn('IQ bench:',e); }
 }
 

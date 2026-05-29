@@ -8,8 +8,8 @@ android {
         applicationId "com.rayhanacafe.app"
         minSdk 26
         targetSdk 34
-        versionCode 49
-        versionName "49.0.0"
+        versionCode 50
+        versionName "50.0.0"
     }
 
     buildTypes {
