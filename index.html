@@ -2872,7 +2872,7 @@ body.dark .ss-card{background:var(--surf)}
         <div class="rpt-pro-actions">
           <button class="rpt-act-btn" onclick="exportPDF()">📄 PDF</button>
           <button class="rpt-act-btn" onclick="exportExcel()">📗 Excel</button>
-          <button class="rpt-act-btn" onclick="window.print()">🖨️</button>
+          <button class="rpt-act-btn" onclick="printReport()">🖨️</button>
         </div>
       </div>
 
@@ -3107,7 +3107,7 @@ body.dark .ss-card{background:var(--surf)}
           <button class="rpt-export-btn rpt-exp-json" onclick="exportJSON()">
             <span>💾</span><span>احتياطي</span>
           </button>
-          <button class="rpt-export-btn" onclick="window.print()">
+          <button class="rpt-export-btn" onclick="printReport()">
             <span>🖨️</span><span>طباعة</span>
           </button>
         </div>
@@ -5847,7 +5847,21 @@ function renderSuppRpt(){
   const ents=Object.entries(sm).sort((a,b)=>b[1].t-a[1].t);
   if(!ents.length){c.innerHTML='<div class="alert al-i">لا توجد مشتريات</div>';return;}
   const grand=ents.reduce((s,[,v])=>s+v.t,0);
-  c.innerHTML=`<div class="tbl-wrap"><table><thead><tr><th>المورد</th><th>عمليات</th><th>الإجمالي</th><th>النسبة</th></tr></thead><tbody>${ents.map(([nm,v])=>{const p=(v.t/grand*100).toFixed(1);return`<tr><td style="text-align:right;font-weight:600">${nm}</td><td>${v.n}</td><td class="td-y num">${n3(v.t)}</td><td><div class="prog"><div class="prog-f" style="width:${p}%"></div></div>${p}%</td></tr>`;}).join("")}</tbody><tfoot><tr><td>الإجمالي</td><td>${ents.reduce((s,[,v])=>s+v.n,0)}</td><td>${n3(grand)}</td><td>100%</td></tr></tfoot></table></div>`;
+  // مقارنة بالشهر السابق لكل مورد: هل زادت السحوبات أم ارتفع متوسط سعر الفاتورة؟
+  const prevKey=getPrevMonthKey();
+  const prevM=S.months[prevKey];
+  const pm={};
+  if(prevM&&prevM.purchases){prevM.purchases.forEach(p=>{if(!pm[p.sName])pm[p.sName]={t:0,n:0};pm[p.sName].t+=p.amt;pm[p.sName].n++;});}
+  const hasPrev=!!(prevM&&prevM.purchases&&prevM.purchases.length);
+  const prevMn=MN[parseInt(prevKey.split('-')[1])-1];
+  const chg=(cur,prev)=>{ if(!prev||prev<=0) return null; return (cur-prev)/prev*100; };
+  const badge=(pct)=>{
+    if(pct===null) return '<span style="color:var(--tx4);font-size:10px">جديد</span>';
+    if(Math.abs(pct)<0.5) return '<span style="color:var(--tx4);font-size:10px">ثابت</span>';
+    const up=pct>0; // ارتفاع المشتريات/السعر = تحذير
+    return '<span style="color:'+(up?'var(--rd)':'var(--gn)')+';font-size:10px;font-weight:700">'+(up?'▲':'▼')+Math.abs(pct).toFixed(0)+'%</span>';
+  };
+  c.innerHTML=`<div class="tbl-wrap"><table><thead><tr><th>المورد</th><th>عمليات</th><th>الإجمالي${hasPrev?'<div style="font-size:9px;color:var(--tx4)">تغيّر vs '+prevMn+'</div>':''}</th><th>متوسط الفاتورة${hasPrev?'<div style="font-size:9px;color:var(--tx4)">تغيّر</div>':''}</th></tr></thead><tbody>${ents.map(([nm,v])=>{const prev=pm[nm];const totChg=chg(v.t,prev?prev.t:0);const avgCur=v.n?v.t/v.n:0;const avgPrev=prev&&prev.n?prev.t/prev.n:0;const avgChg=chg(avgCur,avgPrev);const p=(v.t/grand*100).toFixed(1);return`<tr><td style="text-align:right;font-weight:600">${nm}</td><td>${v.n}</td><td class="td-y num">${n3(v.t)}<div>${hasPrev?badge(totChg):'<span style="font-size:10px;color:var(--tx4)">'+p+'%</span>'}</div></td><td class="num">${n3(avgCur)}<div>${hasPrev?badge(avgChg):''}</div></td></tr>`;}).join("")}</tbody><tfoot><tr><td>الإجمالي</td><td>${ents.reduce((s,[,v])=>s+v.n,0)}</td><td>${n3(grand)}</td><td></td></tr></tfoot></table></div>${hasPrev?'<div style="font-size:10px;color:var(--tx3);padding:6px 4px;text-align:center">▲ ارتفاع عن '+prevMn+' (سحوبات أكثر أو غلاء أسعار) · ▼ انخفاض</div>':'<div style="font-size:10px;color:var(--tx4);padding:6px;text-align:center">لا توجد بيانات للشهر السابق ('+prevMn+') للمقارنة</div>'}`;
   const ctx=$("chSupp");if(!ctx)return;if(CH.su)CH.su.destroy();
   if(ents.length)CH.su=new Chart(ctx,{type:"bar",data:{labels:ents.map(([n])=>n),datasets:[{data:ents.map(([,v])=>v.t),backgroundColor:"#0070F2",borderRadius:5,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"rgba(15,6,4,.9)",callbacks:{label:c=>`${n3(c.raw)} JD`}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+" JD",font:{family:"IBM Plex Mono",size:10}},grid:{color:"rgba(0,0,0,.05)"}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
 }
@@ -6911,7 +6925,7 @@ function exportExcel(){
     toast('⏳ جاري تحميل مكتبة Excel...');
     loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')
       .then(function(){ exportExcel(); })
-      .catch(function(){ toast('❌ تعذّر تحميل مكتبة Excel — تحقق من الاتصال'); });
+      .catch(function(){ toast('📄 لا إنترنت — جاري تصدير CSV بدلاً منه'); exportCSV(); });
     return;
   }
   const t=totals(),d=G();const[y,m]=S.activeKey.split("-");const mn=MN[parseInt(m)-1];
@@ -6987,10 +7001,50 @@ function exportExcel(){
   const wsIs=XLSX.utils.aoa_to_sheet(is);wsIs["!cols"]=[{wch:36},{wch:16}];XLSX.utils.book_append_sheet(wb,wsIs,"قائمة الدخل");
   XLSX.writeFile(wb,`ريحانة_كافيه_${mn}_${y}.xlsx`);toast("📗 تم تصدير Excel");log(`تصدير Excel — ${mn} ${y}`);
 }
+
+// بديل بدون مكتبة (يعمل أوفلاين): CSV يفتح مباشرة في Excel — مع BOM لقراءة العربية
+function exportCSV(){
+  const t=totals(),d=G();const[y,m]=S.activeKey.split("-");const mn=MN[parseInt(m)-1];
+  const esc=v=>{ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  const rows=[];
+  const add=(a,b)=>rows.push(esc(a)+","+esc(b));
+  add("ريحانة كافيه — قائمة الدخل",mn+" "+y);
+  add("","");
+  add("البند","المبلغ (JD)");
+  add("النقدي الصافي",n3(t.cash));
+  add("الفيزا",n3(t.visa));
+  add("صافي البيع (نقد + فيزا)",n3(t.netSales));
+  add("مدفوعات يومية (توثيق)",n3(t.pmts));
+  add("إجمالي الإيرادات",n3(t.rev));
+  add("COGS","("+n3(t.bycat.COGS)+")");
+  add("مجمل الربح",n3(t.grossP));
+  d.obligations.filter(o=>o.paid&&o.amt>0).forEach(o=>add(o.name+(o.paidBy?" (دفعه "+o.paidBy+")":""),"("+n3(o.amt)+")"));
+  add("رواتب شهرية مدفوعة",n3(t.mSalPaid));
+  add("OPS تشغيلية",n3(t.bycat.OPS));
+  add("ADM إدارية",n3(t.bycat.ADM));
+  add("MKT تسويقية",n3(t.bycat.MKT));
+  add("إجمالي التكاليف الفعلية","("+n3(t.totalExp)+")");
+  add("صافي الدخل",n3(t.profit)+" JD");
+  add("هامش الربح",t.margin.toFixed(2)+"%");
+  const csv="﻿"+rows.join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=`ريحانة_كافيه_${mn}_${y}.csv`;
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},1500);
+  toast("📄 تم تصدير CSV (يفتح في Excel)");log(`تصدير CSV — ${mn} ${y}`);
+}
 /* ═══════════════════════════════════════════════════════════════════════
    V25: PDF عربي صحيح — html2canvas يصوّر الصفحة كاملةً
    يحافظ على العربية 100% لأنه يحول الـ HTML لصورة ثم PDF
 ═══════════════════════════════════════════════════════════════════════ */
+// طباعة: داخل تطبيق أندرويد window.print لا يعمل → ننشئ PDF نظيف بدله.
+// في متصفح عادي نستخدم الطباعة الأصلية (أدق للعربية).
+function printReport(){
+  if(window.AndroidBridge){ exportPDF(); return; }
+  try { window.print(); } catch(e){ exportPDF(); }
+}
 function exportPDF(){
   var needsLoad = typeof html2canvas==='undefined' || typeof window.jspdf==='undefined';
   if(needsLoad){
@@ -7049,12 +7103,12 @@ function _renderPDFFromElement(el){
   printDiv.style.cssText='position:fixed;top:-9999px;left:0;width:800px;background:#fff;color:#000;font-family:IBM Plex Sans Arabic,sans-serif;direction:rtl;padding:30px;font-size:13px;line-height:1.7';
   printDiv.innerHTML=`
     <div style="text-align:center;border-bottom:3px solid #C8920F;padding-bottom:16px;margin-bottom:20px">
-      <div style="font-size:22px;font-weight:800;color:#1a1a1a">☕ ريحانة كافيه</div>
+      <div style="font-size:22px;font-weight:700;color:#1a1a1a">☕ ريحانة كافيه</div>
       <div style="font-size:15px;color:#666;margin-top:4px">قائمة الدخل — ${mn} ${y}</div>
       <div style="font-size:11px;color:#999;margin-top:2px">${new Date().toLocaleDateString('ar-JO',{year:'numeric',month:'long',day:'numeric'})}</div>
     </div>
     <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
-      <thead><tr style="background:#1a1a1a;color:#fff"><th style="padding:10px;text-align:right">البند</th><th style="padding:10px;text-align:left;font-family:monospace">المبلغ (JD)</th></tr></thead>
+      <thead><tr style="background:#faf6ee;border-bottom:2px solid #C8920F"><th style="padding:10px;text-align:right;color:#1a1a1a;font-weight:700">البند</th><th style="padding:10px;text-align:left;font-family:monospace;color:#1a1a1a;font-weight:700">المبلغ (JD)</th></tr></thead>
       <tbody>
         <tr style="background:#f8f4ee"><td style="padding:8px 10px;font-weight:700;color:#C8920F">💰 الإيرادات</td><td></td></tr>
         <tr><td style="padding:6px 10px 6px 20px">النقدي الصافي</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:#059669">${n3(t.cash)}</td></tr>
@@ -7076,9 +7130,9 @@ function _renderPDFFromElement(el){
         <tr style="background:#FEF2F2"><td style="padding:8px 10px;font-weight:700">إجمالي التكاليف الفعلية</td><td style="padding:8px 10px;text-align:left;font-family:monospace;font-weight:700;color:#DC2626">(${n3(t.totalExp)})</td></tr>
       </tbody>
       <tfoot>
-        <tr style="background:${t.profit>=0?'#059669':'#DC2626'};color:#fff">
-          <td style="padding:14px 10px;font-size:16px;font-weight:800">صافي الدخل</td>
-          <td style="padding:14px 10px;text-align:left;font-family:monospace;font-size:18px;font-weight:800">${n3(t.profit)} JD</td>
+        <tr style="background:${t.profit>=0?'#F0FDF4':'#FEF2F2'};border-top:3px solid ${t.profit>=0?'#059669':'#DC2626'}">
+          <td style="padding:14px 10px;font-size:16px;font-weight:700;color:#1a1a1a">صافي الدخل</td>
+          <td style="padding:14px 10px;text-align:left;font-family:monospace;font-size:18px;font-weight:700;color:${t.profit>=0?'#047857':'#B91C1C'}">${n3(t.profit)} JD</td>
         </tr>
       </tfoot>
     </table>
@@ -9450,7 +9504,20 @@ function generateAlerts(ctx, d) {
   if (ctx.activeDays < ctx.totalDays * 0.5) {
     alerts.push({level: 'info', icon: 'ℹ️', msg: 'بيانات ناقصة: ' + ctx.activeDays + '/' + ctx.totalDays + ' يوم', action: 'أكمل إدخال البيانات اليومية'});
   }
-  
+
+  // غلاء/زيادة فاتورة مورد مقارنة بالشهر السابق
+  var _supA = detectSupplierPriceAlert();
+  if (_supA) {
+    alerts.push({level: 'warning', icon: '📦', msg: 'متوسط فاتورة "' + _supA.nm + '" ارتفع ' + _supA.pct.toFixed(0) + '% عن الشهر السابق', action: 'قارن العروض أو فاوض المورد على السعر'});
+  }
+  // فرصة عيد/عطلة قادمة (موسم ذروة للكافيهات)
+  try {
+    var _up = getUpcomingHoliday(new Date(), 14);
+    if (_up && _up.info && _up.info.opportunity) {
+      alerts.push({level: 'info', icon: '🎯', msg: 'بعد ' + _up.daysUntil + ' يوم: ' + _up.info.name + ' — موسم ذروة للكافيهات', action: 'جهّز المخزون والموظفين وحضّر عروضاً موسمية'});
+    }
+  } catch(e){}
+
   if (alerts.length === 0) {
     return '✅ **لا توجد تنبيهات!**\n\n🌟 الكافيه يعمل بشكل ممتاز:\n• هامش الربح: ' + ctx.margin.toFixed(1) + '%\n• التكاليف تحت السيطرة\n• لا التزامات متأخرة\n\nاستمر على هذا الأداء الرائع! 💪';
   }
@@ -10959,13 +11026,32 @@ function updateShiftSummary() {
 // V15 ULTIMATE - DAILY INSIGHTS (مثل NetSuite AI)
 // ═══════════════════════════════════════════════════════════════════════════
 
+// يكشف أكبر ارتفاع في متوسط فاتورة مورد مقارنة بالشهر السابق (غلاء أسعار/سحوبات)
+function detectSupplierPriceAlert(){
+  try {
+    var cur={}, prev={};
+    G().purchases.forEach(function(p){ if(!cur[p.sName])cur[p.sName]={t:0,n:0}; cur[p.sName].t+=p.amt; cur[p.sName].n++; });
+    var pm=S.months[getPrevMonthKey()];
+    if(!pm||!pm.purchases||!pm.purchases.length) return null;
+    pm.purchases.forEach(function(p){ if(!prev[p.sName])prev[p.sName]={t:0,n:0}; prev[p.sName].t+=p.amt; prev[p.sName].n++; });
+    var worst=null;
+    Object.keys(cur).forEach(function(nm){
+      var pv=prev[nm]; if(!pv||!pv.n||!cur[nm].n) return;
+      var ap=pv.t/pv.n; if(ap<=0) return;
+      var pct=((cur[nm].t/cur[nm].n)-ap)/ap*100;
+      if(pct>=15 && (!worst || pct>worst.pct)) worst={nm:nm, pct:pct};
+    });
+    return worst; // {nm, pct} أو null
+  } catch(e){ return null; }
+}
 function updateDailyInsights() {
   var t = totals(), d = G();
-  var today = new Date().getDate();
-  var todaySale = d.sales.find(function(s) { return s.day === today; });
-  var todayRev = todaySale ? (todaySale.cash||0) + (todaySale.visa||0) + (todaySale.pmts||0) : 0;
-  
   var active = d.sales.filter(function(s) { return (s.cash||0)+(s.visa||0)+(s.pmts||0) > 0; });
+  // المستخدم يُدخل البيانات بعد منتصف الليل، فاليوم التقويمي غالباً فارغ →
+  // نعرض آخر يوم فيه بيانات فعلية بدل اليوم التقويمي
+  var lastSale = active.length ? active.reduce(function(a,b){ return b.day > a.day ? b : a; }) : null;
+  var today = lastSale ? lastSale.day : new Date().getDate();
+  var todayRev = lastSale ? (lastSale.cash||0)+(lastSale.visa||0)+(lastSale.pmts||0) : 0;
   var avg = active.length ? t.rev / active.length : 0;
   
   var goal = S.targets && S.targets[S.activeKey] ? S.targets[S.activeKey] : 0;
@@ -10975,8 +11061,13 @@ function updateDailyInsights() {
   // تحديث التاريخ
   var dateEl = document.getElementById('diDate');
   if (dateEl) {
-    var now = new Date();
-    dateEl.textContent = now.toLocaleDateString('ar-JO', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
+    if(lastSale){
+      var _ym = S.activeKey.split('-');
+      var _dd = new Date(parseInt(_ym[0]), parseInt(_ym[1])-1, today);
+      dateEl.textContent = 'آخر يوم مُدخل: ' + _dd.toLocaleDateString('ar-JO', {weekday:'long', day:'numeric', month:'long'});
+    } else {
+      dateEl.textContent = new Date().toLocaleDateString('ar-JO', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+    }
   }
   
   // الإيراد
@@ -11034,8 +11125,28 @@ function updateDailyInsights() {
       var needed = daysLeft > 0 ? remaining / daysLeft : remaining;
       insights.push('تحتاج ' + n3(needed) + ' JD/يوم للهدف');
     }
-    
-    insightEl.textContent = insights.length > 0 ? insights.join(' • ') : 'أدخل بيانات اليوم للحصول على رؤى مخصصة';
+
+    // أفضل/أضعف يوم في الشهر
+    if (active.length >= 3) {
+      var srt = active.map(function(s){ return {day:s.day, v:(s.cash||0)+(s.visa||0)+(s.pmts||0)}; }).sort(function(a,b){ return b.v-a.v; });
+      insights.push('📈 أفضل يوم: ' + srt[0].day + ' (' + n3(srt[0].v) + ') · أضعف: ' + srt[srt.length-1].day + ' (' + n3(srt[srt.length-1].v) + ')');
+    }
+    // توقّع نهاية الشهر
+    if (active.length >= 3 && avg > 0) {
+      insights.push('🔮 متوقع نهاية الشهر ≈ ' + n3(avg * days) + ' JD');
+    }
+    // تنبيه غلاء/زيادة مشتريات مورد مقارنة بالشهر السابق
+    var supAlert = detectSupplierPriceAlert();
+    if (supAlert) insights.push('⚠️ متوسط فاتورة "' + esc(supAlert.nm) + '" ارتفع ' + supAlert.pct.toFixed(0) + '% عن الشهر السابق — راجع الأسعار');
+    // فرصة عيد/عطلة قادمة (موسم ذروة للكافيهات)
+    try {
+      var up = getUpcomingHoliday(new Date(), 10);
+      if (up && up.info && up.info.opportunity) {
+        insights.push('🎯 بعد ' + up.daysUntil + ' يوم: ' + up.info.emoji + ' ' + up.info.name + ' — موسم ذروة، جهّز مخزونك!');
+      }
+    } catch(e){}
+
+    insightEl.innerHTML = insights.length > 0 ? insights.map(function(x){ return '• ' + x; }).join('<br>') : 'أدخل بيانات اليوم للحصول على رؤى مخصصة';
   }
 }
 
@@ -13692,28 +13803,30 @@ function runDailyBackup(){
    ═══════════════════════════════════════════════════════════════════════════ */
 
 // عطل ميلادية ثابتة (شهر-يوم)
+// ملاحظة: الكافيهات تزدحم في الأعياد والعطل — فهي فرصة بيع وليست أيام إغلاق.
+// closed=false دائماً، و opportunity=true للمناسبات عالية الإقبال.
 var JO_HOLIDAYS_GREG = {
-  '01-01': { name: 'رأس السنة الميلادية', emoji: '🎉', closed: false },
-  '05-01': { name: 'عيد العمال', emoji: '⚒️', closed: true },
-  '05-25': { name: 'عيد الاستقلال الأردني', emoji: '🇯🇴', closed: true },
-  '12-25': { name: 'عيد الميلاد المجيد', emoji: '🎄', closed: false }
+  '01-01': { name: 'رأس السنة الميلادية', emoji: '🎉', closed: false, opportunity: true },
+  '05-01': { name: 'عيد العمال', emoji: '⚒️', closed: false, opportunity: true },
+  '05-25': { name: 'عيد الاستقلال الأردني', emoji: '🇯🇴', closed: false, opportunity: true },
+  '12-25': { name: 'عيد الميلاد المجيد', emoji: '🎄', closed: false, opportunity: true }
 };
 
 // عطل هجرية — نحدّدها بـ (شهر-يوم) في التقويم الإسلامي
 var JO_HOLIDAYS_HIJRI = [
-  { m: 1, d: 1, name: 'رأس السنة الهجرية', emoji: '🌙', closed: true },
+  { m: 1, d: 1, name: 'رأس السنة الهجرية', emoji: '🌙', closed: false },
   { m: 1, d: 10, name: 'عاشوراء', emoji: '🕋', closed: false },
-  { m: 3, d: 12, name: 'المولد النبوي الشريف', emoji: '🕌', closed: true },
+  { m: 3, d: 12, name: 'المولد النبوي الشريف', emoji: '🕌', closed: false, opportunity: true },
   { m: 7, d: 27, name: 'الإسراء والمعراج', emoji: '✨', closed: false },
-  { m: 9, d: 1, name: 'بداية شهر رمضان', emoji: '🌙', closed: false },
-  { m: 10, d: 1, name: 'عيد الفطر (اليوم الأول)', emoji: '🎊', closed: true },
-  { m: 10, d: 2, name: 'عيد الفطر (اليوم الثاني)', emoji: '🎊', closed: true },
-  { m: 10, d: 3, name: 'عيد الفطر (اليوم الثالث)', emoji: '🎊', closed: true },
-  { m: 12, d: 9, name: 'يوم عرفة', emoji: '🕋', closed: false },
-  { m: 12, d: 10, name: 'عيد الأضحى المبارك (اليوم الأول)', emoji: '🐑', closed: true },
-  { m: 12, d: 11, name: 'عيد الأضحى (اليوم الثاني)', emoji: '🐑', closed: true },
-  { m: 12, d: 12, name: 'عيد الأضحى (اليوم الثالث)', emoji: '🐑', closed: true },
-  { m: 12, d: 13, name: 'عيد الأضحى (اليوم الرابع)', emoji: '🐑', closed: true }
+  { m: 9, d: 1, name: 'بداية شهر رمضان', emoji: '🌙', closed: false, opportunity: true },
+  { m: 10, d: 1, name: 'عيد الفطر (اليوم الأول)', emoji: '🎊', closed: false, opportunity: true, eid: 'fitr' },
+  { m: 10, d: 2, name: 'عيد الفطر (اليوم الثاني)', emoji: '🎊', closed: false, opportunity: true, eid: 'fitr' },
+  { m: 10, d: 3, name: 'عيد الفطر (اليوم الثالث)', emoji: '🎊', closed: false, opportunity: true, eid: 'fitr' },
+  { m: 12, d: 9, name: 'يوم عرفة', emoji: '🕋', closed: false, opportunity: true },
+  { m: 12, d: 10, name: 'عيد الأضحى المبارك (اليوم الأول)', emoji: '🐑', closed: false, opportunity: true, eid: 'adha' },
+  { m: 12, d: 11, name: 'عيد الأضحى (اليوم الثاني)', emoji: '🐑', closed: false, opportunity: true, eid: 'adha' },
+  { m: 12, d: 12, name: 'عيد الأضحى (اليوم الثالث)', emoji: '🐑', closed: false, opportunity: true, eid: 'adha' },
+  { m: 12, d: 13, name: 'عيد الأضحى (اليوم الرابع)', emoji: '🐑', closed: false, opportunity: true, eid: 'adha' }
 ];
 
 // تحويل تاريخ ميلادي إلى هجري {y, m, d}
@@ -13791,10 +13904,10 @@ function buildHolidayBadge(date){
   var upcoming = getUpcomingHoliday(date, 7);
 
   if(today){
-    var bg = today.closed ? 'linear-gradient(135deg,#1A5C28,#2A7A3A)' : 'linear-gradient(135deg,#C17F24,#D97706)';
+    var bg = today.opportunity ? 'linear-gradient(135deg,#C17F24,#D97706)' : 'linear-gradient(135deg,#1A5C28,#2A7A3A)';
     return '<div style="background:' + bg + ';color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;text-align:center;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15)">' +
            today.emoji + ' ' + esc(today.name) +
-           (today.closed ? ' · 🚫 المحل عادةً مغلق' : '') +
+           (today.opportunity ? ' · 🎯 فرصة بيع — الكافيهات تزدحم!' : '') +
            '</div>';
   }
   if(tomorrow){
