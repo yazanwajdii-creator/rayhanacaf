@@ -9464,11 +9464,90 @@ async function callClaudeAPI(question, context, apiKey) {
 }
 
 // النظام المحلي المحسّن
+// ─── مساعد محادثة بالعربية: يجيب على أسئلة محدّدة من بياناتك مباشرةً ───
+// يُستدعى أولاً؛ إن لم يطابق سؤالاً محدّداً يُعيد null فيكمل المحرك العام.
+function iqAnswerSpecific(question){
+  try{
+    var q=(question||'').toLowerCase().replace(/[؟?.,،]/g,' ');
+    var d=G(), t=totals();
+    var ym=S.activeKey.split('-'); var y=parseInt(ym[0]), mo=parseInt(ym[1]); var mn=MN[mo-1];
+    var net=function(s){return (s.cash||0)+(s.visa||0);};
+    var active=(d.sales||[]).filter(function(s){return net(s)>0;});
+
+    // 1) أيام الأسبوع
+    var wdMap={'الاحد':0,'الأحد':0,'الاثنين':1,'الإثنين':1,'الثنين':1,'الثلاثاء':2,'الثلاثا':2,'الثلاث':2,'الاربعاء':3,'الأربعاء':3,'الاربعا':3,'الخميس':4,'الجمعة':5,'الجمعه':5,'السبت':6};
+    for(var name in wdMap){
+      if(q.indexOf(name)>-1){
+        var dow=wdMap[name]; var st=iqWeekdayStats()[dow];
+        if(!st.count) return 'لا توجد بيانات كافية ليوم '+IQ_DAYS[dow]+' بعد.';
+        return '📅 يوم '+IQ_DAYS[dow]+': متوسط صافي البيع <b>'+n3(st.avg)+' JD</b> (من '+st.count+' يوم في آخر 3 أشهر).';
+      }
+    }
+    // 2) أفضل/أسوأ يوم
+    if(/(افضل|أفضل|احسن|أحسن|اعلى|أعلى|اقوى|أقوى).*(يوم|يوميه|مبيعات)/.test(q) || /(يوم).*(افضل|اعلى|اقوى)/.test(q)){
+      if(!active.length) return 'لا توجد مبيعات مُدخلة بعد.';
+      var b=active.reduce(function(a,c){return net(c)>net(a)?c:a;});
+      return '🏆 أفضل يوم في '+mn+' هو <b>يوم '+b.day+'</b> بصافي بيع <b>'+n3(net(b))+' JD</b>.';
+    }
+    if(/(اسوأ|أسوأ|اضعف|أضعف|اقل|أقل).*(يوم|مبيعات)/.test(q) || /(يوم).*(اسوأ|اضعف|اقل)/.test(q)){
+      if(!active.length) return 'لا توجد مبيعات مُدخلة بعد.';
+      var w=active.reduce(function(a,c){return net(c)<net(a)?c:a;});
+      return '📉 أضعف يوم في '+mn+' هو <b>يوم '+w.day+'</b> بصافي بيع <b>'+n3(net(w))+' JD</b>.';
+    }
+    // 3) يوم محدّد برقم
+    var dm=q.match(/يوم\s*(\d{1,2})/);
+    if(dm){
+      var dd=parseInt(dm[1]); var s=(d.sales||[]).find(function(x){return x.day===dd;});
+      if(!s||net(s)+(s.pmts||0)<=0) return 'لا توجد بيانات مُدخلة ليوم '+dd+' من '+mn+'.';
+      return '📆 يوم '+dd+' '+mn+': نقدي '+n3(s.cash||0)+' · فيزا '+n3(s.visa||0)+' · صافي البيع <b>'+n3(net(s))+' JD</b>'+(s.receivedBy?' · استلمه '+esc(s.receivedBy):'')+'.';
+    }
+    // 4) الموردون
+    var supMap={}; (d.purchases||[]).forEach(function(p){ if(p.sName) supMap[p.sName]=(supMap[p.sName]||0)+(p.amt||0); });
+    var supArr=Object.entries(supMap).sort(function(a,b){return b[1]-a[1];});
+    if(/(اكثر|أكثر|اكبر|أكبر).*(مورد|واحد اخذ|محل)/.test(q) || /مورد.*(اكثر|اكبر|اعلى)/.test(q)){
+      if(!supArr.length) return 'لا توجد مشتريات مسجّلة بعد.';
+      return '🏪 أكثر مورد أخذت منه هذا الشهر: <b>'+esc(supArr[0][0])+'</b> بإجمالي <b>'+n3(supArr[0][1])+' JD</b>'+(supArr[1]?'، يليه '+esc(supArr[1][0])+' ('+n3(supArr[1][1])+').':'.');
+    }
+    // كم صرفت/أخذ مورد معيّن بالاسم
+    if(/(كم|قديش|قد ايش).*(صرف|اخذ|دفع|اشتري)/.test(q) || q.indexOf('كم اخذ')>-1){
+      for(var i=0;i<supArr.length;i++){ if(q.indexOf(supArr[i][0].toLowerCase())>-1) return '💵 صرفت على <b>'+esc(supArr[i][0])+'</b> هذا الشهر <b>'+n3(supArr[i][1])+' JD</b>.'; }
+    }
+    // 5) فئات الصرف
+    if(q.indexOf('متفرقات')>-1||q.indexOf('اخرى')>-1||q.indexOf('أخرى')>-1) return '🧾 مصاريف «أخرى/المتفرقات» في '+mn+': <b>'+n3(t.bycat.OTHER)+' JD</b>. (افتح تبويب التحليل الذكي لتفصيلها).';
+    if(q.indexOf('راتب')>-1||q.indexOf('رواتب')>-1) return '💼 الرواتب المدفوعة في '+mn+': <b>'+n3(t.mSalPaid)+' JD</b>'+(t.mSalAccrued>0?'، ومستحقة لم تُدفع: '+n3(t.mSalAccrued)+' JD.':'.');
+    if(q.indexOf('بضاعة')>-1||q.indexOf('بضاعه')>-1||q.indexOf('cogs')>-1||q.indexOf('قهوة')>-1) return '📦 تكلفة البضاعة (COGS) في '+mn+': <b>'+n3(t.bycat.COGS)+' JD</b> ('+(t.netSales>0?(t.bycat.COGS/t.netSales*100).toFixed(0):'0')+'% من البيع).';
+    if(q.indexOf('ايجار')>-1||q.indexOf('إيجار')>-1||q.indexOf('كهرباء')>-1||q.indexOf('التزام')>-1){
+      var ob=(d.obligations||[]).find(function(o){return q.indexOf((o.name||'').toLowerCase().slice(0,4))>-1;});
+      if(ob) return '📋 «'+esc(ob.name)+'»: <b>'+n3(ob.amt)+' JD</b> ('+(ob.paid?'مدفوع ✅':'غير مدفوع ⏳')+').';
+    }
+    // 6) عدد الأيام المُدخلة (قبل الإيراد لأن «أدخلت» تحوي «دخل»)
+    if(/كم.*(يوم|ايام)/.test(q) && /(ادخل|أدخل|سجل|فيه بيانات|عملت)/.test(q)) return '🗓️ أدخلت بيانات <b>'+active.length+'</b> يوم من أصل '+daysIn(S.activeKey)+' في '+mn+'.';
+    // 7) المشتريات/الإيراد الكلي
+    if(/(كم|قديش).*(مشتري|اشتري|صرف)/.test(q) && /(شهر|اجمالي|كل|الكلي)/.test(q)) return '🛒 إجمالي المشتريات في '+mn+': <b>'+n3(t.bycat.total)+' JD</b>.';
+    if(/(كم|قديش).*(بعت|بيع|ايراد|إيراد|دخل)/.test(q)) return '💰 صافي البيع في '+mn+': <b>'+n3(t.netSales)+' JD</b> (نقدي '+n3(t.cash)+' + فيزا '+n3(t.visa)+').';
+    // 7) الهدف
+    if(q.indexOf('هدف')>-1){
+      var goal=(S.targets&&S.targets[S.activeKey])||0;
+      if(!goal) return '🎯 لم تحدّد هدفاً لهذا الشهر بعد. حدّده من لوحة التحكم.';
+      var rem=goal-t.rev; var dim=daysIn(S.activeKey); var left=Math.max(0,dim-active.length);
+      if(rem<=0) return '🎉 تجاوزت هدف الشهر ('+n3(goal)+' JD) بـ '+n3(Math.abs(rem))+' JD!';
+      return '🎯 الهدف '+n3(goal)+' JD · المتبقّي <b>'+n3(rem)+' JD</b>'+(left>0?'، تحتاج ~'+n3(rem/left)+' JD/يوم خلال '+left+' يوم متبقّي.':'.');
+    }
+    // 8) متوسط
+    if(q.indexOf('متوسط')>-1) return '📊 متوسط صافي البيع اليومي في '+mn+': <b>'+n3(active.length?(t.netSales/active.length):0)+' JD</b> (من '+active.length+' يوم).';
+    return null;
+  }catch(e){ return null; }
+}
+
 function getEnhancedLocalAIResponse(question, ctx) {
   var q = question.toLowerCase();
   var response = '';
   var d = G();
-  
+
+  // مساعد المحادثة: جواب محدّد من البيانات قبل الردود العامة
+  var specific = iqAnswerSpecific(question);
+  if(specific) return specific;
+
   // ═══════════════════════════════════════════════════════════════════════════
   // V24 PRO - نظام AI ذكي يعمل بدون إنترنت
   // يعتمد على البيانات المحلية فقط ويعطي قرارات حقيقية
