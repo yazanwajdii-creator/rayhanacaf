@@ -2009,6 +2009,7 @@ body.dark .ss-card{background:var(--surf)}
       <button class="ntab" onclick="pg('adv',this)">💵 السلف</button>
       <button class="ntab" onclick="pg('cash',this)">🏦 الصندوق</button>
       <button class="ntab" onclick="pg('rpt',this)">📈 التقارير</button>
+      <button class="ntab" onclick="pg('iq',this)">🧠 التحليل الذكي</button>
       <button class="ntab" onclick="pg('cloud',this)" id="cloudTab">☁️ السحابة</button>
       <button class="ntab" onclick="pg('audit',this)">📝 سجل التعديلات</button>
     </div>
@@ -3117,6 +3118,102 @@ body.dark .ss-card{background:var(--surf)}
 
     </div>
 
+
+    <!-- ═══════════ التحليل الذكي (IQ) — مدير مالي يعمل أوفلاين ═══════════ -->
+    <div id="iq" class="pg">
+
+      <!-- 1. الملخص التنفيذي السردي -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">🧠</span>الملخص التنفيذي</div><span style="font-size:10px;color:var(--tx4)">يُولَّد آلياً من بياناتك</span></div>
+        <div class="card-body">
+          <div id="iqNarrative" style="font-size:13.5px;line-height:2;color:var(--tx)">—</div>
+        </div>
+      </div>
+
+      <!-- 2. التنبؤ بموسمية أيام الأسبوع -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">🔮</span>التنبؤ الذكي بنهاية الشهر</div></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="padding:12px;border-radius:10px;background:var(--surf2);text-align:center">
+              <div style="font-size:11px;color:var(--tx3);margin-bottom:4px">الإيراد المتوقّع</div>
+              <div id="iqFcRev" class="num" style="font-size:20px;font-weight:700;color:var(--gn)">—</div>
+              <div id="iqFcRevSub" style="font-size:10px;color:var(--tx4);margin-top:2px"></div>
+            </div>
+            <div style="padding:12px;border-radius:10px;background:var(--surf2);text-align:center">
+              <div style="font-size:11px;color:var(--tx3);margin-bottom:4px">الربح المتوقّع</div>
+              <div id="iqFcProfit" class="num" style="font-size:20px;font-weight:700">—</div>
+              <div id="iqFcProfitSub" style="font-size:10px;color:var(--tx4);margin-top:2px"></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--tx3);font-weight:600;margin-bottom:8px">📅 متوسط الإيراد حسب يوم الأسبوع</div>
+          <div id="iqWeekdayBars"></div>
+          <div id="iqFcNote" style="font-size:11px;color:var(--tx3);margin-top:10px;padding:8px;background:var(--surf3);border-radius:8px"></div>
+        </div>
+      </div>
+
+      <!-- 3. محاكي القرارات (What-if) -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-y">🎚️</span>محاكي القرارات — ماذا لو؟</div><button class="btn btn-ghost btn-sm" onclick="iqResetSim()">↺ إعادة ضبط</button></div>
+        <div class="card-body">
+          <div style="font-size:11px;color:var(--tx3);margin-bottom:12px">حرّك الشرائح لترى أثر كل قرار على ربحك الشهري فوراً:</div>
+
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>📈 تغيير الأسعار</span><span id="iqSimPriceLbl" class="num" style="font-weight:700;color:var(--bld)">0%</span></div>
+            <input type="range" id="iqSimPrice" min="-20" max="30" value="0" step="1" oninput="iqRunSim()" style="width:100%">
+          </div>
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>🛒 تغيير تكلفة البضاعة (COGS)</span><span id="iqSimCogsLbl" class="num" style="font-weight:700;color:var(--bld)">0%</span></div>
+            <input type="range" id="iqSimCogs" min="-30" max="20" value="0" step="1" oninput="iqRunSim()" style="width:100%">
+          </div>
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>👥 موظفون إضافيون (شهري لكل واحد)</span><span id="iqSimStaffLbl" class="num" style="font-weight:700;color:var(--bld)">0</span></div>
+            <input type="range" id="iqSimStaff" min="-2" max="3" value="0" step="1" oninput="iqRunSim()" style="width:100%">
+            <input type="number" id="iqSimStaffCost" class="inp" value="250" step="10" min="0" oninput="iqRunSim()" style="margin-top:6px;height:34px;font-size:12px" placeholder="راتب الموظف الواحد">
+          </div>
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>☕ زبائن إضافيون يومياً</span><span id="iqSimCustLbl" class="num" style="font-weight:700;color:var(--bld)">0</span></div>
+            <input type="range" id="iqSimCust" min="0" max="50" value="0" step="1" oninput="iqRunSim()" style="width:100%">
+            <input type="number" id="iqSimTicket" class="inp" value="2.5" step="0.25" min="0" oninput="iqRunSim()" style="margin-top:6px;height:34px;font-size:12px" placeholder="متوسط فاتورة الزبون">
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+            <div style="padding:12px;border-radius:10px;background:var(--surf2)">
+              <div style="font-size:10px;color:var(--tx3)">الربح الحالي</div>
+              <div id="iqSimBase" class="num" style="font-size:17px;font-weight:700">—</div>
+            </div>
+            <div id="iqSimResultBox" style="padding:12px;border-radius:10px;background:var(--surf2);border:2px solid var(--gn)">
+              <div style="font-size:10px;color:var(--tx3)">الربح بعد القرار</div>
+              <div id="iqSimResult" class="num" style="font-size:17px;font-weight:700;color:var(--gn)">—</div>
+              <div id="iqSimDelta" style="font-size:11px;font-weight:700;margin-top:2px"></div>
+            </div>
+          </div>
+          <div id="iqSimNote" style="font-size:11px;color:var(--tx3);margin-top:10px"></div>
+        </div>
+      </div>
+
+      <!-- 4. التحليلات الموسمية والمقارنات -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-r">📅</span>تحليلات موسمية</div></div>
+        <div class="card-body">
+          <div id="iqWeekdayInsight" style="font-size:12px;color:var(--tx);margin-bottom:12px;line-height:1.8"></div>
+          <div style="font-size:11px;color:var(--tx3);font-weight:600;margin:10px 0 6px">🎊 مقارنة الأعياد عبر السنوات</div>
+          <div id="iqEidCompare" style="font-size:12px;color:var(--tx);line-height:1.8"></div>
+          <div style="font-size:11px;color:var(--tx3);font-weight:600;margin:14px 0 6px">👥 توصية جدولة الموظفين</div>
+          <div id="iqStaffing" style="font-size:12px;color:var(--tx);line-height:1.8"></div>
+        </div>
+      </div>
+
+      <!-- 5. معايير قطاع الكافيهات -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">🎯</span>معايير قطاع الكافيهات</div></div>
+        <div class="card-body">
+          <div id="iqBenchmarks"></div>
+          <div style="font-size:10px;color:var(--tx4);margin-top:10px">المعايير العالمية لقطاع المقاهي: تكلفة البضاعة 28–35٪ · العمالة 25–30٪ · التكلفة الأولية (Prime) أقل من 60٪ · هامش صافٍ 10–20٪.</div>
+        </div>
+      </div>
+
+    </div>
 
     <!-- CLOUD PAGE -->
     <div id="cloud" class="pg">
@@ -4481,6 +4578,7 @@ function pg(id,btn){
     try {
       if(id==="audit") renderLog();
       else if(id==="rpt") { updateDash(); setTimeout(function(){try{updateRpt();}catch(e){}}, 30); }
+      else if(id==="iq") { setTimeout(function(){try{renderIQ();}catch(e){console.warn('IQ:',e);}}, 30); }
       else if(id==="sal") { setTimeout(function(){try{initSalTables();}catch(e){}}, 30); }
       else if(id==="adv") { renderAdv(); renderAdvLedger(); }
       else if(id==="oblig") renderObligList();
@@ -7127,6 +7225,15 @@ function _renderPDFFromElement(el){
   const[y,m]=S.activeKey.split('-');
   const mn=MN[parseInt(m)-1];
   const t=totals();
+  // بيانات تنفيذية إضافية (تنبؤ + معايير + سرد)
+  var _fc; try{ _fc=iqForecast(); }catch(e){ _fc={projected:0,projProfit:0,activeDays:0}; }
+  var _ns=t.netSales||0;
+  var _cogsP=_ns>0?t.bycat.COGS/_ns*100:0;
+  var _laborP=_ns>0?(t.mSalPaid+t.dwTotal)/_ns*100:0;
+  var _primeP=_ns>0?(t.bycat.COGS+t.mSalPaid+t.dwTotal)/_ns*100:0;
+  var _prevNet=iqMonthNet(getPrevMonthKey());
+  var _momTxt = _prevNet>0 ? ((t.netSales-_prevNet)/_prevNet*100>=0?'بارتفاع ':'بانخفاض ')+Math.abs((t.netSales-_prevNet)/_prevNet*100).toFixed(0)+'% عن الشهر السابق' : 'لا توجد مقارنة بالشهر السابق';
+  function _bench(label,val,good,warn,lower){var ok=lower?val<=good:val>=good;var mid=lower?val<=warn:val>=warn;var col=ok?'#047857':mid?'#B45309':'#B91C1C';var ic=ok?'✅':mid?'🟡':'🔴';return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:11px;color:#444">'+ic+' '+label+'</span><span style="font-family:monospace;font-weight:700;color:'+col+'">'+val.toFixed(1)+'%</span></div>';}
   // بناء HTML مؤقت للطباعة
   const printDiv=document.createElement('div');
   printDiv.style.cssText='position:fixed;top:-9999px;left:0;width:800px;background:#fff;color:#000;font-family:IBM Plex Sans Arabic,sans-serif;direction:rtl;padding:30px;font-size:13px;line-height:1.7';
@@ -7135,6 +7242,12 @@ function _renderPDFFromElement(el){
       <div style="font-size:22px;font-weight:700;color:#1a1a1a">☕ ريحانة كافيه</div>
       <div style="font-size:15px;color:#666;margin-top:4px">قائمة الدخل — ${mn} ${y}</div>
       <div style="font-size:11px;color:#999;margin-top:2px">${new Date().toLocaleDateString('ar-JO',{year:'numeric',month:'long',day:'numeric'})}</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:18px">
+      <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#F8FAFC"><div style="font-size:10px;color:#888">صافي البيع</div><div style="font-size:17px;font-weight:700;color:#1d4ed8;font-family:monospace">${n3(t.netSales)}</div></div>
+      <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:${t.profit>=0?'#F0FDF4':'#FEF2F2'}"><div style="font-size:10px;color:#888">صافي الربح</div><div style="font-size:17px;font-weight:700;color:${t.profit>=0?'#047857':'#B91C1C'};font-family:monospace">${n3(t.profit)}</div></div>
+      <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#F8FAFC"><div style="font-size:10px;color:#888">الهامش</div><div style="font-size:17px;font-weight:700;color:#1a1a1a;font-family:monospace">${t.margin.toFixed(1)}%</div></div>
+      <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#FFFBEB"><div style="font-size:10px;color:#888">متوقّع آخر الشهر</div><div style="font-size:17px;font-weight:700;color:#B45309;font-family:monospace">${n3(_fc.projected)}</div></div>
     </div>
     <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
       <thead><tr style="background:#faf6ee;border-bottom:2px solid #C8920F"><th style="padding:10px;text-align:right;color:#1a1a1a;font-weight:700">البند</th><th style="padding:10px;text-align:left;font-family:monospace;color:#1a1a1a;font-weight:700">المبلغ (JD)</th></tr></thead>
@@ -7169,9 +7282,24 @@ function _renderPDFFromElement(el){
         </tr>
       </tfoot>
     </table>
+    <div style="display:flex;gap:14px;margin-bottom:16px">
+      <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:14px;background:#FCFCFD">
+        <div style="font-size:13px;font-weight:700;color:#C8920F;margin-bottom:8px">📋 الملخص التنفيذي</div>
+        <div style="font-size:11.5px;color:#333;line-height:1.9">
+          سجّل الكافيه صافي بيع ${n3(t.netSales)} JD خلال ${_fc.activeDays} يوم عمل، ${_momTxt}.
+          ${t.profit>=0?('حقّق ربحاً صافياً '+n3(t.profit)+' JD بهامش '+t.margin.toFixed(1)+'%'+(t.margin>=15?' وهو أداء ممتاز.':t.margin>=10?' وهو أداء جيد.':' ويُنصح بتحسين الهامش.')):('سجّل خسارة '+n3(Math.abs(t.profit))+' JD وتجب مراجعة التكاليف عاجلاً.')}
+          ${_fc.projected>0?(' يُتوقّع إغلاق الشهر على نحو '+n3(_fc.projected)+' JD صافي بيع.'):''}
+        </div>
+      </div>
+      <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:14px;background:#FCFCFD">
+        <div style="font-size:13px;font-weight:700;color:#C8920F;margin-bottom:8px">🎯 مقابل معايير القطاع</div>
+        ${_ns>0?(_bench('تكلفة البضاعة (≤35%)',_cogsP,35,40,true)+_bench('تكلفة العمالة (≤30%)',_laborP,30,35,true)+_bench('التكلفة الأولية (≤60%)',_primeP,60,68,true)+_bench('الهامش الصافي (≥15%)',t.margin||0,15,8,false)):'<div style="font-size:11px;color:#999">لا توجد مبيعات لحساب المعايير.</div>'}
+      </div>
+    </div>
     <div style="text-align:center;color:#666;font-size:10px;border-top:1px solid #eee;padding-top:10px">
-      هامش الربح الصافي: ${t.margin.toFixed(2)}% | 
+      هامش الربح الصافي: ${t.margin.toFixed(2)}% |
       المعادلة: صافي الربح = (نقد+فيزا) − (مشتريات + التزامات مدفوعة ✅ + رواتب مدفوعة ✅)
+      <br>تقرير مُولَّد آلياً من نظام ريحانة كافيه — ${new Date().toLocaleDateString('ar-JO')}
     </div>`;
   document.body.appendChild(printDiv);
   html2canvas(printDiv,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false}).then(function(canvas){
@@ -11235,6 +11363,257 @@ function calculateAdvancedKPIs() {
   };
   
   return kpis;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// 🧠 محرك التحليل الذكي (IQ) — يعمل أوفلاين بالكامل بلا أي مفتاح
+// تنبؤ بموسمية أيام الأسبوع · ملخص تنفيذي سردي · محاكي قرارات · مقارنات
+// ═══════════════════════════════════════════════════════════════════════════
+var IQ_DAYS = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+// متوسط صافي البيع (نقد+فيزا) حسب يوم الأسبوع من آخر 3 أشهر
+function iqWeekdayStats(){
+  var stats=[]; for(var i=0;i<7;i++) stats.push({sum:0,count:0,avg:0});
+  var keys=Object.keys(S.months||{}).sort().slice(-3);
+  keys.forEach(function(k){
+    var ym=k.split('-'); var y=parseInt(ym[0]), mo=parseInt(ym[1]);
+    (S.months[k].sales||[]).forEach(function(s){
+      var net=(s.cash||0)+(s.visa||0);
+      if(net<=0) return;
+      var dow=new Date(y,mo-1,s.day).getDay();
+      stats[dow].sum+=net; stats[dow].count++;
+    });
+  });
+  stats.forEach(function(x){ x.avg = x.count ? x.sum/x.count : 0; });
+  return stats;
+}
+
+// تنبؤ نهاية الشهر: الأيام المُدخلة فعلاً + توقّع الباقي حسب موسمية يوم الأسبوع
+function iqForecast(){
+  var t=totals(), d=G();
+  var dim=daysIn(S.activeKey);
+  var ym=S.activeKey.split('-'); var y=parseInt(ym[0]), mo=parseInt(ym[1]);
+  var stats=iqWeekdayStats();
+  var gSum=0,gc=0; stats.forEach(function(s){ gSum+=s.sum; gc+=s.count; });
+  var globalAvg = gc ? gSum/gc : 0;
+  var actualByDay={}, actualSum=0, activeDays=0;
+  (d.sales||[]).forEach(function(s){ var net=(s.cash||0)+(s.visa||0); if(net>0){ actualByDay[s.day]=net; actualSum+=net; activeDays++; } });
+  var projected=actualSum, predictedDays=0;
+  for(var day=1;day<=dim;day++){
+    if(actualByDay[day]!=null) continue;
+    var dow=new Date(y,mo-1,day).getDay();
+    var pred = stats[dow].avg>0 ? stats[dow].avg : globalAvg;
+    projected += pred; if(pred>0) predictedDays++;
+  }
+  var margin = t.margin || 0;
+  var projProfit = projected * margin/100;
+  return {projected:projected, projProfit:projProfit, margin:margin, activeDays:activeDays, predictedDays:predictedDays, stats:stats, dim:dim, actualSum:actualSum};
+}
+
+// مجموع صافي البيع لشهر معيّن
+function iqMonthNet(key){
+  var m=S.months[key]; if(!m) return 0;
+  return (m.sales||[]).reduce(function(s,x){ return s+(x.cash||0)+(x.visa||0); },0);
+}
+
+// بيانات الأعياد عبر السنوات (يكتشفها من التقويم الهجري لكل يوم بيع)
+function iqEidData(){
+  var groups={};
+  Object.keys(S.months||{}).forEach(function(k){
+    var ym=k.split('-'); var y=parseInt(ym[0]), mo=parseInt(ym[1]);
+    (S.months[k].sales||[]).forEach(function(s){
+      var net=(s.cash||0)+(s.visa||0); if(net<=0) return;
+      var info; try{ info=getHolidayInfo(new Date(y,mo-1,s.day)); }catch(e){ info=null; }
+      if(info && info.eid){
+        var key=info.eid+'-'+y;
+        if(!groups[key]) groups[key]={eid:info.eid, year:y, name:(info.eid==='fitr'?'عيد الفطر':'عيد الأضحى'), sum:0, days:0};
+        groups[key].sum+=net; groups[key].days++;
+      }
+    });
+  });
+  return Object.values(groups).sort(function(a,b){ return (a.eid===b.eid)?(a.year-b.year):a.eid.localeCompare(b.eid); });
+}
+
+// ─── الملخص التنفيذي السردي ───
+function renderIQNarrative(){
+  var el=document.getElementById('iqNarrative'); if(!el) return;
+  var t=totals(); var ym=S.activeKey.split('-'); var mn=MN[parseInt(ym[1])-1];
+  var calc; try{ calc=getCalc(); }catch(e){ calc={activeDays:0}; }
+  if(!calc.activeDays){ el.innerHTML='📭 لا توجد بيانات كافية لهذا الشهر بعد. أدخل إيرادات يومية ليكتب لك المستشار قصة الشهر.'; return; }
+  var p=[];
+  // افتتاحية
+  p.push('في <b>'+mn+' '+ym[0]+'</b> سجّل الكافيه صافي بيع <b>'+n3(t.netSales)+' JD</b> خلال <b>'+calc.activeDays+'</b> يوم عمل، بمتوسط <b>'+n3(calc.avgDaily)+' JD/يوم</b>.');
+  // مقارنة بالشهر السابق
+  var prevNet=iqMonthNet(getPrevMonthKey());
+  if(prevNet>0){
+    var ch=(t.netSales-prevNet)/prevNet*100;
+    p.push(ch>=0 ? '📈 أعلى من الشهر السابق بنسبة <b style="color:var(--gn)">'+ch.toFixed(0)+'%</b> (كان '+n3(prevNet)+' JD).'
+                 : '📉 أقل من الشهر السابق بنسبة <b style="color:var(--rd)">'+Math.abs(ch).toFixed(0)+'%</b> (كان '+n3(prevNet)+' JD).');
+  }
+  // الربح والهامش
+  if(t.profit>=0) p.push('💰 صافي الربح <b style="color:var(--gn)">'+n3(t.profit)+' JD</b> بهامش <b>'+t.margin.toFixed(1)+'%</b>'+(t.margin>=15?' — ممتاز.':t.margin>=10?' — جيد.':' — يحتاج تحسيناً.'));
+  else p.push('🚨 الكافيه يعمل بخسارة <b style="color:var(--rd)">'+n3(Math.abs(t.profit))+' JD</b> هذا الشهر — راجع التكاليف عاجلاً.');
+  // أفضل يوم أسبوع
+  var st=iqWeekdayStats(); var best=-1,worst=-1,bv=-1,wv=Infinity;
+  for(var i=0;i<7;i++){ if(st[i].count){ if(st[i].avg>bv){bv=st[i].avg;best=i;} if(st[i].avg<wv){wv=st[i].avg;worst=i;} } }
+  if(best>=0&&worst>=0&&best!==worst) p.push('🗓️ أقوى أيامك <b>'+IQ_DAYS[best]+'</b> (متوسط '+n3(bv)+' JD)، وأضعفها <b>'+IQ_DAYS[worst]+'</b> ('+n3(wv)+' JD) — فكّر بعرض ترويجي يوم '+IQ_DAYS[worst]+'.');
+  // التوقع
+  var fc=iqForecast();
+  if(fc.predictedDays>0) p.push('🔮 على هذا المنوال، يُتوقّع أن يُغلق الشهر على <b>'+n3(fc.projected)+' JD</b> صافي بيع، بربح متوقّع <b>'+n3(fc.projProfit)+' JD</b>.');
+  // أعلى خطر
+  var unpaid=(t.obls||[]).filter(function(o){return !o.paid&&o.amt>0;}).reduce(function(s,o){return s+o.amt;},0);
+  if(t.netSales>0 && t.bycat.COGS/t.netSales>0.4) p.push('⚠️ تكلفة البضاعة مرتفعة ('+(t.bycat.COGS/t.netSales*100).toFixed(0)+'% من البيع) — فاوض الموردين.');
+  if(unpaid>0) p.push('📋 لديك التزامات غير مسددة بقيمة <b>'+n3(unpaid)+' JD</b> ستخصم من الربح عند دفعها.');
+  var supA=detectSupplierPriceAlert();
+  if(supA) p.push('📦 متوسط فاتورة "<b>'+esc(supA.nm)+'</b>" ارتفع '+supA.pct.toFixed(0)+'% عن الشهر السابق.');
+  el.innerHTML = p.map(function(x){ return '<div style="margin-bottom:8px">• '+x+'</div>'; }).join('');
+}
+
+// ─── التنبؤ + أعمدة أيام الأسبوع ───
+function renderIQForecast(){
+  var fc=iqForecast();
+  T('iqFcRev', n3(fc.projected));
+  var sub=document.getElementById('iqFcRevSub'); if(sub) sub.textContent = fc.activeDays+' يوم فعلي + '+fc.predictedDays+' متوقّع';
+  var pr=document.getElementById('iqFcProfit');
+  if(pr){ pr.textContent=n3(fc.projProfit); pr.style.color = fc.projProfit>=0?'var(--gn)':'var(--rd)'; }
+  var ps=document.getElementById('iqFcProfitSub'); if(ps) ps.textContent='بهامش '+fc.margin.toFixed(1)+'%';
+  // أعمدة
+  var bars=document.getElementById('iqWeekdayBars'); if(bars){
+    var mx=0; fc.stats.forEach(function(s){ if(s.avg>mx)mx=s.avg; });
+    var bv=-1,wv=Infinity; fc.stats.forEach(function(s){ if(s.count){ if(s.avg>bv)bv=s.avg; if(s.avg<wv)wv=s.avg; } });
+    bars.innerHTML = fc.stats.map(function(s,i){
+      var w = mx>0 ? (s.avg/mx*100) : 0;
+      var col = s.count===0 ? 'var(--br)' : s.avg===bv ? '#10B981' : s.avg===wv ? '#EF4444' : 'var(--primary)';
+      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'+
+        '<span style="width:46px;font-size:11px;color:var(--tx2);font-weight:600">'+IQ_DAYS[i]+'</span>'+
+        '<div style="flex:1;height:18px;background:var(--surf2);border-radius:5px;overflow:hidden"><div style="height:100%;width:'+w.toFixed(0)+'%;background:'+col+';border-radius:5px;transition:width .4s"></div></div>'+
+        '<span class="num" style="width:62px;text-align:left;font-size:11px;font-weight:600">'+(s.count?n3(s.avg):'—')+'</span></div>';
+    }).join('');
+  }
+  var note=document.getElementById('iqFcNote');
+  if(note) note.innerHTML = '💡 التوقّع يستخدم متوسط كل يوم أسبوع من آخر 3 أشهر، ثم يُسقط الهامش الحالي. كلما أدخلت بيانات أكثر، دقّ التوقّع.';
+}
+
+// ─── محاكي القرارات (What-if) ───
+function iqRunSim(){
+  var t=totals(); var calc; try{ calc=getCalc(); }catch(e){ calc={activeDays:0}; }
+  var dim=daysIn(S.activeKey);
+  var activeDays=calc.activeDays||0;
+  var cogsRatio = t.netSales>0 ? t.bycat.COGS/t.netSales : 0.30;
+  var price=parseFloat((document.getElementById('iqSimPrice')||{}).value)||0;
+  var cogs=parseFloat((document.getElementById('iqSimCogs')||{}).value)||0;
+  var staff=parseFloat((document.getElementById('iqSimStaff')||{}).value)||0;
+  var staffCost=parseFloat((document.getElementById('iqSimStaffCost')||{}).value)||0;
+  var cust=parseFloat((document.getElementById('iqSimCust')||{}).value)||0;
+  var ticket=parseFloat((document.getElementById('iqSimTicket')||{}).value)||0;
+  T('iqSimPriceLbl',(price>=0?'+':'')+price+'%');
+  T('iqSimCogsLbl',(cogs>=0?'+':'')+cogs+'%');
+  T('iqSimStaffLbl',(staff>=0?'+':'')+staff);
+  T('iqSimCustLbl','+'+cust);
+  // كل الحسابات على مقياس الشهر حتى الآن للاتساق
+  var dRevPrice = t.netSales*(price/100);            // أثر السعر (نفس الكمية)
+  var dCogs     = -t.bycat.COGS*(cogs/100);          // أثر تغيّر COGS
+  var dStaff    = -(staff*staffCost*(dim>0?activeDays/dim:1)); // رواتب مُحتسبة بنسبة الفترة
+  var addRev    = cust*ticket*activeDays;            // إيراد الزبائن الإضافيين خلال الفترة
+  var dCust     = addRev*(1-cogsRatio);              // صافي بعد تكلفتهم
+  var base=t.profit;
+  var result = base + dRevPrice + dCogs + dStaff + dCust;
+  var delta = result - base;
+  T('iqSimBase', n3(base));
+  var rEl=document.getElementById('iqSimResult'); if(rEl){ rEl.textContent=n3(result); rEl.style.color=result>=0?'var(--gn)':'var(--rd)'; }
+  var box=document.getElementById('iqSimResultBox'); if(box) box.style.borderColor = delta>=0?'var(--gn)':'var(--rd)';
+  var dEl=document.getElementById('iqSimDelta');
+  if(dEl){ dEl.textContent=(delta>=0?'▲ +':'▼ ')+n3(delta)+' JD'; dEl.style.color=delta>=0?'var(--gn)':'var(--rd)'; }
+  var note=document.getElementById('iqSimNote');
+  if(note) note.innerHTML='📊 الأرقام على أساس بيانات الشهر حتى الآن ('+activeDays+' يوم). رواتب الموظفين مُحتسبة بنسبة الفترة المنقضية.';
+}
+function iqResetSim(){
+  ['iqSimPrice','iqSimCogs','iqSimStaff','iqSimCust'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=0; });
+  var sc=document.getElementById('iqSimStaffCost'); if(sc) sc.value=250;
+  var tk=document.getElementById('iqSimTicket'); if(tk) tk.value=2.5;
+  iqRunSim();
+}
+
+// ─── تحليلات موسمية ───
+function renderIQSeasonal(){
+  var st=iqWeekdayStats();
+  // يوم الأسبوع
+  var wel=document.getElementById('iqWeekdayInsight');
+  if(wel){
+    var ranked=st.map(function(s,i){return {i:i,avg:s.avg,count:s.count};}).filter(function(x){return x.count>0;}).sort(function(a,b){return b.avg-a.avg;});
+    if(ranked.length<2){ wel.innerHTML='تحتاج بيانات أيام أكثر لتحليل موسمية الأسبوع.'; }
+    else {
+      var tot=ranked.reduce(function(s,x){return s+x.avg;},0);
+      wel.innerHTML='🏆 ترتيب الأيام بالإيراد: '+ranked.map(function(x){ return '<b>'+IQ_DAYS[x.i]+'</b> ('+n3(x.avg)+')'; }).join(' › ');
+    }
+  }
+  // الأعياد
+  var eel=document.getElementById('iqEidCompare');
+  if(eel){
+    var eid=iqEidData();
+    if(!eid.length){ eel.innerHTML='لا توجد بيانات أعياد مسجّلة بعد. عند إدخال مبيعات أيام العيد ستظهر هنا المقارنة عبر السنوات.'; }
+    else {
+      var byType={}; eid.forEach(function(g){ (byType[g.eid]=byType[g.eid]||[]).push(g); });
+      var out=[];
+      Object.keys(byType).forEach(function(type){
+        var arr=byType[type].sort(function(a,b){return a.year-b.year;});
+        arr.forEach(function(g,idx){
+          var line='🎊 <b>'+g.name+' '+g.year+'</b>: '+n3(g.sum)+' JD ('+g.days+' أيام · متوسط '+n3(g.sum/g.days)+'/يوم)';
+          if(idx>0){ var prev=arr[idx-1]; var ch=prev.sum>0?(g.sum-prev.sum)/prev.sum*100:0; line+=' <span style="color:'+(ch>=0?'var(--gn)':'var(--rd)')+';font-weight:700">'+(ch>=0?'▲':'▼')+Math.abs(ch).toFixed(0)+'% عن '+prev.year+'</span>'; }
+          out.push(line);
+        });
+      });
+      eel.innerHTML=out.map(function(x){return '<div style="margin-bottom:4px">'+x+'</div>';}).join('');
+    }
+  }
+  // جدولة الموظفين
+  var sel=document.getElementById('iqStaffing');
+  if(sel){
+    var r=st.map(function(s,i){return {i:i,avg:s.avg,count:s.count};}).filter(function(x){return x.count>0;}).sort(function(a,b){return b.avg-a.avg;});
+    if(r.length<3){ sel.innerHTML='تحتاج بيانات أكثر لتوصية الجدولة.'; }
+    else {
+      var top=r.slice(0,2).map(function(x){return IQ_DAYS[x.i];});
+      var bot=r.slice(-2).map(function(x){return IQ_DAYS[x.i];});
+      sel.innerHTML='👍 عزّز العمالة أيام <b style="color:var(--gn)">'+top.join(' و')+'</b> (ذروة الطلب)، وخفّفها أيام <b style="color:var(--rd)">'+bot.join(' و')+'</b> لتوفير الأجور دون التأثير على الخدمة.';
+    }
+  }
+}
+
+// ─── معايير قطاع الكافيهات ───
+function renderIQBenchmarks(){
+  var el=document.getElementById('iqBenchmarks'); if(!el) return;
+  var t=totals();
+  var ns=t.netSales||0;
+  var cogsP = ns>0 ? t.bycat.COGS/ns*100 : 0;
+  var laborP = ns>0 ? (t.mSalPaid+t.dwTotal)/ns*100 : 0;
+  var primeP = ns>0 ? (t.bycat.COGS+t.mSalPaid+t.dwTotal)/ns*100 : 0;
+  var marginP = t.margin||0;
+  function row(label, val, good, warn, lowerBetter, unit){
+    unit=unit||'%';
+    var ok = lowerBetter ? val<=good : val>=good;
+    var mid = lowerBetter ? val<=warn : val>=warn;
+    var col = ok?'#10B981':mid?'#F59E0B':'#EF4444';
+    var icon = ok?'✅':mid?'🟡':'🔴';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--br)">'+
+      '<span style="font-size:12px;color:var(--tx2)">'+icon+' '+label+'</span>'+
+      '<span class="num" style="font-weight:700;color:'+col+'">'+val.toFixed(1)+unit+'</span></div>';
+  }
+  if(ns<=0){ el.innerHTML='<div style="color:var(--tx4);font-size:12px">لا توجد مبيعات لحساب المعايير.</div>'; return; }
+  el.innerHTML =
+    row('تكلفة البضاعة (الهدف ≤35%)',cogsP,35,40,true)+
+    row('تكلفة العمالة (الهدف ≤30%)',laborP,30,35,true)+
+    row('التكلفة الأولية Prime (الهدف ≤60%)',primeP,60,68,true)+
+    row('الهامش الصافي (الهدف ≥15%)',marginP,15,8,false);
+}
+
+// ─── المنسّق الرئيسي ───
+function renderIQ(){
+  try{ renderIQNarrative(); }catch(e){ console.warn('IQ narrative:',e); }
+  try{ renderIQForecast(); }catch(e){ console.warn('IQ forecast:',e); }
+  try{ iqRunSim(); }catch(e){ console.warn('IQ sim:',e); }
+  try{ renderIQSeasonal(); }catch(e){ console.warn('IQ seasonal:',e); }
+  try{ renderIQBenchmarks(); }catch(e){ console.warn('IQ bench:',e); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
