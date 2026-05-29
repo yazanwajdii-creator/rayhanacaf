@@ -4344,7 +4344,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v53';
+const APP_VERSION='v54';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5449,7 +5449,7 @@ function renderPurch(){
   const isDateFiltered=pFrom||pTo||pBuyer;
   // Apply filters
   let shown=0,shownAmt=0,tot=0;
-  if(!p.length){b.innerHTML='<tr><td colspan="7" style="padding:22px;color:var(--tx4)">لا توجد مشتريات</td></tr>';T("t-purch","0.000");const sum=$("purchFilterSummary");if(sum)sum.innerHTML="";return;}
+  if(!p.length){b.innerHTML='<tr><td colspan="7" style="padding:32px;text-align:center;color:var(--tx3)"><div style="font-size:34px;margin-bottom:6px">📭</div><div style="font-weight:600;margin-bottom:3px">لا توجد مشتريات بعد</div><div style="font-size:11px;color:var(--tx4)">اضغط زر «➕ فاتورة جديدة» أعلى الصفحة لتسجيل أول مشترى</div></td></tr>';T("t-purch","0.000");const sum=$("purchFilterSummary");if(sum)sum.innerHTML="";return;}
   p.forEach((r,i)=>{
     tot+=r.amt;
     // Category filter
@@ -6079,15 +6079,15 @@ function hmDayClick(day) {
 
 /* SUPPLIERS */
 const SICO={"مواد غذائية ومواد خام":"🥗","مشروبات ومواد القهوة":"☕","مواد التعبئة والتغليف":"📦","مواد النظافة والتعقيم":"🧹","مستلزمات التشغيل":"⚙️","خدمات وصيانة":"🔧","أخرى":"📋"};
-function renderSuppList(){const c=$("suppList");if(!c)return;if(!S.suppliers.length){c.innerHTML='<div class="alert al-i">لا يوجد موردون</div>';return;}c.innerHTML=S.suppliers.map((s,i)=>`<div class="sup-card"><div class="sup-ico">${SICO[s.cat]||"📦"}</div><div class="sup-info"><div class="sup-name">${s.name}</div><div class="sup-cat">${s.cat}${s.note?" — "+s.note:""}</div></div><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-xs" onclick="editSupp(${i})">✏️</button><button class="btn btn-r btn-xs del-btn" onclick="delSupp(${i})">🗑️</button></div></div>`).join("");applyRoles();}
+function renderSuppList(){const c=$("suppList");if(!c)return;if(!S.suppliers.length){c.innerHTML='<div style="text-align:center;padding:26px;color:var(--tx3)"><div style="font-size:32px;margin-bottom:6px">🏪</div><div style="font-weight:600;margin-bottom:3px">لم تُضف موردين بعد</div><div style="font-size:11px;color:var(--tx4)">اضغط «➕ مورد جديد» لإضافة أول مورد</div></div>';return;}c.innerHTML=S.suppliers.map((s,i)=>`<div class="sup-card"><div class="sup-ico">${SICO[s.cat]||"📦"}</div><div class="sup-info"><div class="sup-name">${s.name}</div><div class="sup-cat">${s.cat}${s.note?" — "+s.note:""}</div></div><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-xs" onclick="editSupp(${i})">✏️</button><button class="btn btn-r btn-xs del-btn" onclick="delSupp(${i})">🗑️</button></div></div>`).join("");applyRoles();}
 function editSupp(i){if(!_requireManager())return;const s=S.suppliers[i];if(!s)return;$("suppTit").textContent="✏️ تعديل المورد";$("suppEI").value=i;$("sName").value=s.name;$("sCat").value=s.cat;$("sNote").value=s.note||"";openMo("moSupp");}
 function saveSupp(){const n=$("sName").value.trim(),c=$("sCat").value,nt=$("sNote").value.trim();if(!n){toast("⚠️ أدخل اسم المورد");return;}const ei=$("suppEI").value;if(ei!==""){S.suppliers[parseInt(ei)]={...S.suppliers[parseInt(ei)],name:n,cat:c,note:nt};}else{S.suppliers.push({id:"s"+Date.now(),name:n,cat:c,note:nt});}buildPurchSupp();renderSuppList();renderSuppRpt();cmo("moSupp");$("suppEI").value="";$("suppTit").textContent="📦 إضافة مورد";["sName","sNote"].forEach(id=>$(id).value="");saveAll();toast("✅ تم الحفظ");}
-function delSupp(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}var sp=S.suppliers[i];if(!sp)return;if(!confirm(`حذف المورد "${sp.name}"؟`))return;undoSnapshot('حذف مورد: '+sp.name);log('حذف مورد — '+sp.name,{action:'delete',entity:'supplier',before:sp});S.suppliers.splice(i,1);buildPurchSupp();renderSuppList();renderSuppRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
+function delSupp(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}var sp=S.suppliers[i];if(!sp)return;var _u=(G().purchases||[]).filter(function(p){return p.sId===sp.id||p.sName===sp.name;}).length;if(!confirm(`حذف المورد "${sp.name}"؟${_u>0?'\n⚠️ لديه '+_u+' فاتورة مسجّلة لن تُحذف لكنها ستفقد ارتباطها بالمورد.':''}`))return;undoSnapshot('حذف مورد: '+sp.name);log('حذف مورد — '+sp.name,{action:'delete',entity:'supplier',before:sp});S.suppliers.splice(i,1);buildPurchSupp();renderSuppList();renderSuppRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 function renderSuppRpt(){
   const c=$("suppRpt");if(!c)return;
   const sm={};G().purchases.forEach(p=>{if(!sm[p.sName])sm[p.sName]={t:0,n:0};sm[p.sName].t+=p.amt;sm[p.sName].n++;});
   const ents=Object.entries(sm).sort((a,b)=>b[1].t-a[1].t);
-  if(!ents.length){c.innerHTML='<div class="alert al-i">لا توجد مشتريات</div>';return;}
+  if(!ents.length){c.innerHTML='<div style="text-align:center;padding:24px;color:var(--tx3)"><div style="font-size:30px;margin-bottom:6px">📦</div><div style="font-weight:600;margin-bottom:3px">لا توجد مشتريات لهذا الشهر</div><div style="font-size:11px;color:var(--tx4)">سجّل فاتورة من تبويب «🛒 المشتريات» وستظهر تحليلات الموردين هنا</div></div>';return;}
   const grand=ents.reduce((s,[,v])=>s+v.t,0);
   // مقارنة بالشهر السابق لكل مورد: هل زادت السحوبات أم ارتفع متوسط سعر الفاتورة؟
   const prevKey=getPrevMonthKey();
@@ -6112,6 +6112,11 @@ function renderSuppRpt(){
 function renderObligList(){
   const c=$("obligList");if(!c)return;
   const locked=isLocked();
+  if(!G().obligations.length){
+    c.innerHTML='<div style="text-align:center;padding:30px;color:var(--tx3)"><div style="font-size:34px;margin-bottom:6px">📋</div><div style="font-weight:600;margin-bottom:3px">لم تُحدّد التزامات بعد</div><div style="font-size:11px;color:var(--tx4)">اضغط «➕ التزام جديد» لإضافة إيجار/كهرباء/جمعية وغيرها — ستظهر في التقارير وتنبّهك قبل استحقاقها</div></div>';
+    const obls0=G().obligations; T("obl-tot","0.000 JD");T("obl-paid","0.000 JD");T("obl-due","0.000 JD");
+    return;
+  }
   c.innerHTML=G().obligations.map((o,i)=>`<div class="obl-row ${o.paid?"paid":""}">
     <div class="obl-info">
       <div class="obl-name">${esc(o.name)}</div>
@@ -6167,7 +6172,7 @@ function saveOblig(){
   ["oName","oAmt","oDue"].forEach(id=>{const e=$(id);if(e)e.value="";});
   renderObligList();updateDash();calcCash();updateRpt();cmo("moOblig");saveAll();toast("✅ تم الحفظ");
 }
-function delOblig(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}var ob=G().obligations[i];if(!ob)return;if(!confirm(`حذف "${ob.name}"؟`))return;undoSnapshot('حذف التزام: '+ob.name);log('حذف التزام — '+ob.name+' '+n3(ob.amt)+' JD',{action:'delete',entity:'obligation',amount:ob.amt,before:ob});G().obligations.splice(i,1);renderObligList();updateDash();calcCash();updateRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
+function delOblig(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}if(isLocked()){toast("🔒 الشهر مغلق");return;}var ob=G().obligations[i];if(!ob)return;if(!confirm(`حذف التزام "${ob.name}" بمبلغ ${n3(ob.amt)} JD${ob.paid?' (مدفوع ✅)':' (غير مدفوع)'}؟`))return;undoSnapshot('حذف التزام: '+ob.name);log('حذف التزام — '+ob.name+' '+n3(ob.amt)+' JD',{action:'delete',entity:'obligation',amount:ob.amt,before:ob});G().obligations.splice(i,1);renderObligList();updateDash();calcCash();updateRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
 
 /* v40.1: إدارة الموظفين (إضافة + حذف) — كانت مفقودة تماماً */
 function renderEmpMgr(){
@@ -6505,7 +6510,7 @@ function addAdv(){
 function renderAdv(){
   const b=$("advBody");if(!b)return;b.innerHTML="";let tot=0;
   const adv=G().advances;
-  if(!adv.length){b.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--tx4)">لا توجد سلف</td></tr>';T("t-adv","0.000");return;}
+  if(!adv.length){b.innerHTML='<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--tx3)"><div style="font-size:34px;margin-bottom:6px">💵</div><div style="font-weight:600;margin-bottom:3px">لا توجد سلف بعد</div><div style="font-size:11px;color:var(--tx4)">اضغط «➕ سلفة جديدة» لتسجيل أول سلفة لموظف</div></td></tr>';T("t-adv","0.000");return;}
   adv.forEach((a,i)=>{
     if(a.status==="مستحقة"||a.status==="مسددة جزئياً")tot+=a.amt;
     const sc=a.status==="مسددة"?"bg-ok":a.status==="مسددة جزئياً"?"bg-w":"bg-e";
