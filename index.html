@@ -3204,6 +3204,22 @@ body.dark .ss-card{background:var(--surf)}
         </div>
       </div>
 
+      <!-- 4.5 كشف الشذوذ الذكي -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-r">🔍</span>كشف الشذوذ — أيام ومشتريات غير اعتيادية</div></div>
+        <div class="card-body">
+          <div id="iqAnomalies" style="font-size:12px;line-height:1.9;color:var(--tx)">—</div>
+        </div>
+      </div>
+
+      <!-- 4.6 تحليل المتفرقات -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-y">🧾</span>تحليل المتفرقات (أخرى)</div></div>
+        <div class="card-body">
+          <div id="iqMisc" style="font-size:12px;line-height:1.8;color:var(--tx)">—</div>
+        </div>
+      </div>
+
       <!-- 5. معايير قطاع الكافيهات -->
       <div class="card">
         <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">🎯</span>معايير قطاع الكافيهات</div></div>
@@ -11607,12 +11623,101 @@ function renderIQBenchmarks(){
     row('الهامش الصافي (الهدف ≥15%)',marginP,15,8,false);
 }
 
+// ─── كشف الشذوذ الذكي (يعتمد الوسيط — robust ضد إخفاء القيم الشاذّة لنفسها) ───
+function iqMedian(arr){
+  if(!arr.length) return 0;
+  var a=arr.slice().sort(function(x,y){return x-y;});
+  var m=Math.floor(a.length/2);
+  return a.length%2 ? a[m] : (a[m-1]+a[m])/2;
+}
+function renderIQAnomalies(){
+  var el=document.getElementById('iqAnomalies'); if(!el) return;
+  var d=G(); var out=[];
+  // 1) أيام إيراد شاذّة — نقارن بالوسيط (لا يتأثر بالقيم المتطرّفة نفسها)
+  var days=(d.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)>0;}).map(function(s){return {day:s.day,v:(s.cash||0)+(s.visa||0)};});
+  if(days.length>=5){
+    var med=iqMedian(days.map(function(x){return x.v;}));
+    days.forEach(function(x){
+      if(med>0 && x.v > med*1.75){
+        out.push('🟢 يوم '+x.day+': '+n3(x.v)+' JD — أعلى بـ '+((x.v/med-1)*100).toFixed(0)+'% من اليوم المعتاد ('+n3(med)+') — حلّل سبب التميّز وكرّره');
+      } else if(med>0 && x.v < med*0.45){
+        out.push('🔴 يوم '+x.day+': '+n3(x.v)+' JD — أدنى بـ '+((1-x.v/med)*100).toFixed(0)+'% من المعتاد — تحقّق: عطلة؟ نقص موظفين؟ خطأ إدخال؟');
+      }
+    });
+  }
+  // 2) مشتريات شاذّة الحجم — أكبر من 3× الوسيط
+  var ps=(d.purchases||[]).filter(function(p){return (p.amt||0)>0;});
+  if(ps.length>=4){
+    var pmed=iqMedian(ps.map(function(p){return p.amt;}));
+    ps.forEach(function(p){
+      if(pmed>0 && p.amt > pmed*3){
+        out.push('💸 فاتورة كبيرة غير اعتيادية: '+esc(p.sName||'—')+' بـ '+n3(p.amt)+' JD'+(p.desc?' ('+esc(p.desc)+')':'')+' — تأكّد أنها صحيحة ومصنّفة جيداً (الفاتورة المعتادة ~'+n3(pmed)+')');
+      }
+    });
+  }
+  // 3) قفزة مفاجئة في فاتورة مورد مقارنة بمتوسطه
+  var supA=detectSupplierPriceAlert();
+  if(supA) out.push('📈 متوسط فاتورة "'+esc(supA.nm)+'" ارتفع '+supA.pct.toFixed(0)+'% عن الشهر السابق');
+
+  if(!out.length){ el.innerHTML='✅ لا يوجد شذوذ ملحوظ — أنماط الإيراد والمشتريات ضمن المعتاد.'+(days.length<4?'<br><span style="color:var(--tx4);font-size:11px">(يلزم 4 أيام بيانات على الأقل لكشف أدقّ)</span>':''); return; }
+  el.innerHTML = out.map(function(x){return '<div style="margin-bottom:6px">'+x+'</div>';}).join('');
+}
+
+// ─── تحليل المتفرقات (فئة OTHER): ما هي فعلاً + أين يتسرّب المال ───
+function renderIQMisc(){
+  var el=document.getElementById('iqMisc'); if(!el) return;
+  var d=G(); var t=totals();
+  var other=(d.purchases||[]).filter(function(p){return (p.cat||'COGS')==='OTHER';});
+  var total=other.reduce(function(s,p){return s+(p.amt||0);},0);
+  if(!other.length){ el.innerHTML='لا توجد مشتريات في بند «أخرى/المتفرقات» هذا الشهر. <span style="color:var(--gn)">ممتاز — كل شيء مصنّف بدقّة.</span>'; return; }
+  var allPurch=(d.purchases||[]).reduce(function(s,p){return s+(p.amt||0);},0);
+  var pctOfPurch = allPurch>0 ? total/allPurch*100 : 0;
+  var pctOfSales = t.netSales>0 ? total/t.netSales*100 : 0;
+  // تفصيل: ما هي المشتريات فعلاً (بنود/أوصاف)
+  var byItem={};
+  other.forEach(function(p){
+    if(p.items && p.items.length){ p.items.forEach(function(it){ var k=(it.name||p.desc||'بند').trim(); byItem[k]=(byItem[k]||0)+(it.total||(it.qty*it.unitPrice)||0); }); }
+    else { var k=(p.desc||p.sName||'بند غير موصوف').trim(); byItem[k]=(byItem[k]||0)+(p.amt||0); }
+  });
+  var items=Object.entries(byItem).sort(function(a,b){return b[1]-a[1];});
+  // الموردون
+  var bySupp={}; other.forEach(function(p){var k=p.sName||'—';bySupp[k]=(bySupp[k]||0)+(p.amt||0);});
+  var supps=Object.entries(bySupp).sort(function(a,b){return b[1]-a[1];});
+  // الشهر السابق
+  var pm=S.months[getPrevMonthKey()];
+  var prevTotal = pm ? (pm.purchases||[]).filter(function(p){return (p.cat||'COGS')==='OTHER';}).reduce(function(s,p){return s+(p.amt||0);},0) : 0;
+
+  var html='';
+  html+='<div style="display:flex;gap:8px;margin-bottom:10px">'+
+    '<div style="flex:1;background:var(--surf2);border-radius:8px;padding:8px;text-align:center"><div style="font-size:10px;color:var(--tx3)">إجمالي المتفرقات</div><div class="num" style="font-weight:700;font-size:15px">'+n3(total)+'</div></div>'+
+    '<div style="flex:1;background:var(--surf2);border-radius:8px;padding:8px;text-align:center"><div style="font-size:10px;color:var(--tx3)">% من المشتريات</div><div class="num" style="font-weight:700;font-size:15px;color:'+(pctOfPurch>10?'var(--rd)':'var(--gn)')+'">'+pctOfPurch.toFixed(1)+'%</div></div>'+
+    '</div>';
+  // مقارنة بالسابق
+  if(prevTotal>0){ var ch=(total-prevTotal)/prevTotal*100; html+='<div style="font-size:11px;margin-bottom:8px">مقابل الشهر السابق ('+n3(prevTotal)+' JD): <b style="color:'+(ch>0?'var(--rd)':'var(--gn)')+'">'+(ch>0?'▲ +':'▼ ')+Math.abs(ch).toFixed(0)+'%</b></div>'; }
+  // ما هي المشتريات فعلاً
+  html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);margin:8px 0 5px">📋 ما هي هذه المشتريات؟</div>';
+  html+=items.slice(0,8).map(function(e){var pct=total>0?e[1]/total*100:0;return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--br)"><span style="font-size:12px">'+esc(e[0])+'</span><span class="num" style="font-size:12px;font-weight:600">'+n3(e[1])+' <span style="color:var(--tx4);font-size:10px">('+pct.toFixed(0)+'%)</span></span></div>';}).join('');
+  if(items.length>8) html+='<div style="font-size:10px;color:var(--tx4);margin-top:3px">+'+(items.length-8)+' بنود أخرى</div>';
+  // الموردون
+  if(supps.length>1){ html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);margin:10px 0 5px">🏪 حسب المورد</div>'; html+=supps.slice(0,5).map(function(e){return '<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="font-size:11px;color:var(--tx2)">'+esc(e[0])+'</span><span class="num" style="font-size:11px">'+n3(e[1])+'</span></div>';}).join(''); }
+  // التوصية الذكية
+  html+='<div style="margin-top:10px;padding:9px;border-radius:8px;background:'+(pctOfPurch>10?'rgba(239,68,68,.1)':'rgba(16,185,129,.08)')+';font-size:11.5px;line-height:1.7">';
+  if(pctOfPurch>15) html+='🚨 <b>المتفرقات مرتفعة جداً ('+pctOfPurch.toFixed(0)+'%)</b> — هذا مؤشر محاسبي سيئ: المبلغ كبير لكنه «غير مصنّف». أعد تصنيف أكبر البنود أعلاه إلى فئات واضحة (مواد/تشغيل/إدارة) أو حوّل المتكرر منها إلى التزام شهري ثابت لتتحكم به.';
+  else if(pctOfPurch>10) html+='⚠️ المتفرقات '+pctOfPurch.toFixed(0)+'% من مشترياتك — حاول تصنيف أكبر بند («'+esc(items[0]?items[0][0]:'')+'») لفئته الصحيحة لتوضيح أين يذهب المال.';
+  else if(items[0] && items[0][1] > total*0.5) html+='💡 بند واحد («'+esc(items[0][0])+'») يستحوذ على '+(items[0][1]/total*100).toFixed(0)+'% من المتفرقات — إن كان متكرراً، اجعله فئة أو التزاماً مستقلاً لتتبّعه بدقة.';
+  else html+='✅ المتفرقات ضمن حدود صحية ('+pctOfPurch.toFixed(1)+'% من المشتريات). راقب فقط أن لا يتضخّم بند واحد.';
+  html+='</div>';
+  el.innerHTML=html;
+}
+
 // ─── المنسّق الرئيسي ───
 function renderIQ(){
   try{ renderIQNarrative(); }catch(e){ console.warn('IQ narrative:',e); }
   try{ renderIQForecast(); }catch(e){ console.warn('IQ forecast:',e); }
   try{ iqRunSim(); }catch(e){ console.warn('IQ sim:',e); }
   try{ renderIQSeasonal(); }catch(e){ console.warn('IQ seasonal:',e); }
+  try{ renderIQAnomalies(); }catch(e){ console.warn('IQ anomalies:',e); }
+  try{ renderIQMisc(); }catch(e){ console.warn('IQ misc:',e); }
   try{ renderIQBenchmarks(); }catch(e){ console.warn('IQ bench:',e); }
 }
 
