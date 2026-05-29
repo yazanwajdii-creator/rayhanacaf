@@ -2021,6 +2021,7 @@ body.dark .ss-card{background:var(--surf)}
 
     <!-- DASHBOARD -->
     <div id="dash" class="pg on">
+      <div id="appVerBadge" style="text-align:center;font-size:10px;color:var(--tx4);margin-bottom:6px"></div>
       <!-- V24 PRO - SMART ALERTS BAR -->
       <div id="alertsBar" class="sa-bar" style="display:none"></div>
 
@@ -3204,6 +3205,15 @@ body.dark .ss-card{background:var(--surf)}
         </div>
       </div>
 
+      <!-- 4.4 مقارنة الأيام مع الشهر الماضي -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">📆</span>مقارنة الأيام مع الشهر الماضي</div></div>
+        <div class="card-body">
+          <div id="iqDayCompareSummary" style="font-size:12px;color:var(--tx);margin-bottom:10px;line-height:1.8"></div>
+          <div id="iqDayCompare" style="max-height:340px;overflow-y:auto"></div>
+        </div>
+      </div>
+
       <!-- 4.5 كشف الشذوذ الذكي -->
       <div class="card">
         <div class="card-hd"><div class="card-title"><span class="ct-ico ct-r">🔍</span>كشف الشذوذ — أيام ومشتريات غير اعتيادية</div></div>
@@ -4205,6 +4215,7 @@ function doLogin(role) {
     try { applyRoles(); } catch(e) {}
     try { resetInact(); } catch(e) {}
     try { updLkChips(); } catch(e) {}
+    try { var _vb=document.getElementById('appVerBadge'); if(_vb) _vb.textContent='ريحانة كافيه · الإصدار '+APP_VERSION; } catch(e) {}
     
     // V15 ULTIMATE - تحديث كل الميزات الجديدة
     setTimeout(function() {
@@ -4255,6 +4266,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const APP_VERSION='v51';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -7072,14 +7084,68 @@ function importJSON(ev){
   ev.target.value='';
 }
 
+// تصدير Excel احترافي يعمل أوفلاين بالكامل (ملف .xls بصيغة HTML منسّقة — يفتح في Excel/Sheets بالتنسيق)
+function exportExcelPro(){
+  var t=totals(), d=G(); var ym=S.activeKey.split('-'); var y=ym[0], mo=parseInt(ym[1]); var mn=MN[mo-1];
+  var prevNet=(function(){var pm=S.months[getPrevMonthKey()];return pm?(pm.sales||[]).reduce(function(s,x){return s+(x.cash||0)+(x.visa||0);},0):0;})();
+  var momPct = prevNet>0 ? ((t.netSales-prevNet)/prevNet*100) : null;
+  var th='background:#1a3a2a;color:#fff;font-weight:bold;padding:6px 10px;border:1px solid #ccc';
+  var sec='background:#C8920F;color:#fff;font-weight:bold;padding:6px 10px;border:1px solid #ccc';
+  var td='padding:5px 10px;border:1px solid #ddd';
+  var num='padding:5px 10px;border:1px solid #ddd;text-align:left;mso-number-format:"0.000"';
+  function r(label,val,style){return '<tr><td style="'+td+(style||'')+'">'+label+'</td><td style="'+num+(style||'')+'">'+val+'</td></tr>';}
+  // الموردون
+  var sm={}; (d.purchases||[]).forEach(function(p){if(!sm[p.sName])sm[p.sName]={t:0,n:0};sm[p.sName].t+=p.amt||0;sm[p.sName].n++;});
+  var supRows=Object.entries(sm).sort(function(a,b){return b[1].t-a[1].t;}).map(function(e){return '<tr><td style="'+td+'">'+esc(e[0])+'</td><td style="'+td+';text-align:center">'+e[1].n+'</td><td style="'+num+'">'+n3(e[1].t)+'</td></tr>';}).join('');
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8">'+
+    '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>ريحانة كافيه</x:Name><x:WorksheetOptions><x:DisplayRightToLeft/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>'+
+    '<body dir="rtl"><table style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:13px">'+
+    '<tr><td colspan="2" style="font-size:20px;font-weight:bold;color:#1a3a2a;padding:10px">☕ ريحانة كافيه — قائمة الدخل</td></tr>'+
+    '<tr><td colspan="2" style="color:#666;padding:0 10px 10px">'+mn+' '+y+' · صادر '+new Date().toLocaleDateString('ar-JO')+'</td></tr>'+
+    '<tr><td style="'+sec+'">💰 الإيرادات</td><td style="'+sec+'"></td></tr>'+
+    r('النقدي',n3(t.cash))+r('الفيزا',n3(t.visa))+
+    r('صافي البيع (نقد+فيزا)',n3(t.netSales),';font-weight:bold;background:#eef6ff')+
+    (momPct!==null?r('التغيّر عن '+MN[(mo+10)%12],(momPct>=0?'+':'')+momPct.toFixed(1)+'%',';color:'+(momPct>=0?'#080':'#c00')):'')+
+    r('مدفوعات يومية (توثيق)',n3(t.pmts),';color:#888')+
+    '<tr><td style="'+sec+'">📦 التكاليف</td><td style="'+sec+'"></td></tr>'+
+    r('تكلفة البضاعة COGS',n3(t.bycat.COGS))+
+    r('مجمل الربح',n3(t.grossP),';font-weight:bold;background:#f0fdf4')+
+    r('رواتب مدفوعة',n3(t.mSalPaid))+
+    r('التزامات مدفوعة',n3(t.oblPaid))+
+    (t.bycat.OPS>0?r('مصاريف تشغيلية',n3(t.bycat.OPS)):'')+
+    (t.bycat.ADM>0?r('مصاريف إدارية',n3(t.bycat.ADM)):'')+
+    (t.bycat.MKT>0?r('تسويق',n3(t.bycat.MKT)):'')+
+    (t.bycat.OTHER>0?r('متفرقات',n3(t.bycat.OTHER)):'')+
+    r('إجمالي التكاليف الفعلية',n3(t.totalExp),';font-weight:bold;background:#fef2f2')+
+    '<tr><td style="'+(t.profit>=0?sec:'background:#b91c1c;color:#fff;font-weight:bold;padding:6px 10px')+';font-size:15px">صافي الربح</td><td style="'+num+';font-size:15px;font-weight:bold;background:'+(t.profit>=0?'#dcfce7':'#fee2e2')+'">'+n3(t.profit)+' JD</td></tr>'+
+    r('هامش الربح',t.margin.toFixed(2)+'%',';font-weight:bold')+
+    '<tr><td colspan="2" style="height:14px"></td></tr>'+
+    '<tr><td style="'+th+'">المورد</td><td style="'+th+'">عمليات / إجمالي</td></tr>'+supRows+
+    '</table></body></html>';
+  var fn='ريحانة_كافيه_'+mn+'_'+y+'.xls';
+  if(window.AndroidBridge && AndroidBridge.saveBlob){
+    try{ AndroidBridge.saveBlob(btoa(unescape(encodeURIComponent(html))), fn, 'application/vnd.ms-excel'); toast('📗 تم تصدير Excel'); log('تصدير Excel — '+mn+' '+y); return; }catch(e){}
+  }
+  var blob=new Blob(['﻿'+html],{type:'application/vnd.ms-excel;charset=utf-8'});
+  var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download=fn;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},1500);
+  toast('📗 تم تصدير Excel احترافي'); log('تصدير Excel — '+mn+' '+y);
+}
 function exportExcel(){
+  // أوفلاين أولاً: ملف .xls منسّق بلا مكتبة خارجية (موثوق داخل التطبيق)
+  try{ return exportExcelPro(); }catch(e){ console.warn('excelPro:',e); }
   if(!window.XLSX){
     toast('⏳ جاري تحميل مكتبة Excel...');
     loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')
-      .then(function(){ exportExcel(); })
+      .then(function(){ _exportExcelXLSX(); })
       .catch(function(){ toast('📄 لا إنترنت — جاري تصدير CSV بدلاً منه'); exportCSV(); });
     return;
   }
+  _exportExcelXLSX();
+}
+function _exportExcelXLSX(){
+  if(!window.XLSX){ exportCSV(); return; }
   const t=totals(),d=G();const[y,m]=S.activeKey.split("-");const mn=MN[parseInt(m)-1];
   const wb=XLSX.utils.book_new();
   const rv=[["ريحانة كافيه — الإيرادات"],[],["اليوم","نقدي","فيزا","مدفوعات","صافي البيع","إجمالي الإيراد","ملاحظات"]];
@@ -11694,6 +11760,16 @@ function renderIQSeasonal(){
           out.push(line);
         });
       });
+      // مقارنة عيد الفطر مقابل عيد الأضحى (متوسط اليوم عبر كل السنوات)
+      function eidAvg(type){var a=byType[type]||[];var s=0,dd=0;a.forEach(function(g){s+=g.sum;dd+=g.days;});return dd?s/dd:0;}
+      var fAvg=eidAvg('fitr'), aAvg=eidAvg('adha');
+      if(fAvg>0 && aAvg>0){
+        var hi=fAvg>=aAvg?'الفطر':'الأضحى'; var lo=fAvg>=aAvg?'الأضحى':'الفطر';
+        var diff=Math.abs(fAvg-aAvg); var base=Math.min(fAvg,aAvg)||1;
+        out.push('⚖️ <b>الفطر مقابل الأضحى</b> (متوسط اليوم): الفطر '+n3(fAvg)+' · الأضحى '+n3(aAvg)+' — عيد <b style="color:var(--gn)">'+hi+'</b> أعلى بـ '+(diff/base*100).toFixed(0)+'% من '+lo+'.');
+      } else if(fAvg>0 || aAvg>0){
+        out.push('ℹ️ لإجراء مقارنة الفطر مقابل الأضحى، تحتاج بيانات مبيعات للعيدين معاً.');
+      }
       eel.innerHTML=out.map(function(x){return '<div style="margin-bottom:4px">'+x+'</div>';}).join('');
     }
   }
@@ -11824,12 +11900,53 @@ function renderIQMisc(){
   el.innerHTML=html;
 }
 
+// ─── مقارنة الأيام: هذا الشهر مقابل الشهر الماضي (يوماً بيوم) ───
+function renderIQDayCompare(){
+  var el=document.getElementById('iqDayCompare'); var sEl=document.getElementById('iqDayCompareSummary');
+  if(!el) return;
+  var cur=G(); var pm=S.months[getPrevMonthKey()];
+  var net=function(s){return (s.cash||0)+(s.visa||0);};
+  var curMap={}, prevMap={};
+  (cur.sales||[]).forEach(function(s){ if(net(s)>0) curMap[s.day]=net(s); });
+  if(pm)(pm.sales||[]).forEach(function(s){ if(net(s)>0) prevMap[s.day]=net(s); });
+  var prevMn=MN[parseInt(getPrevMonthKey().split('-')[1])-1];
+  var curMn=MN[parseInt(S.activeKey.split('-')[1])-1];
+  if(!Object.keys(curMap).length){ el.innerHTML='<div style="color:var(--tx4);font-size:12px">لا توجد بيانات لهذا الشهر بعد.</div>'; if(sEl)sEl.innerHTML=''; return; }
+  var maxDay=Math.max.apply(null,[31].concat(Object.keys(curMap).map(Number),Object.keys(prevMap).map(Number)));
+  var rows='', curTot=0, prevTotShared=0, better=0, worse=0;
+  for(var dnum=1; dnum<=daysIn(S.activeKey); dnum++){
+    var c=curMap[dnum], p=prevMap[dnum];
+    if(c==null && p==null) continue;
+    curTot += c||0;
+    var delta = (c!=null && p!=null) ? c-p : null;
+    if(delta!=null){ prevTotShared+=p; if(delta>=0) better++; else worse++; }
+    var dCol = delta==null ? 'var(--tx4)' : delta>=0 ? 'var(--gn)' : 'var(--rd)';
+    var dTxt = delta==null ? '—' : (delta>=0?'▲ +':'▼ ')+n3(Math.abs(delta));
+    rows += '<tr><td style="padding:3px 6px;text-align:center;font-weight:600">'+dnum+'</td>'+
+            '<td style="padding:3px 6px;text-align:center;font-family:monospace">'+(c!=null?n3(c):'—')+'</td>'+
+            '<td style="padding:3px 6px;text-align:center;font-family:monospace;color:var(--tx3)">'+(p!=null?n3(p):'—')+'</td>'+
+            '<td style="padding:3px 6px;text-align:center;font-family:monospace;color:'+dCol+';font-weight:600">'+dTxt+'</td></tr>';
+  }
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:11.5px">'+
+    '<thead><tr style="color:var(--tx3);border-bottom:1px solid var(--br)"><th style="padding:4px">اليوم</th><th style="padding:4px">'+curMn+'</th><th style="padding:4px">'+prevMn+'</th><th style="padding:4px">الفرق</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  if(sEl){
+    if(!Object.keys(prevMap).length){ sEl.innerHTML='ℹ️ لا توجد بيانات لشهر '+prevMn+' للمقارنة — يظهر شهرك الحالي فقط.'; }
+    else {
+      var diff=curTot-prevTotShared;
+      sEl.innerHTML='في الأيام المشتركة: <b>'+curMn+'</b> '+n3(curTot)+' مقابل <b>'+prevMn+'</b> '+n3(prevTotShared)+
+        ' — <b style="color:'+(diff>=0?'var(--gn)':'var(--rd)')+'">'+(diff>=0?'▲ +':'▼ ')+n3(Math.abs(diff))+' JD</b> · '+
+        '<span style="color:var(--gn)">'+better+' يوم أفضل</span> · <span style="color:var(--rd)">'+worse+' يوم أقل</span>.';
+    }
+  }
+}
+
 // ─── المنسّق الرئيسي ───
 function renderIQ(){
   try{ renderIQNarrative(); }catch(e){ console.warn('IQ narrative:',e); }
   try{ renderIQForecast(); }catch(e){ console.warn('IQ forecast:',e); }
   try{ iqRunSim(); }catch(e){ console.warn('IQ sim:',e); }
   try{ renderIQSeasonal(); }catch(e){ console.warn('IQ seasonal:',e); }
+  try{ renderIQDayCompare(); }catch(e){ console.warn('IQ daycompare:',e); }
   try{ renderIQAnomalies(); }catch(e){ console.warn('IQ anomalies:',e); }
   try{ renderIQMisc(); }catch(e){ console.warn('IQ misc:',e); }
   try{ loadBudgetInputs(); renderBudget(); }catch(e){ console.warn('IQ budget:',e); }
@@ -12708,8 +12825,9 @@ function getV22AIResponse(question, ctx) {
     return response;
   }
   
-  // fallback
-  return getEnhancedLocalAIResponse(question, ctx);
+  // fallback — نستدعي النسخة الأصلية (لا الاسم المُعاد تعيينه) تفادياً للتكرار اللانهائي
+  if (window._originalGetEnhanced) return window._originalGetEnhanced(question, ctx);
+  return 'عذراً، لم أفهم سؤالك. جرّب مثلاً: «كيف أداء الشهر؟» · «قارن بالشهر السابق» · «أفضل يوم» · «كم بعت هذا الشهر؟»';
 }
 
 // ربط V22 AI بالنظام
@@ -12717,6 +12835,8 @@ var originalGetEnhancedLocal = typeof getEnhancedLocalAIResponse === 'function' 
 if (originalGetEnhancedLocal) {
   window._originalGetEnhanced = originalGetEnhancedLocal;
   getEnhancedLocalAIResponse = function(question, ctx) {
+    // مساعد المحادثة: جواب محدّد من البيانات أولاً (أفضل يوم، كم بعت، أكثر مورد...)
+    try { var sp = iqAnswerSpecific(question); if (sp) return sp; } catch(e) {}
     return getV22AIResponse(question, ctx);
   };
 }
