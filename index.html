@@ -2038,6 +2038,9 @@ body.dark .ss-card{background:var(--surf)}
         </div>
       </div>
 
+      <!-- v55: موجز للمشاركة — يولّد نصاً جاهزاً لإرساله للمالك عبر واتساب -->
+      <div style="margin:10px 0 12px"><button class="btn btn-g" onclick="shareDailyBriefing()" style="width:100%;font-size:13px;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><span>📋</span><span>موجز اليوم — جاهز للمشاركة على واتساب</span></button></div>
+
       <!-- V24 PRO - KPI GRID -->
       <div class="kpi-grid-v22">
         <div class="kpi-v22 rev">
@@ -3723,6 +3726,15 @@ create policy "allow_all" on rh_store
   <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="addAdv()">✅ تسجيل</button><button class="btn btn-ghost" style="flex:1" onclick="cmo('moAdv')">إلغاء</button></div>
 </div></div>
 
+<!-- v55: موجز يومي للمشاركة (واتساب/SMS/تيليغرام) -->
+<div class="mo-ov" id="moBriefing" onclick="moOut(event,'moBriefing')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moBriefing')">×</button>
+  <div class="mo-title">📋 موجز اليوم — للمشاركة</div>
+  <textarea id="briefingTxt" readonly style="width:100%;min-height:240px;padding:12px;border-radius:10px;border:1px solid var(--br);background:var(--bg2);color:var(--tx);font-family:inherit;font-size:13px;line-height:1.85;direction:rtl;resize:vertical;box-sizing:border-box"></textarea>
+  <div style="font-size:11px;color:var(--tx4);margin-top:6px;text-align:center">💡 جاهز للنسخ — الصقه في واتساب/الرسائل لإطلاع المالك</div>
+  <div class="btn-row" style="margin-top:10px"><button class="btn btn-p" style="flex:1" onclick="copyBriefing()">📋 نسخ</button><button class="btn btn-g" style="flex:1" onclick="shareBriefingNative()">📤 مشاركة</button><button class="btn btn-ghost" onclick="cmo('moBriefing')">إغلاق</button></div>
+</div></div>
+
 <!-- v39 [إصلاح UI #1]: كان onclick="cmo('moPin')" لكن id الـ overlay = moPwd
      → زر الإغلاق وزر إلغاء كانا عاطلين، المستخدم يعلق في الـ modal -->
 <div class="mo-ov" id="moPwd" onclick="moOut(event,'moPwd')">
@@ -3749,6 +3761,29 @@ create policy "allow_all" on rh_store
 </div></div>
 
 <script>
+/* ╔══════════════════════════════════════════════════════════════════╗
+ * ║  ريحانة كافيه — خريطة الكود (TOC) — للملاحة السريعة في الملف     ║
+ * ║  Ctrl+F على «SECTION:» للقفز بين الأقسام                          ║
+ * ╠══════════════════════════════════════════════════════════════════╣
+ * ║  SECTION: HELPERS        — n3, esc, $, toast, G, openMo, cmo      ║
+ * ║  SECTION: STORAGE        — saveAll, getMonth, loadFromSupabase    ║
+ * ║  SECTION: AUTH           — كلمة المرور والأدوار (CR)              ║
+ * ║  SECTION: PAGES          — pg(), pageRender, التنقّل بين التبويبات ║
+ * ║  SECTION: SEARCH         — doSearch, _detectQueryIntent           ║
+ * ║  SECTION: BRIEFING       — generateDailyBriefing (v55)            ║
+ * ║  SECTION: REVENUE        — renderRevTable, addRevRow, calcDay     ║
+ * ║  SECTION: PURCHASES      — renderPurch, addPurch, delPurch        ║
+ * ║  SECTION: SUPPLIERS      — renderSuppList, renderSuppRpt          ║
+ * ║  SECTION: OBLIGATIONS    — renderObligList, toggleOblig           ║
+ * ║  SECTION: SALARIES       — renderSal, payAllSal                   ║
+ * ║  SECTION: ADVANCES       — renderAdv, addAdv, pendAdv             ║
+ * ║  SECTION: CASHBOX        — calcCash, renderCash                   ║
+ * ║  SECTION: REPORTS        — updateRpt, renderCharts                ║
+ * ║  SECTION: ANALYTICS      — totals(), KPIs, profit hero            ║
+ * ║  SECTION: ADVISOR        — getEnhancedLocalAIResponse, _diagnose  ║
+ * ║  SECTION: AUDIT          — log(), undoSnapshot, undoLast          ║
+ * ║  SECTION: CLOUD SYNC     — supaInit, supaUpsert, supaPull         ║
+ * ╚══════════════════════════════════════════════════════════════════╝ */
 var _mem = {};
 var safeLS = (function() {
   try {
@@ -4344,7 +4379,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v54';
+const APP_VERSION='v55';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -4771,6 +4806,22 @@ function doSearch(q){
     })
   );
 
+  // v55: السلف عبر كل الأشهر — أحياناً تبحث عن سلفة قديمة لموظف معين
+  allMonthKeys.forEach(function(k){
+    var month = S.months[k];
+    if(!month || !month.advances) return;
+    month.advances.forEach(function(a){
+      if((a.name||'').includes(q) || (a.note||'').includes(q)){
+        results.push({
+          ico: "💵",
+          text: 'سلفة: ' + (a.name||'—') + (a.note ? ' — ' + a.note : ''),
+          sub: n3(a.amt||0) + ' JD · ' + (a.status||'—') + (a.date ? ' · ' + a.date : ''),
+          act: "switchMonth('" + k + "');pg('adv',document.querySelectorAll('.ntab')[7])"
+        });
+      }
+    });
+  });
+
   // أسماء في ملاحظات الإيرادات (العاملات الجزئيات)
   var notesNames = new Set();
   allMonthKeys.forEach(function(k){
@@ -4897,6 +4948,124 @@ function _detectQueryIntent(q){
   } catch(e){ console.warn('_detectQueryIntent:', e); return null; }
 }
 function closeSearch(){$("sres").classList.remove("open");$("gSearch").value="";}
+
+/* ═══════════════════════════════════════════════════════════════
+ * v55: موجز يومي للمشاركة
+ * generateDailyBriefing — يبني نصاً عربياً جاهزاً للنسخ/الإرسال
+ * shareDailyBriefing    — يعرض الموجز في modal مع نسخ/مشاركة
+ * ═══════════════════════════════════════════════════════════════ */
+function generateDailyBriefing(){
+  try {
+    var now = new Date();
+    var day = now.getDate();
+    var mNum = now.getMonth()+1;
+    var yr = now.getFullYear();
+    var t = totals();
+    var d = G();
+
+    // اليوم vs الأمس
+    var todayRow = (d.sales||[]).find(function(r){return r.d===day;});
+    var yRow = (d.sales||[]).find(function(r){return r.d===day-1;});
+    var todayCash = todayRow ? (todayRow.cash||0) : 0;
+    var todayVisa = todayRow ? (todayRow.visa||0) : 0;
+    var todaySales = todayCash + todayVisa;
+    var ySales = yRow ? ((yRow.cash||0)+(yRow.visa||0)) : 0;
+
+    // مشتريات اليوم (تطابق على .day أو من .date)
+    var todayPurch = (d.purchases||[]).filter(function(p){
+      if(p.day === day) return true;
+      if(p.date){
+        var dt = new Date(p.date);
+        if(!isNaN(dt) && dt.getDate()===day && (dt.getMonth()+1)===mNum) return true;
+      }
+      return false;
+    }).reduce(function(s,p){return s+(p.amt||0);},0);
+
+    var todayNet = todaySales - todayPurch;
+
+    // التزامات قريبة الاستحقاق (خلال ٥ أيام)
+    var upcoming = (d.obligations||[])
+      .filter(function(o){return !o.paid && o.due;})
+      .map(function(o){ return Object.assign({}, o, {_due: parseInt(o.due,10)}); })
+      .filter(function(o){return !isNaN(o._due) && o._due >= day && o._due <= day+5;})
+      .sort(function(a,b){return a._due-b._due;});
+
+    var lines = [];
+    lines.push('📊 ريحانة كافيه — موجز '+day+'/'+mNum+'/'+yr);
+    lines.push('');
+
+    if(todaySales > 0 || todayPurch > 0){
+      lines.push('🌅 اليوم:');
+      if(todaySales > 0){
+        var saleLine = '💰 مبيعات: '+n3(todaySales)+' JD';
+        if(ySales > 0){
+          var pct = Math.round(((todaySales-ySales)/ySales)*100);
+          saleLine += ' ('+(pct>=0?'↑':'↓')+Math.abs(pct)+'٪ من أمس)';
+        }
+        lines.push(saleLine);
+      }
+      if(todayPurch > 0) lines.push('🛒 مشتريات: '+n3(todayPurch)+' JD');
+      lines.push('📈 صافي: '+n3(todayNet)+' JD');
+      lines.push('');
+    }
+
+    lines.push('📅 الشهر حتى الآن:');
+    lines.push('• إيراد: '+n3(t.rev)+' JD');
+    lines.push('• ربح: '+n3(t.profit)+' JD (هامش '+t.margin.toFixed(1)+'٪)');
+    lines.push('• أيام التشغيل: '+t.daysActive);
+
+    if(upcoming.length){
+      lines.push('');
+      lines.push('⚠️ التزامات قريبة:');
+      upcoming.forEach(function(o){
+        lines.push('• '+o.name+' يوم '+o._due+' ('+n3(o.amt)+' JD)');
+      });
+    }
+
+    return lines.join('\n');
+  } catch(e){
+    console.warn('generateDailyBriefing:', e);
+    return '📊 ريحانة كافيه — تعذّر توليد الموجز. تأكّد من وجود بيانات في الشهر الحالي.';
+  }
+}
+
+function shareDailyBriefing(){
+  var txt = generateDailyBriefing();
+  var ta = $('briefingTxt');
+  if(ta) ta.value = txt;
+  openMo('moBriefing');
+}
+
+function copyBriefing(){
+  var ta = $('briefingTxt');
+  if(!ta) return;
+  ta.select();
+  try { ta.setSelectionRange(0, 99999); } catch(e){}
+  function ok(){ toast('📋 نُسخ — الصقه أينما تشاء'); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(ta.value).then(ok).catch(function(){
+      try { document.execCommand('copy'); ok(); } catch(e2){ toast('⚠️ تعذّر النسخ — اختر النص يدوياً'); }
+    });
+  } else {
+    try { document.execCommand('copy'); ok(); } catch(e){ toast('⚠️ تعذّر النسخ — اختر النص يدوياً'); }
+  }
+}
+
+function shareBriefingNative(){
+  var ta = $('briefingTxt');
+  if(!ta) return;
+  var text = ta.value;
+  if(navigator.share){
+    navigator.share({text: text, title: 'موجز ريحانة كافيه'}).catch(function(e){
+      if(e && e.name !== 'AbortError'){
+        // fallback to WhatsApp link
+        try { window.open('https://wa.me/?text='+encodeURIComponent(text), '_blank'); } catch(_){}
+      }
+    });
+  } else {
+    try { window.open('https://wa.me/?text='+encodeURIComponent(text), '_blank'); } catch(e){ copyBriefing(); }
+  }
+}
 
 /* REVENUE */
 function clearRevFilter(){const f=$("revFrom"),t=$("revTo");if(f)f.value="";if(t)t.value="";renderRevTable();toast("✕ تم إلغاء الفلتر");}
