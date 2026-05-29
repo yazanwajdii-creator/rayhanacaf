@@ -2010,8 +2010,9 @@ body.dark .ss-card{background:var(--surf)}
       <button class="ntab" onclick="pg('cash',this)">🏦 الصندوق</button>
       <button class="ntab" onclick="pg('rpt',this)">📈 التقارير</button>
       <button class="ntab" onclick="pg('iq',this)">🧠 التحليل الذكي</button>
+      <button class="ntab" onclick="pg('menu',this)">☕ المنيو والتسعير</button>
       <button class="ntab" onclick="pg('cloud',this)" id="cloudTab">☁️ السحابة</button>
-      <button class="ntab" onclick="pg('audit',this)">📝 سجل التعديلات</button>
+      <button class="ntab" onclick="pg('settings',this)">⚙️ الإعدادات</button>
     </div>
   </div>
 
@@ -2022,6 +2023,8 @@ body.dark .ss-card{background:var(--surf)}
     <!-- DASHBOARD -->
     <div id="dash" class="pg on">
       <div id="appVerBadge" style="text-align:center;font-size:10px;color:var(--tx4);margin-bottom:6px"></div>
+      <!-- دليل البدء (Onboarding) -->
+      <div id="onboardCard" style="display:none;background:linear-gradient(135deg,#1A5C28,#2A7A3A);color:#fff;border-radius:14px;padding:14px;margin-bottom:12px"></div>
       <!-- V24 PRO - SMART ALERTS BAR -->
       <div id="alertsBar" class="sa-bar" style="display:none"></div>
 
@@ -3257,6 +3260,58 @@ body.dark .ss-card{background:var(--surf)}
 
     </div>
 
+    <!-- ═══════════ المنيو والتسعير — هندسة المنيو (Menu Engineering) ═══════════ -->
+    <div id="menu" class="pg">
+      <div id="menuVerBadge" style="text-align:center;font-size:10px;color:var(--tx4);margin-bottom:6px"></div>
+
+      <!-- ملخص المنيو -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">☕</span>ملخص المنيو</div><button class="btn btn-p btn-sm" onclick="openMenuModal()">➕ منتج جديد</button></div>
+        <div class="card-body"><div id="menuSummary" style="font-size:12px;line-height:1.8"></div></div>
+      </div>
+
+      <!-- هندسة المنيو (المصفوفة) -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">🎯</span>هندسة المنيو — تصنيف المنتجات</div></div>
+        <div class="card-body">
+          <div style="font-size:11px;color:var(--tx3);margin-bottom:10px">يُصنّف كل منتج حسب <b>الرواج</b> (كم يُباع) و<b>الربحية</b> (هامشه) مقارنةً بالمتوسط:</div>
+          <div id="menuMatrix"></div>
+        </div>
+      </div>
+
+      <!-- قائمة المنتجات -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-y">📋</span>كل المنتجات</div></div>
+        <div class="card-body"><div id="menuList"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ الإعدادات — مركز موحّد ═══════════ -->
+    <div id="settings" class="pg">
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">⚙️</span>الإعدادات والنظام</div></div>
+        <div class="card-body">
+          <div style="font-size:11px;color:var(--tx3);font-weight:700;margin-bottom:6px">🔐 الأمان والبيانات</div>
+          <button class="btn btn-ghost btn-full" style="justify-content:flex-start;margin-bottom:6px" onclick="openMo('moPwd')">🔑 تغيير كلمة المرور</button>
+          <button class="btn btn-ghost btn-full" style="justify-content:flex-start;margin-bottom:6px" onclick="openMo('moBackup')">📦 النسخ الاحتياطي (تصدير / استيراد)</button>
+          <button class="btn btn-ghost btn-full" style="justify-content:flex-start;margin-bottom:6px" onclick="pg('cloud')">☁️ المزامنة السحابية</button>
+
+          <div style="font-size:11px;color:var(--tx3);font-weight:700;margin:14px 0 6px">📊 أقسام إضافية</div>
+          <button class="btn btn-ghost btn-full" style="justify-content:flex-start;margin-bottom:6px" onclick="pg('inv')">📦 المخزون والهدر</button>
+          <button class="btn btn-ghost btn-full" style="justify-content:flex-start;margin-bottom:6px" onclick="pg('annual')">📅 التقرير السنوي</button>
+          <button class="btn btn-ghost btn-full" style="justify-content:flex-start;margin-bottom:6px" onclick="pg('audit')">📝 سجل التعديلات</button>
+          <button class="btn btn-ghost btn-full" style="justify-content:flex-start;margin-bottom:6px" onclick="showAISettings()">🤖 إعداد المستشار الذكي (مفتاح Claude/Groq)</button>
+
+          <div style="font-size:11px;color:var(--tx3);font-weight:700;margin:14px 0 6px">🚀 البدء</div>
+          <button class="btn btn-p btn-full" style="justify-content:center;margin-bottom:6px" onclick="showOnboarding(true)">📋 دليل إعداد الكافيه</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">ℹ️</span>معلومات التطبيق</div></div>
+        <div class="card-body"><div id="settingsInfo" style="font-size:12px;line-height:2;color:var(--tx2)"></div></div>
+      </div>
+    </div>
+
     <!-- CLOUD PAGE -->
     <div id="cloud" class="pg">
 
@@ -3534,6 +3589,28 @@ create policy "allow_all" on rh_store
 </div>
 
 <!-- MODALS -->
+<div class="mo-ov" id="moMenu" onclick="moOut(event,'moMenu')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moMenu')">×</button>
+  <div class="mo-title" id="menuModalTitle">☕ منتج جديد</div>
+  <input type="hidden" id="menuEditId" value="">
+  <div class="fg"><label>اسم المنتج</label><input type="text" class="fi" id="mProdName" placeholder="مثال: لاتيه، كابتشينو، عصير برتقال..."></div>
+  <div class="fg"><label>الفئة</label><select class="fs" id="mProdCat">
+    <option value="قهوة ساخنة">☕ قهوة ساخنة</option>
+    <option value="قهوة باردة">🧊 قهوة باردة</option>
+    <option value="مشروبات">🥤 مشروبات أخرى</option>
+    <option value="عصائر">🍊 عصائر</option>
+    <option value="حلويات">🍰 حلويات ومعجنات</option>
+    <option value="أخرى">📋 أخرى</option>
+  </select></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="fg"><label>سعر البيع (JD)</label><input type="number" class="fi" id="mProdPrice" placeholder="0.000" step="0.001" min="0" oninput="menuModalPreview()"></div>
+    <div class="fg"><label>تكلفة الإعداد (JD)</label><input type="number" class="fi" id="mProdCost" placeholder="0.000" step="0.001" min="0" oninput="menuModalPreview()"></div>
+  </div>
+  <div class="fg"><label>عدد المبيعات الشهرية (تقديري)</label><input type="number" class="fi" id="mProdUnits" placeholder="0" step="1" min="0" oninput="menuModalPreview()"></div>
+  <div id="menuModalPrev" style="font-size:12px;color:var(--tx3);padding:9px;background:var(--surf3);border-radius:8px;margin-bottom:10px;line-height:1.8">—</div>
+  <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="saveMenuProduct()">✅ حفظ</button><button class="btn btn-ghost" style="flex:1" onclick="cmo('moMenu')">إلغاء</button></div>
+</div></div>
+
 <div class="mo-ov" id="moInv" onclick="moOut(event,'moInv')">
 <div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moInv')">×</button>
   <div class="mo-title">📦 صنف مخزون</div>
@@ -4216,6 +4293,7 @@ function doLogin(role) {
     try { resetInact(); } catch(e) {}
     try { updLkChips(); } catch(e) {}
     try { var _vb=document.getElementById('appVerBadge'); if(_vb) _vb.textContent='ريحانة كافيه · الإصدار '+APP_VERSION; } catch(e) {}
+    try { renderOnboard(); } catch(e) {}
     
     // V15 ULTIMATE - تحديث كل الميزات الجديدة
     setTimeout(function() {
@@ -4266,7 +4344,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v51';
+const APP_VERSION='v52';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -4289,7 +4367,8 @@ let S={activeKey:_ck,months:{},lockedMonths:[],
   monthlyEmps:[{id:'hani',name:'هاني'},{id:'sidra',name:'سدرة'},{id:'aya',name:'آية'}],
   dailyEmps:[{id:'tharaa',name:'ثراء'},{id:'enaa',name:'عيناء'},{id:'waad',name:'وعد'}],
   itemCatalog:{},
-  purchaseTemplates:[]
+  purchaseTemplates:[],
+  menu:[]
 };
 
 const PL={'2026-02':{
@@ -4623,6 +4702,8 @@ function pg(id,btn){
       if(id==="audit") renderLog();
       else if(id==="rpt") { updateDash(); setTimeout(function(){try{updateRpt();}catch(e){}}, 30); }
       else if(id==="iq") { setTimeout(function(){try{renderIQ();}catch(e){console.warn('IQ:',e);}}, 30); }
+      else if(id==="menu") { setTimeout(function(){try{renderMenu();}catch(e){console.warn('Menu:',e);}}, 30); }
+      else if(id==="settings") { setTimeout(function(){try{renderSettings();}catch(e){console.warn('Settings:',e);}}, 30); }
       else if(id==="sal") { setTimeout(function(){try{initSalTables();}catch(e){}}, 30); }
       else if(id==="adv") { renderAdv(); renderAdvLedger(); }
       else if(id==="oblig") renderObligList();
@@ -6834,6 +6915,7 @@ function saveAll(){
       inventory:S.inventory||[],
       itemCatalog:S.itemCatalog||{},
       purchaseTemplates:S.purchaseTemplates||[],
+      menu:S.menu||[],
       savedAt:new Date().toISOString()
     });
     safeLS.setItem(SK, data);
@@ -6906,6 +6988,7 @@ function loadStore(){
       if(sv.inventory && sv.inventory.length) S.inventory = sv.inventory;
       if(sv.itemCatalog && Object.keys(sv.itemCatalog).length) S.itemCatalog = sv.itemCatalog;
       if(sv.purchaseTemplates && sv.purchaseTemplates.length) S.purchaseTemplates = sv.purchaseTemplates;
+      if(sv.menu && sv.menu.length) S.menu = sv.menu;
       if(sv.budgets) S.budgets = sv.budgets;
     }
   }
@@ -11563,6 +11646,210 @@ function calculateAdvancedKPIs() {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════════════
+// ⚙️ الإعدادات + دليل البدء (Onboarding)
+// ═══════════════════════════════════════════════════════════════════════════
+function renderSettings(){
+  var el=document.getElementById('settingsInfo'); if(!el) return;
+  var monthsCount=Object.keys(S.months||{}).length;
+  var dataKB=0; try{ var raw=safeLS.getItem(SK)||''; dataKB=Math.round(raw.length/1024); }catch(e){}
+  var supState='غير مفعّلة';
+  try{ if(typeof SUPA!=='undefined' && SUPA) supState='مفعّلة ✅'; }catch(e){}
+  el.innerHTML=
+    '<div>📌 الإصدار: <b>'+APP_VERSION+'</b></div>'+
+    '<div>📆 عدد الأشهر المسجّلة: <b>'+monthsCount+'</b></div>'+
+    '<div>👥 الموظفون: <b>'+((S.monthlyEmps||[]).length+(S.dailyEmps||[]).length)+'</b> · الموردون: <b>'+((S.suppliers||[]).length)+'</b></div>'+
+    '<div>☕ منتجات المنيو: <b>'+((S.menu||[]).length)+'</b></div>'+
+    '<div>💾 حجم البيانات المحلية: <b>'+dataKB+' KB</b></div>'+
+    '<div>☁️ المزامنة السحابية: <b>'+supState+'</b></div>'+
+    '<div style="font-size:10px;color:var(--tx4);margin-top:6px">نصيحة: اعمل نسخة احتياطية (تصدير JSON) دورياً، وفعّل السحابة ليرى يزن وعبدالرحمن نفس البيانات.</div>';
+}
+
+// خطوات دليل البدء — كلٌّ يفحص هل أُنجزت
+function onboardSteps(){
+  return [
+    {key:'obl', label:'حدّد التزاماتك الثابتة (إيجار، جمعية، كهرباء)', tab:'oblig', done:(G().obligations||[]).some(function(o){return o.amt>0;})},
+    {key:'emp', label:'أضف موظفيك ورواتبهم', tab:'sal', done:((S.monthlyEmps||[]).length+(S.dailyEmps||[]).length)>0},
+    {key:'goal', label:'ضع هدف الإيراد الشهري', tab:'dash', done:!!(S.targets&&S.targets[S.activeKey]>0)},
+    {key:'rev', label:'أدخل إيراد أول يوم', tab:'today', done:(G().sales||[]).some(function(s){return (s.cash||0)+(s.visa||0)>0;})},
+    {key:'menu', label:'أضف منتجاتك وأسعارها (المنيو)', tab:'menu', done:(S.menu||[]).length>0},
+    {key:'cloud', label:'فعّل المزامنة السحابية (نسخة آمنة)', tab:'cloud', done:(function(){try{return typeof SUPA!=='undefined'&&!!SUPA;}catch(e){return false;}})()}
+  ];
+}
+function renderOnboard(){
+  var c=document.getElementById('onboardCard'); if(!c) return;
+  var dismissed=false; try{ dismissed=safeLS.getItem('rh_onboard_done')==='1'; }catch(e){}
+  var steps=onboardSteps();
+  var done=steps.filter(function(s){return s.done;}).length;
+  // يظهر تلقائياً فقط إن لم يُغلق ولم تكتمل كل الخطوات
+  if(dismissed || done===steps.length){ c.style.display='none'; return; }
+  c.style.display='block';
+  c.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+    '<div style="font-weight:700;font-size:14px">🚀 دليل إعداد كافيهك ('+done+'/'+steps.length+')</div>'+
+    '<button onclick="dismissOnboarding()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">إخفاء</button></div>'+
+    steps.map(function(s){
+      return '<div onclick="pg(\''+s.tab+'\')" style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:12.5px;opacity:'+(s.done?'.65':'1')+'">'+
+        '<span style="font-size:15px">'+(s.done?'✅':'⬜')+'</span><span style="'+(s.done?'text-decoration:line-through':'')+'">'+s.label+'</span>'+
+        (s.done?'':'<span style="margin-right:auto;font-size:11px;opacity:.8">اضغط ←</span>')+'</div>';
+    }).join('');
+}
+function showOnboarding(force){
+  if(force){ try{ safeLS.removeItem('rh_onboard_done'); }catch(e){} }
+  var t=Array.from(document.querySelectorAll('.ntab')).find(function(b){return (b.getAttribute('onclick')||'').indexOf("pg('dash'")>-1;});
+  pg('dash', t);
+  setTimeout(renderOnboard, 60);
+}
+function dismissOnboarding(){
+  try{ safeLS.setItem('rh_onboard_done','1'); }catch(e){}
+  var c=document.getElementById('onboardCard'); if(c) c.style.display='none';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ☕ المنيو والتسعير — هندسة المنيو (Menu Engineering) — أوفلاين بالكامل
+// ═══════════════════════════════════════════════════════════════════════════
+var MENU_TARGET_FOODCOST = 0.32; // الهدف: تكلفة المنتج ≤ 32% من سعره
+
+function menuMetrics(p){
+  var price=+p.price||0, cost=+p.cost||0, units=+p.units||0;
+  var margin=price-cost;
+  return {
+    price:price, cost:cost, units:units, margin:margin,
+    marginPct: price>0 ? margin/price*100 : 0,
+    foodPct: price>0 ? cost/price*100 : 0,
+    monthRev: price*units,
+    monthProfit: margin*units,
+    suggested: cost>0 ? cost/MENU_TARGET_FOODCOST : 0
+  };
+}
+function menuClassify(){
+  var items=(S.menu||[]).map(function(p){var m=menuMetrics(p);return Object.assign({id:p.id,name:p.name,cat:p.cat},m);});
+  var withUnits=items.filter(function(x){return x.units>0;});
+  // عتبة الرواج = متوسط الوحدات؛ عتبة الربحية = متوسط هامش% (للمنتجات التي تُباع)
+  var avgUnits = withUnits.length ? withUnits.reduce(function(s,x){return s+x.units;},0)/withUnits.length : 0;
+  var avgMargin = withUnits.length ? withUnits.reduce(function(s,x){return s+x.marginPct;},0)/withUnits.length : 0;
+  items.forEach(function(x){
+    if(x.units<=0){ x.klass='new'; return; }
+    var pop = x.units>=avgUnits, prof = x.marginPct>=avgMargin;
+    x.klass = pop&&prof ? 'star' : pop&&!prof ? 'plow' : !pop&&prof ? 'puzzle' : 'dog';
+  });
+  return {items:items, avgUnits:avgUnits, avgMargin:avgMargin};
+}
+var MENU_KLASS={
+  star:{ico:'⭐',name:'نجوم',color:'#059669',tip:'رائجة ومربحة — أبرزها في المنيو وحافظ على جودتها'},
+  plow:{ico:'🐎',name:'أحصنة عمل',color:'#D97706',tip:'رائجة لكن هامشها ضعيف — ارفع سعرها قليلاً أو اخفض تكلفتها'},
+  puzzle:{ico:'🧩',name:'ألغاز',color:'#7C3AED',tip:'مربحة لكنها قليلة المبيع — روّج لها أو اقترحها للزبائن'},
+  dog:{ico:'🐕',name:'كلاب',color:'#DC2626',tip:'قليلة ومنخفضة الربح — أعد تسعيرها أو احذفها من المنيو'},
+  new:{ico:'🆕',name:'بلا مبيعات',color:'#64748B',tip:'أدخل عدد مبيعاتها الشهرية لتصنيفها'}
+};
+
+function openMenuModal(id){
+  var t=document.getElementById('menuModalTitle');
+  document.getElementById('menuEditId').value=id||'';
+  if(id){
+    var p=(S.menu||[]).find(function(x){return x.id===id;});
+    if(p){ if(t)t.textContent='✏️ تعديل منتج'; $('mProdName').value=p.name||''; $('mProdCat').value=p.cat||'قهوة ساخنة'; $('mProdPrice').value=p.price||''; $('mProdCost').value=p.cost||''; $('mProdUnits').value=p.units||''; }
+  } else {
+    if(t)t.textContent='☕ منتج جديد';
+    ['mProdName','mProdPrice','mProdCost','mProdUnits'].forEach(function(i){var el=$(i);if(el)el.value='';});
+    var c=$('mProdCat'); if(c)c.value='قهوة ساخنة';
+  }
+  menuModalPreview();
+  openMo('moMenu');
+}
+function menuModalPreview(){
+  var price=parseFloat(($('mProdPrice')||{}).value)||0, cost=parseFloat(($('mProdCost')||{}).value)||0;
+  var el=document.getElementById('menuModalPrev'); if(!el) return;
+  if(price<=0&&cost<=0){ el.textContent='أدخل السعر والتكلفة لرؤية الهامش الفوري.'; return; }
+  var margin=price-cost, mp=price>0?margin/price*100:0, fp=price>0?cost/price*100:0;
+  var sug = cost>0 ? cost/MENU_TARGET_FOODCOST : 0;
+  el.innerHTML='الهامش: <b style="color:'+(margin>=0?'var(--gn)':'var(--rd)')+'">'+n3(margin)+' JD ('+mp.toFixed(0)+'%)</b> · تكلفة المنتج '+fp.toFixed(0)+'% من السعر'+
+    (fp>35?'<br>⚠️ التكلفة مرتفعة — السعر المقترح لهامش صحي: <b>'+n3(sug)+' JD</b>':'');
+}
+function saveMenuProduct(){
+  var name=($('mProdName').value||'').trim();
+  var price=parseFloat($('mProdPrice').value)||0, cost=parseFloat($('mProdCost').value)||0, units=parseFloat($('mProdUnits').value)||0;
+  if(!name){ toast('⚠️ أدخل اسم المنتج'); return; }
+  if(price<=0){ toast('⚠️ أدخل سعر بيع صحيح'); return; }
+  if(!S.menu) S.menu=[];
+  var id=$('menuEditId').value;
+  if(id){ var p=S.menu.find(function(x){return x.id===id;}); if(p){ p.name=name;p.cat=$('mProdCat').value;p.price=price;p.cost=cost;p.units=units; } toast('✅ تم تعديل المنتج'); }
+  else { S.menu.push({id:'m'+Date.now(),name:name,cat:$('mProdCat').value,price:price,cost:cost,units:units}); toast('✅ تم إضافة المنتج'); }
+  cmo('moMenu'); saveAll(); renderMenu(); log('منيو — حفظ '+name);
+}
+function delMenuProduct(id){
+  if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}
+  var p=(S.menu||[]).find(function(x){return x.id===id;}); if(!p) return;
+  if(!confirm('حذف "'+p.name+'" من المنيو؟')) return;
+  S.menu=S.menu.filter(function(x){return x.id!==id;});
+  saveAll(); renderMenu(); toast('🗑️ تم الحذف');
+}
+function renderMenu(){
+  try{ var vb=document.getElementById('menuVerBadge'); if(vb) vb.textContent='ريحانة كافيه · '+APP_VERSION; }catch(e){}
+  var data=menuClassify(); var items=data.items;
+  // ملخص
+  var sEl=document.getElementById('menuSummary');
+  if(sEl){
+    if(!items.length){ sEl.innerHTML='لا توجد منتجات بعد. اضغط «➕ منتج جديد» وأدخل أسعار وتكاليف مشروباتك ليبدأ التحليل.'; }
+    else {
+      var totRev=items.reduce(function(s,x){return s+x.monthRev;},0);
+      var totProfit=items.reduce(function(s,x){return s+x.monthProfit;},0);
+      var totCost=items.reduce(function(s,x){return s+x.cost*x.units;},0);
+      var wFood = totRev>0 ? totCost/totRev*100 : 0;
+      var sold=items.filter(function(x){return x.units>0;});
+      var topStar = sold.slice().sort(function(a,b){return b.monthProfit-a.monthProfit;})[0];
+      var worst = sold.slice().sort(function(a,b){return a.marginPct-b.marginPct;})[0];
+      sEl.innerHTML=
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+        '<div style="background:var(--surf2);border-radius:8px;padding:9px;text-align:center"><div style="font-size:10px;color:var(--tx3)">عدد المنتجات</div><div style="font-size:16px;font-weight:700">'+items.length+'</div></div>'+
+        '<div style="background:var(--surf2);border-radius:8px;padding:9px;text-align:center"><div style="font-size:10px;color:var(--tx3)">ربح المنيو الشهري المقدّر</div><div class="num" style="font-size:16px;font-weight:700;color:var(--gn)">'+n3(totProfit)+'</div></div>'+
+        '<div style="background:var(--surf2);border-radius:8px;padding:9px;text-align:center"><div style="font-size:10px;color:var(--tx3)">إيراد المنيو الشهري المقدّر</div><div class="num" style="font-size:15px;font-weight:700">'+n3(totRev)+'</div></div>'+
+        '<div style="background:var(--surf2);border-radius:8px;padding:9px;text-align:center"><div style="font-size:10px;color:var(--tx3)">متوسط تكلفة المنتج</div><div class="num" style="font-size:15px;font-weight:700;color:'+(wFood>35?'var(--rd)':'var(--gn)')+'">'+wFood.toFixed(0)+'%</div></div>'+
+        '</div>'+
+        (topStar?'<div style="font-size:12px;margin-bottom:3px">🏆 الأكثر ربحاً: <b>'+esc(topStar.name)+'</b> ('+n3(topStar.monthProfit)+' JD/شهر)</div>':'')+
+        (worst&&worst.marginPct<25?'<div style="font-size:12px;color:var(--rd)">⚠️ أضعف هامش: <b>'+esc(worst.name)+'</b> ('+worst.marginPct.toFixed(0)+'%) — راجع سعره أو تكلفته</div>':'');
+    }
+  }
+  // المصفوفة
+  var mEl=document.getElementById('menuMatrix');
+  if(mEl){
+    if(!items.filter(function(x){return x.units>0;}).length){ mEl.innerHTML='<div style="font-size:11px;color:var(--tx4)">أدخل «عدد المبيعات الشهرية» لكل منتج لتظهر هندسة المنيو (نجوم/أحصنة/ألغاز/كلاب).</div>'; }
+    else {
+      var groups={star:[],plow:[],puzzle:[],dog:[]};
+      items.forEach(function(x){ if(groups[x.klass]) groups[x.klass].push(x); });
+      mEl.innerHTML=['star','plow','puzzle','dog'].map(function(k){
+        if(!groups[k].length) return '';
+        var K=MENU_KLASS[k];
+        return '<div style="margin-bottom:10px;border:1px solid var(--br);border-radius:10px;overflow:hidden">'+
+          '<div style="background:'+K.color+';color:#fff;padding:6px 10px;font-size:12px;font-weight:700">'+K.ico+' '+K.name+' ('+groups[k].length+')</div>'+
+          '<div style="padding:8px 10px">'+
+          '<div style="font-size:10.5px;color:var(--tx3);margin-bottom:6px">'+K.tip+'</div>'+
+          groups[k].map(function(x){return '<span style="display:inline-block;background:var(--surf3);border:1px solid var(--br);border-radius:6px;padding:2px 8px;margin:2px;font-size:11px">'+esc(x.name)+' <b style="color:'+K.color+'">'+x.marginPct.toFixed(0)+'%</b></span>';}).join('')+
+          '</div></div>';
+      }).join('');
+    }
+  }
+  // القائمة
+  var lEl=document.getElementById('menuList');
+  if(lEl){
+    if(!items.length){ lEl.innerHTML=''; return; }
+    lEl.innerHTML='<div class="tbl-wrap"><table style="font-size:11.5px"><thead><tr><th style="text-align:right">المنتج</th><th>السعر</th><th>التكلفة</th><th>الهامش</th><th>مبيعات/شهر</th><th>ربح/شهر</th><th>التصنيف</th><th></th></tr></thead><tbody>'+
+      items.slice().sort(function(a,b){return b.monthProfit-a.monthProfit;}).map(function(x){
+        var K=MENU_KLASS[x.klass];
+        var fcWarn = x.foodPct>35 ? ' style="color:var(--rd);font-weight:700"' : '';
+        return '<tr>'+
+          '<td style="text-align:right;font-weight:600">'+esc(x.name)+'<div style="font-size:9px;color:var(--tx4)">'+esc(x.cat||'')+'</div></td>'+
+          '<td class="num">'+n3(x.price)+'</td>'+
+          '<td class="num"'+fcWarn+'>'+n3(x.cost)+'</td>'+
+          '<td class="num" style="color:'+(x.margin>=0?'var(--gn)':'var(--rd)')+'">'+n3(x.margin)+'<div style="font-size:9px">'+x.marginPct.toFixed(0)+'%</div></td>'+
+          '<td class="num">'+(x.units||'—')+'</td>'+
+          '<td class="num" style="font-weight:600">'+n3(x.monthProfit)+'</td>'+
+          '<td style="text-align:center" title="'+K.tip+'">'+K.ico+'</td>'+
+          '<td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" onclick="openMenuModal(\''+x.id+'\')">✏️</button><button class="btn btn-r btn-xs del-btn" onclick="delMenuProduct(\''+x.id+'\')">🗑️</button></td>'+
+        '</tr>';
+      }).join('')+'</tbody></table></div>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // 🧠 محرك التحليل الذكي (IQ) — يعمل أوفلاين بالكامل بلا أي مفتاح
 // تنبؤ بموسمية أيام الأسبوع · ملخص تنفيذي سردي · محاكي قرارات · مقارنات
 // ═══════════════════════════════════════════════════════════════════════════
@@ -13983,6 +14270,7 @@ function buildSnapshot(){
     inventory: S.inventory || [],
     itemCatalog: S.itemCatalog || {},
     purchaseTemplates: S.purchaseTemplates || [],
+    menu: S.menu || [],
     budgets: S.budgets || {},
     savedAt: new Date().toISOString(),
     clientId: getClientId(),
@@ -14350,6 +14638,7 @@ async function syncPullSafe(opts){
   if(snap.inventory && snap.inventory.length) S.inventory = snap.inventory;
   if(snap.itemCatalog && Object.keys(snap.itemCatalog).length) S.itemCatalog = snap.itemCatalog;
   if(snap.purchaseTemplates && snap.purchaseTemplates.length) S.purchaseTemplates = snap.purchaseTemplates;
+  if(snap.menu && snap.menu.length) S.menu = snap.menu;
   if(snap.budgets && Object.keys(snap.budgets).length) S.budgets = snap.budgets;
   if(snap.activeKey && S.months[snap.activeKey]) S.activeKey = snap.activeKey;
 
