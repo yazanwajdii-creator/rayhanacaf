@@ -4417,7 +4417,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v56';
+const APP_VERSION='v57';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5259,17 +5259,35 @@ function _parseVoiceCommand(text){
   if(/امس|البارح[هة]/.test(norm)) dayNum = Math.max(1, dayNum - 1);
 
   if(intent === 'sale'){
-    // ابحث عن كاش/فيزا/مدفوعات + الرقم الذي يليه
-    function _amtAfter(keyword){
-      var m = norm.match(new RegExp(keyword + '\\s+([^\\.،,؟!]*?)(?:\\s+(?:و(?:كاش|فيزا|مدفوعات))|$)','u'));
-      if(!m) return null;
-      return _parseArabicNumber(m[1]);
+    // v57: تمشية على التوكنات بدل regex — تتعامل مع «ال»/«و» على الكلمات المفتاحية
+    // "النقد 685 الفيزا 123 المدفوعات 40" → cash=685, visa=123, pmts=40 (كان: 848/163/40)
+    function _saleKind(t){
+      var b = String(t || '').replace(/^و/,'').replace(/^ال/,'');
+      if(/^(كاش|نقد|نقدي)$/.test(b)) return 'cash';
+      if(/^(فيزا|شبكه)$/.test(b)) return 'visa';
+      if(/^(مدفوعات|مدفوع|دفعات)$/.test(b)) return 'pmts';
+      return null;
     }
-    fields.cash = _amtAfter('كاش') || _amtAfter('نقدي') || _amtAfter('نقد');
-    fields.visa = _amtAfter('فيزا') || _amtAfter('شبكه') || _amtAfter('شبكة');
-    fields.pmts = _amtAfter('مدفوعات') || _amtAfter('مدفوع');
+    var acc = { cash:null, visa:null, pmts:null };
+    var curKind = null;
+    var bucket = [];
+    function _flushSale(){
+      if(curKind && bucket.length){
+        var n = _parseArabicNumber(bucket.join(' '));
+        if(n != null && n > 0) acc[curKind] = (acc[curKind] || 0) + n;
+      }
+      bucket = [];
+    }
+    for(var iSale=0; iSale<tokens.length; iSale++){
+      var kSale = _saleKind(tokens[iSale]);
+      if(kSale){ _flushSale(); curKind = kSale; }
+      else if(curKind){ bucket.push(tokens[iSale]); }
+    }
+    _flushSale();
+    fields.cash = acc.cash;
+    fields.visa = acc.visa;
+    fields.pmts = acc.pmts;
     fields.day = dayNum;
-    // إن لم تُذكر أي صيغة لكن يوجد رقم → اعتبره كاش
     if(!fields.cash && !fields.visa && !fields.pmts && amounts.length){
       fields.cash = amounts[0].val;
     }
@@ -6246,7 +6264,12 @@ function closePurchModal(){
   if(hiddenIdx) hiddenIdx.value="-1";
   var title=document.querySelector("#moPurch .mo-title");
   if(title) title.textContent="🛒 تسجيل مستند مشترى";
-  ["pDesc","pAmt","pInv"].forEach(function(id){var e=$(id);if(e)e.value="";});
+  // v57: كان pDate و pSupp و pCat يحتفظون بقيم الفاتورة السابقة (التاريخ ثابت)
+  ["pDesc","pAmt","pInv","pSupp"].forEach(function(id){var e=$(id);if(e)e.value="";});
+  // أعِد التاريخ إلى اليوم (لا فارغ ولا تاريخ قديم)
+  var pd=$("pDate"); if(pd) pd.value=(new Date()).toISOString().slice(0,10);
+  // فئة افتراضية BCC
+  var pc=$("pCat"); if(pc) pc.value="COGS";
   if($("pBuyer"))$("pBuyer").value="";
   clearItemRows();
   pImgClear();
@@ -7857,10 +7880,12 @@ function exportExcelPro(){
     '<tr><td style="'+th+'">المورد</td><td style="'+th+'">عمليات / إجمالي</td></tr>'+supRows+
     '</table></body></html>';
   var fn='ريحانة_كافيه_'+mn+'_'+y+'.xls';
+  // v57: BOM + MIME صحيح (الـ ;charset=utf-8 كان يجعل Excel يرفض الملف)
+  var BOM = '﻿';
   if(window.AndroidBridge && AndroidBridge.saveBlob){
-    try{ AndroidBridge.saveBlob(btoa(unescape(encodeURIComponent(html))), fn, 'application/vnd.ms-excel'); toast('📗 تم تصدير Excel'); log('تصدير Excel — '+mn+' '+y); return; }catch(e){}
+    try{ AndroidBridge.saveBlob(btoa(unescape(encodeURIComponent(BOM+html))), fn, 'application/vnd.ms-excel'); toast('📗 تم تصدير Excel'); log('تصدير Excel — '+mn+' '+y); return; }catch(e){}
   }
-  var blob=new Blob(['﻿'+html],{type:'application/vnd.ms-excel;charset=utf-8'});
+  var blob=new Blob([BOM+html],{type:'application/vnd.ms-excel'});
   var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download=fn;
   document.body.appendChild(a); a.click();
   setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},1500);

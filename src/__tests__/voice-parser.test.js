@@ -169,6 +169,26 @@ describe('_parseVoiceCommand — مبيعات', () => {
     expect(r.fields.day).toBe(28);
     expect(r.fields.cash).toBe(100);
   });
+
+  // v57 BUG: «ال» على الكلمات المفتاحية كانت تكسر الاستخراج (cash يأخذ مجموع كل الأرقام)
+  test('"النقد 685 الفيزا 123 المدفوعات 40" → ال prefix لا يخلط الأرقام', () => {
+    const r = _parseVoiceCommand('النقد 685 الفيزا 123 المدفوعات 40', CTX);
+    expect(r.intent).toBe('sale');
+    expect(r.fields.cash).toBe(685);
+    expect(r.fields.visa).toBe(123);
+    expect(r.fields.pmts).toBe(40);
+  });
+
+  test('مزج «ال» و «و» على الكلمات المفتاحية', () => {
+    const r = _parseVoiceCommand('اليوم النقد ميتين والفيزا خمسين', CTX);
+    expect(r.fields.cash).toBe(200);
+    expect(r.fields.visa).toBe(50);
+  });
+
+  test('رقم بدون كلمة مفتاحية يُعتبر كاش (سلوك سابق)', () => {
+    const r = _parseVoiceCommand('اليوم بعت بمية', CTX);
+    expect(r.fields.cash).toBe(100);
+  });
 });
 
 // ─── نوايا: سلفة ──────────────────────────────────────────────────────────────

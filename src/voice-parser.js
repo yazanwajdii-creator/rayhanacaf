@@ -181,15 +181,36 @@ function _parseVoiceCommand(text, ctx){
   if(/امس|البارحه/.test(norm)) dayNum = Math.max(1, dayNum - 1);
 
   if(intent === 'sale'){
-    function _amtAfter(keyword){
-      const m = norm.match(new RegExp(keyword + '\\s+([^\\.،,؟!]*?)(?:\\s+(?:و(?:كاش|فيزا|مدفوعات))|$)','u'));
-      if(!m) return null;
-      return _parseArabicNumber(m[1]);
+    // v57: استخراج المبالغ بالتمشية على التوكنات بدل regex (يتعامل مع «ال»/«و» على الكلمات المفتاحية)
+    // "النقد 685 الفيزا 123 المدفوعات 40" → cash=685, visa=123, pmts=40
+    function _saleKind(t){
+      const b = String(t || '').replace(/^و/,'').replace(/^ال/,'');
+      if(/^(كاش|نقد|نقدي)$/.test(b)) return 'cash';
+      if(/^(فيزا|شبكه)$/.test(b)) return 'visa';
+      if(/^(مدفوعات|مدفوع|دفعات)$/.test(b)) return 'pmts';
+      return null;
     }
-    fields.cash = _amtAfter('كاش') || _amtAfter('نقدي') || _amtAfter('نقد');
-    fields.visa = _amtAfter('فيزا') || _amtAfter('شبكه');
-    fields.pmts = _amtAfter('مدفوعات') || _amtAfter('مدفوع');
+    const acc = { cash: null, visa: null, pmts: null };
+    let curKind = null;
+    let bucket = [];
+    function _flush(){
+      if(curKind && bucket.length){
+        const n = _parseArabicNumber(bucket.join(' '));
+        if(n != null && n > 0) acc[curKind] = (acc[curKind] || 0) + n;
+      }
+      bucket = [];
+    }
+    for(let i=0; i<tokens.length; i++){
+      const k = _saleKind(tokens[i]);
+      if(k){ _flush(); curKind = k; }
+      else if(curKind){ bucket.push(tokens[i]); }
+    }
+    _flush();
+    fields.cash = acc.cash;
+    fields.visa = acc.visa;
+    fields.pmts = acc.pmts;
     fields.day = dayNum;
+    // ولا أي كلمة مفتاحية ولكن رقم موجود → اعتبره كاش
     if(!fields.cash && !fields.visa && !fields.pmts && amounts.length){
       fields.cash = amounts[0];
     }
