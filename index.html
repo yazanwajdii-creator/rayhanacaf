@@ -2049,7 +2049,9 @@ body.dark .ss-card{background:var(--surf)}
       </div>
 
       <!-- v55: موجز للمشاركة — يولّد نصاً جاهزاً لإرساله للمالك عبر واتساب -->
-      <div style="margin:10px 0 12px"><button class="btn btn-g" onclick="shareDailyBriefing()" style="width:100%;font-size:13px;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><span>📋</span><span>موجز اليوم — جاهز للمشاركة على واتساب</span></button></div>
+      <div style="margin:10px 0 6px"><button class="btn btn-g" onclick="shareDailyBriefing()" style="width:100%;font-size:13px;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><span>📋</span><span>موجز اليوم — جاهز للمشاركة على واتساب</span></button></div>
+      <!-- v58: تشخيص بياناتك — لاكتشاف فوري لأي نقص -->
+      <div style="margin:0 0 12px"><button class="btn btn-ghost" onclick="openDataDiag()" style="width:100%;font-size:12px;padding:8px;background:rgba(123,77,191,.08);border:1px solid rgba(123,77,191,.3);color:var(--tx)">🔍 تشخيص بياناتي — اعرض ما هو محفوظ فعلاً</button></div>
 
       <!-- V24 PRO - KPI GRID -->
       <div class="kpi-grid-v22">
@@ -3745,6 +3747,19 @@ create policy "allow_all" on rh_store
   <div class="btn-row" style="margin-top:10px"><button class="btn btn-p" style="flex:1" onclick="copyBriefing()">📋 نسخ</button><button class="btn btn-g" style="flex:1" onclick="shareBriefingNative()">📤 مشاركة</button><button class="btn btn-ghost" onclick="cmo('moBriefing')">إغلاق</button></div>
 </div></div>
 
+<!-- v58: تشخيص بياناتك — يعرض الحقيقة الصلبة عن كل شهر -->
+<div class="mo-ov" id="moDiag" onclick="moOut(event,'moDiag')">
+<div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moDiag')">×</button>
+  <div class="mo-title">🔍 تشخيص بياناتك</div>
+  <div style="font-size:11px;color:var(--tx4);margin-bottom:8px">جدول مباشر بمحتوى كل شهر — يساعدك تكتشف فوراً إن كان هناك نقص</div>
+  <div id="diagContent" style="max-height:60vh;overflow-y:auto;font-family:'Courier New',monospace;font-size:11.5px;line-height:1.7;background:var(--bg2);padding:10px;border-radius:8px;border:1px solid var(--br);direction:ltr;text-align:left"></div>
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn btn-p" style="flex:1" onclick="diagCopy()">📋 نسخ التقرير</button>
+    <button class="btn btn-g" style="flex:1" onclick="exportJSON()">💾 احتياطي JSON كامل</button>
+    <button class="btn btn-ghost" onclick="cmo('moDiag')">إغلاق</button>
+  </div>
+</div></div>
+
 <!-- v56: إدخال صوتي/كتابي بالعربية مع NLP يفهم النوايا (شراء/مبيعات/سلفة) -->
 <div class="mo-ov" id="moVoice" onclick="moOut(event,'moVoice')">
 <div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moVoice')">×</button>
@@ -4417,7 +4432,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v57';
+const APP_VERSION='v58';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -4986,6 +5001,112 @@ function _detectQueryIntent(q){
   } catch(e){ console.warn('_detectQueryIntent:', e); return null; }
 }
 function closeSearch(){$("sres").classList.remove("open");$("gSearch").value="";}
+
+/* ═══════════════════════════════════════════════════════════════
+ * v58: تشخيص البيانات — يكشف ما هو محفوظ فعلاً، شهراً شهراً
+ * ═══════════════════════════════════════════════════════════════ */
+function openDataDiag(){
+  try {
+    var lines = [];
+    lines.push('═══ تشخيص بيانات ريحانة كافيه ═══');
+    lines.push('الوقت: ' + new Date().toLocaleString('ar'));
+    lines.push('الإصدار: ' + (typeof APP_VERSION === 'string' ? APP_VERSION : '?'));
+    lines.push('الشهر النشط: ' + (S.activeKey || '?'));
+    lines.push('');
+
+    // حجم localStorage
+    try {
+      var rawSize = 0;
+      for(var k in localStorage){ if(localStorage.hasOwnProperty(k)){ rawSize += (localStorage[k] || '').length; } }
+      lines.push('حجم localStorage: ' + Math.round(rawSize/1024) + ' KB');
+    } catch(e){ lines.push('حجم localStorage: تعذّر القياس'); }
+
+    // المزامنة السحابية
+    var supaConnected = (typeof SUPA !== 'undefined' && SUPA) ? 'متصل ☁️' : 'غير متصل';
+    var supaDisabled = safeLS.getItem('rh_supa_disabled') === '1';
+    var lastPush = safeLS.getItem('rh_last_push_at') || 'لم يحدث';
+    lines.push('المزامنة: ' + (supaDisabled ? '🚫 مُعطّلة يدوياً' : supaConnected));
+    lines.push('آخر رفع للسحابة: ' + lastPush);
+    lines.push('');
+
+    // الموظفون والموردون
+    lines.push('───── البيانات الثابتة ─────');
+    lines.push('موظفون شهريون: ' + (S.monthlyEmps || []).length);
+    lines.push('موظفون يوميون: ' + (S.dailyEmps || []).length);
+    lines.push('موردون: ' + (S.suppliers || []).length);
+    lines.push('');
+
+    // كل شهر
+    lines.push('───── الأشهر ─────');
+    var keys = Object.keys(S.months || {}).sort();
+    if(!keys.length){
+      lines.push('⚠️ لا توجد أي أشهر في البيانات!');
+    } else {
+      keys.forEach(function(k){
+        var m = S.months[k] || {};
+        var sales = m.sales || [];
+        var activeSales = sales.filter(function(s){ return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0; });
+        var purch = m.purchases || [];
+        var advs = m.advances || [];
+        var obls = m.obligations || [];
+        // أيام تظهر فيها مبيعات نشطة
+        var activeDays = activeSales.map(function(s){return s.day;}).sort(function(a,b){return a-b;});
+        var daysStr = activeDays.length ? activeDays.join(',') : '(لا يوم)';
+        if(daysStr.length > 60) daysStr = daysStr.slice(0,60) + '...';
+        var marker = (k === S.activeKey) ? ' ← الحالي' : '';
+        lines.push('');
+        lines.push('▸ ' + k + marker);
+        lines.push('  مبيعات نشطة: ' + activeSales.length + ' يوم — ' + daysStr);
+        lines.push('  مشتريات: ' + purch.length + ' فاتورة');
+        lines.push('  سلف: ' + advs.length);
+        lines.push('  التزامات: ' + obls.length + ' (مدفوع: ' + obls.filter(function(o){return o.paid;}).length + ')');
+        if(activeSales.length){
+          var lastDay = activeDays[activeDays.length-1];
+          var lastRow = activeSales[activeSales.length-1];
+          lines.push('  آخر يوم مُدخل: ' + lastDay + ' — كاش ' + n3(lastRow.cash||0) + ' / فيزا ' + n3(lastRow.visa||0));
+        }
+        if(purch.length){
+          var lastP = purch[purch.length-1];
+          lines.push('  آخر فاتورة: ' + (lastP.date||'?') + ' — ' + (lastP.sName||'?') + ' ' + n3(lastP.amt||0) + ' JD');
+        }
+      });
+    }
+
+    lines.push('');
+    lines.push('───── إنذار ذكي ─────');
+    var now = new Date();
+    var curMonth = S.months[S.activeKey] || {};
+    var curActiveDays = (curMonth.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
+    var today = now.getDate();
+    var expectedDays = today - 1; // ما قبل اليوم
+    if(curActiveDays < expectedDays - 5 && today > 10){
+      lines.push('⚠️ الشهر الحالي فيه ' + curActiveDays + ' يوم فقط لكن اليوم هو ' + today);
+      lines.push('   → نقص محتمل بـ ' + (expectedDays - curActiveDays) + ' يوم');
+      lines.push('   → فحص المزامنة السحابية + النسخ الاحتياطية مطلوب فوراً');
+    } else {
+      lines.push('✅ الأيام النشطة ' + curActiveDays + '/' + expectedDays + ' — يبدو سليماً');
+    }
+
+    var content = lines.join('\n');
+    var el = $('diagContent');
+    if(el) el.textContent = content;
+    window._lastDiagText = content;
+    openMo('moDiag');
+  } catch(e){
+    console.error('openDataDiag:', e);
+    toast('⚠️ تعذّر التشخيص: ' + e.message);
+  }
+}
+
+function diagCopy(){
+  var txt = window._lastDiagText || '';
+  if(!txt) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){ toast('📋 نُسخ — أرسله للمطوّر للمراجعة'); }).catch(function(){
+      try { var ta = $('diagContent'); var r = document.createRange(); r.selectNode(ta); window.getSelection().removeAllRanges(); window.getSelection().addRange(r); document.execCommand('copy'); toast('📋 نُسخ'); } catch(e){}
+    });
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════════
  * v55: موجز يومي للمشاركة
