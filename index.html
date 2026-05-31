@@ -3357,7 +3357,7 @@ body.dark .ss-card{background:var(--surf)}
           <summary style="font-size:11px;color:var(--tx4);cursor:pointer">⚙️ خيارات متقدمة (تعطيل/استبدال)</summary>
           <div style="margin-top:8px;padding:8px;background:var(--surf2);border-radius:6px">
             <button class="btn btn-ghost" style="width:100%;font-size:11px;margin-bottom:4px" onclick="if(confirm('تعطيل المزامنة السحابية؟ بياناتك ستبقى محلية فقط.')){safeLS.setItem('rh_supa_disabled','1');location.reload();}">🚫 تعطيل المزامنة السحابية</button>
-            <button class="btn btn-ghost" style="width:100%;font-size:11px" onclick="safeLS.removeItem('rh_supa_disabled');location.reload();">🔄 إعادة تفعيل المزامنة</button>
+            <button class="btn btn-ghost" style="width:100%;font-size:11px" onclick="reenableSupaSafe()">🔄 إعادة تفعيل المزامنة (آمنة)</button>
           </div>
         </details>
       </div>
@@ -4432,7 +4432,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v58';
+const APP_VERSION='v59';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5001,6 +5001,42 @@ function _detectQueryIntent(q){
   } catch(e){ console.warn('_detectQueryIntent:', e); return null; }
 }
 function closeSearch(){$("sres").classList.remove("open");$("gSearch").value="";}
+
+/* ═══════════════════════════════════════════════════════════════
+ * v59: إعادة تفعيل المزامنة بأمان — يدفع المحلي للسحابة بدل أن يسحب
+ * هذا يمنع الكارثة: إن استوردتَ JSON ثم فعّلت المزامنة، يجب أن يربح المحلي
+ * ═══════════════════════════════════════════════════════════════ */
+function reenableSupaSafe(){
+  if(!confirm(
+    '🔄 إعادة تفعيل المزامنة\n\n'+
+    'سيتم رفع بياناتك المحلية إلى السحابة (المحلية تنتصر — لن تُحذف).\n\n'+
+    'هذا آمن بعد استيراد JSON أو إدخالات جديدة. متابعة؟'
+  )) return;
+  // علامة "ادفع أولاً": تقرأها syncPullSafe لإلغاء أي pull حتى يكتمل الـpush
+  safeLS.setItem('rh_force_push_next', '1');
+  safeLS.removeItem('rh_supa_disabled');
+  toast('⏳ جاري إعادة التحميل ورفع البيانات...');
+  setTimeout(function(){ location.reload(); }, 800);
+}
+
+// عامل يدفع المحلي عند بدء التشغيل إن كانت علامة force-push موجودة
+// يُستدعى من supaInit بعد إنشاء العميل بنجاح
+function _runForcePushIfNeeded(){
+  if(safeLS.getItem('rh_force_push_next') !== '1') return;
+  // ننتظر قليلاً ليجهز SUPA والعامل
+  setTimeout(function(){
+    if(!SUPA){ return; }
+    if(typeof supaSync !== 'function'){ return; }
+    supaSync('push').then(function(){
+      safeLS.removeItem('rh_force_push_next');
+      toast('✅ رفعت بياناتك للسحابة — المزامنة مفعّلة بأمان');
+      try{ log('v59: force-push بعد إعادة تفعيل المزامنة'); }catch(e){}
+    }).catch(function(e){
+      console.warn('[v59] force-push فشل:', e);
+      // اترك العلامة — يُحاول لاحقاً
+    });
+  }, 2500);
+}
 
 /* ═══════════════════════════════════════════════════════════════
  * v58: تشخيص البيانات — يكشف ما هو محفوظ فعلاً، شهراً شهراً
@@ -7945,15 +7981,19 @@ function importJSON(ev){
       
       renderAll(); saveAll();
       
+      // v59: علامة force-push — تضمن أن إعادة تفعيل المزامنة لاحقاً ستدفع المحلي
+      // (تحمي ضد الكارثة: استيراد ثم تفعيل ⇒ السحابة تأكل الـimport)
+      safeLS.setItem('rh_force_push_next', '1');
       // رفع تلقائي لـ Supabase بعد الاستيراد
       if(SUPA){
         supaSync('push').then(function(){
+          safeLS.removeItem('rh_force_push_next');
           toast('✅ تم الاستيراد وحفظه في السحابة ☁️');
         }).catch(function(){
-          toast('✅ تم الاستيراد محلياً (Supabase لاحقاً)');
+          toast('✅ تم الاستيراد محلياً — سيُرفع تلقائياً عند توفر الاتصال');
         });
       } else {
-        toast('✅ تم الاستيراد — '+monthCount+' شهر');
+        toast('✅ تم الاستيراد — '+monthCount+' شهر. ستُرفع للسحابة عند تفعيل المزامنة.');
       }
       log('استيراد JSON — '+monthCount+' شهر');
     }catch(err){ toast('❌ ملف تالف: '+err.message); }
@@ -14796,6 +14836,8 @@ function supaInit(){
     SUPA = supabase.createClient(url, key);
     supaUpdateUI(true);
     console.log('[Supabase] ✅ connected (auto, built-in config)');
+    // v59: إن كانت علامة force-push موجودة (بعد إعادة تفعيل آمنة)، ادفع المحلي قبل أي شيء
+    try { _runForcePushIfNeeded(); } catch(e){ console.warn(e); }
   } catch(e){
     console.warn('Supabase init error:', e);
     SUPA = null;
@@ -15486,7 +15528,7 @@ async function _safePullAndMerge(cloudSnap, localSnap){
     var lp=(lm.purchases||[]).length, cp=(cm.purchases||[]).length;
     var ls=(lm.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
     var cs=(cm.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
-    if((lp>0 && cp===0) || (ls>0 && cs < ls*0.5)){ /* السحابة أفقر — أبقِ المحلي */ }
+    if((lp>0 && cp===0) || (ls>0 && cs < ls)){ /* v59: قاعدة أصرم — السحابة لازم تكون أكثر فعلاً، لا 50% */ }
     else { _lMonths[k] = cm; }
   });
   Object.keys(_cMonths).forEach(function(k){ if(!_lMonths[k]) _lMonths[k] = _cMonths[k]; });
@@ -15514,6 +15556,14 @@ function syncEnqueuePush(){
 async function syncPullSafe(opts){
   opts = opts || {};
   if(!SUPA) throw new Error('Supabase not connected');
+  // v59 [حماية ضد فقد البيانات بعد استيراد JSON]:
+  // إن كان "force-push" مُعلّماً (بعد استيراد أو إعادة تفعيل آمنة)، ألغِ هذا الـpull
+  // لأن المحلي أحدث من السحابة. سيُرفع المحلي تلقائياً عبر العامل.
+  if(safeLS.getItem('rh_force_push_next') === '1'){
+    console.warn('[Sync] force-push مُعلّم — يُلغى pull لحماية البيانات المُستوردة');
+    syncEnqueuePush && syncEnqueuePush();
+    return false;
+  }
   // v39.2 [إصلاح Migration #6]: lock حقيقي حول pull (كان flag ميت)
   // يمنع push يحصل بالتوازي ويُربك الـ state
   if(_supaPullInProgress){
@@ -15602,8 +15652,10 @@ async function syncPullSafe(opts){
       var cp = (cm.purchases || []).length;
       var ls = (lm.sales || []).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
       var cs = (cm.sales || []).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
-      // لو السحابة فيها أقل من 50% من بيانات المحلي → ارفض الاستبدال
-      if((lp > 0 && cp === 0) || (ls > 0 && cs < ls * 0.5)){
+      // v59 [إصلاح كارثة فقد البيانات]: قاعدة أصرم — لا يستبدل المحلي إلا إذا السحابة فيها أكثر فعلاً
+      // قبل v59: كانت الحماية 50% (cs < ls * 0.5) → سمحت بفقد بيانات بعد استيراد JSON ثم تفعيل المزامنة
+      // الآن: السحابة أكثر فقط حين cp >= lp && cs >= ls — وإلا أبقِ المحلي وادفعه للسحابة
+      if((lp > 0 && cp < lp) || (ls > 0 && cs < ls)){
         rejectedReplacement.push(k);
         // نُبقي على المحلي + سيُرفع لاحقاً
       } else {
