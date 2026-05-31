@@ -4432,7 +4432,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v59';
+const APP_VERSION='v60';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -4493,7 +4493,16 @@ function loadScript(url){
 
 function toggleDark(){document.body.classList.toggle("dark");safeLS.setItem("rh_dark",document.body.classList.contains("dark")?"1":"0");}
 if(safeLS.getItem("rh_dark")==="1")document.body.classList.add("dark");
-function openMo(id){$(id).classList.add("open");document.body.style.overflow="hidden";}
+function openMo(id){
+  // v59.1 [إصلاح بقّ]: أعد بناء القوائم المنسدلة قبل فتح نماذج تعتمد على بيانات متغيّرة
+  // يضمن أن الاستيراد/الحذف/الإضافة من شاشات أخرى تنعكس في النموذج فوراً
+  try {
+    if(id === 'moPurch') buildPurchSupp();
+    else if(id === 'moAdv') buildAdvEmpSel();
+  } catch(e){}
+  $(id).classList.add("open");
+  document.body.style.overflow="hidden";
+}
 // v39.2 [إصلاح UI #3]: cmo يُعيد ضبط edit-state بناءً على الـ modal
 // كان: إغلاق modal بـ X/خارج النقر يترك pEditIdx/suppEI/oblEI مضبوطة
 // → الإضافة التالية تكتب فوق السجل المحرَّر سابقاً (خسارة بيانات صامتة)
@@ -7065,6 +7074,8 @@ function delEmployee(type, idx){
   list.splice(idx, 1);
   renderEmpMgr();
   try { initSalTables(); } catch(e){}
+  // v59.1 [إصلاح بقّ]: حدّث قائمة السلف فوراً وإلا يبقى الاسم المحذوف في القائمة المنسدلة
+  try { buildAdvEmpSel(); } catch(e){}
   saveAll();
   toast('🗑️ حُذف ' + emp.name + ' · اضغط ↶ للتراجع');
 }
@@ -7980,7 +7991,10 @@ function importJSON(ev){
       if(data.suppliers&&data.suppliers.length) S.suppliers=data.suppliers;
       
       renderAll(); saveAll();
-      
+      // v59.1 [إصلاح بقّ]: أعد بناء كل القوائم المنسدلة بعد الاستيراد
+      // (موردون + موظفون) — وإلا تبقى تعرض بيانات ما قبل الاستيراد
+      try { buildSelects(); } catch(e){}
+
       // v59: علامة force-push — تضمن أن إعادة تفعيل المزامنة لاحقاً ستدفع المحلي
       // (تحمي ضد الكارثة: استيراد ثم تفعيل ⇒ السحابة تأكل الـimport)
       safeLS.setItem('rh_force_push_next', '1');

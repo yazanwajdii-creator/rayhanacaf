@@ -4,7 +4,7 @@
  * يتيح العمل أوفلاين بعد أول زيارة
  */
 
-const CACHE = 'rayhanacafe-v59';
+const CACHE = 'rayhanacafe-v60';
 const CORE_FILES = ['./index.html', './manifest.json', './icon.svg'];
 
 // تثبيت: تخزين الملفات الأساسية
