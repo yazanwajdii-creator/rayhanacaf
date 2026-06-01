@@ -143,7 +143,27 @@ body.dark .welcome-card{background:linear-gradient(135deg,#0A2A14 0%,#1A4A28 50%
 .ntab.on{color:var(--sap);font-weight:700;background:var(--sap-l);box-shadow:0 0 0 1px var(--sap-m)}
 
 /* MAIN */
-.main{flex:1;overflow-y:auto;padding:14px;max-width:1100px;margin:0 auto;width:100%}
+.main{flex:1;overflow-y:auto;padding:clamp(12px,3vw,22px);max-width:1100px;margin:0 auto;width:100%}
+/* v67: تحسين تناسق المحتوى مع شاشات كبيرة (S25 Ultra في عرضي وأفقي) */
+@media(min-width:600px){
+  .main{padding:clamp(16px,2.5vw,28px) clamp(20px,4vw,40px)}
+  .kpi-row{gap:12px}
+  .smart-cards-row{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{margin-bottom:14px}
+}
+/* الأفقي على الهاتف (S25 Ultra landscape ~ 850px+) */
+@media(min-width:850px) and (orientation:landscape){
+  .main{max-width:1200px;padding:18px 32px}
+  .kpi-row{grid-template-columns:repeat(4,1fr)}
+  .smart-cards-row{grid-template-columns:repeat(3,1fr)}
+  .nav-tabs{padding:0 32px}
+}
+/* تكبير العناصر على شاشات عالية الدقة */
+@media(min-width:430px) and (max-width:599px){
+  .kpi-row{grid-template-columns:repeat(2,1fr);gap:10px}
+  .kpi-tile{min-height:88px}
+  .kt-value{font-size:18px!important}
+}
 .pg{display:none}
 .pg.on{display:block}
 /* v36: حُذف animation:fadeIn من .pg.on — كان يسبب اهتزاز عند تبديل التبويبات */
@@ -2243,12 +2263,12 @@ body.dark .ss-card{background:var(--surf)}
         </div>
       </div>
 
-      <!-- KPI ROW - Original but enhanced -->
-      <div class="kpi-row">
-        <div class="kpi-tile tc-gold"><div class="kt-bg">💰</div><div class="kt-label">إجمالي الإيراد</div><div class="kt-value" id="kv-rev">0.000</div><div class="kt-sub" id="kv-avg-daily">متوسط — JD/يوم</div></div>
-        <div class="kpi-tile tc-blue"><div class="kt-bg">💳</div><div class="kt-label">صافي البيع</div><div class="kt-value" id="kv-nrev">0.000</div><div class="kt-sub" id="kv-cogs-ratio">COGS 0%</div></div>
-        <div class="kpi-tile tc-green" id="kv-profit-tile"><div class="kt-bg">📈</div><div class="kt-label">صافي الدخل</div><div class="kt-value" id="kv-profit">0.000</div><div class="kt-sub" id="kv-margin">هامش 0%</div></div>
-        <div class="kpi-tile tc-red"><div class="kt-bg">📉</div><div class="kt-label">إجمالي التكاليف</div><div class="kt-value" id="kv-exp">0.000</div><div class="kt-sub" id="kv-exp-ratio">من الإيراد 0%</div></div>
+      <!-- v67: استُبدلت بطاقات مكررة بمعلومات مكمّلة (COGS، مجمل الربح، متوسط يومي، نسبة التكاليف) -->
+      <div class="kpi-row" id="kpi-row-secondary">
+        <div class="kpi-tile tc-gold"><div class="kt-bg">📦</div><div class="kt-label">تكلفة البضاعة COGS</div><div class="kt-value" id="kv2-cogs">0.000</div><div class="kt-sub" id="kv-cogs-ratio">0% من البيع</div></div>
+        <div class="kpi-tile tc-blue"><div class="kt-bg">🌿</div><div class="kt-label">مجمل الربح</div><div class="kt-value" id="kv2-gp">0.000</div><div class="kt-sub" id="kv-margin">هامش 0%</div></div>
+        <div class="kpi-tile tc-green"><div class="kt-bg">📊</div><div class="kt-label">متوسط يومي</div><div class="kt-value" id="kv2-avg">0.000</div><div class="kt-sub" id="kv-avg-daily">— JD/يوم</div></div>
+        <div class="kpi-tile tc-red"><div class="kt-bg">⚖️</div><div class="kt-label">نسبة التكاليف</div><div class="kt-value" id="kv2-expr">0.0%</div><div class="kt-sub" id="kv-exp-ratio">من صافي البيع</div></div>
       </div>
       <!-- شريط تحذير الرواتب المستحقة -->
       <div id="kv-accrued" style="display:none;background:var(--ywl);border:1px solid var(--ywb);border-radius:8px;padding:7px 13px;font-size:12px;font-weight:600;color:var(--ywd);margin-bottom:10px;display:flex;align-items:center;gap:7px">
@@ -2288,12 +2308,13 @@ body.dark .ss-card{background:var(--surf)}
         </div>
       </div>
       
-      <!-- WEEKLY PERFORMANCE HEATMAP -->
-      <div class="smart-card weekly-card" id="weeklyCardNew">
+      <!-- v67: WEEKLY PERFORMANCE HEATMAP — مخفي افتراضياً حسب طلب يزن (غير مهم) -->
+      <div class="smart-card weekly-card" id="weeklyCardNew" style="display:none">
         <div class="sc-header">
           <div class="sc-icon weekly-icon">📊</div>
           <div class="sc-title">أداء الأسبوع</div>
           <div class="weekly-avg" id="weeklyAvgBadge">—</div>
+          <button onclick="document.getElementById('weeklyCardNew').style.display='none';try{localStorage.setItem('rh_hide_weekly','1');}catch(e){}" style="margin-right:auto;background:none;border:none;color:var(--tx3);font-size:18px;cursor:pointer" title="إخفاء">✕</button>
         </div>
         <div class="weekly-grid" id="weeklyGridNew"></div>
         <div class="weekly-legend">
@@ -2303,8 +2324,15 @@ body.dark .ss-card{background:var(--surf)}
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">📈</span>منحنى الإيرادات اليومية</div><div id="lk-dash"></div></div>
+      <!-- v67: منحنى الإيرادات اليومية مع زرّ إخفاء -->
+      <div class="card" id="revCurveCard">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-ico ct-b">📈</span>منحنى الإيرادات اليومية</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div id="lk-dash"></div>
+            <button onclick="document.getElementById('revCurveCard').style.display='none';try{localStorage.setItem('rh_hide_revcurve','1');}catch(e){}" style="background:none;border:none;color:var(--tx3);font-size:18px;cursor:pointer;padding:4px" title="إخفاء المنحنى">✕</button>
+          </div>
+        </div>
         <div class="card-body"><div class="ch-lg"><canvas id="chLine"></canvas></div></div>
       </div>
       <!-- خريطة الشهر / Heatmap -->
@@ -4497,7 +4525,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v66';
+const APP_VERSION='v67';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -6706,6 +6734,11 @@ function updateDash(){
   
   // V24-2: تحديث جميع البطاقات مباشرة
   T("kv-rev",n3(t.rev));T("kv-nrev",n3(t.netSales));T("kv-profit",n3(t.profit));T("kv-exp",n3(t.totalExp));
+  // v67: بطاقات الصف الثاني الجديدة — معلومات مكمّلة (لا تكرّر)
+  T("kv2-cogs", n3(t.bycat.COGS||0));
+  T("kv2-gp", n3(t.grossP||0));
+  T("kv2-avg", n3(t.avgDaily||0));
+  T("kv2-expr", (t.expRatio||0).toFixed(1)+'%');
   // هامش الربح + مؤشر الصحة المدمج
   var _hs=Math.max(0,Math.min(100,Math.round(50+(t.margin>=20?30:t.margin>=15?15:t.margin>=10?8:t.margin>=5?2:t.margin<0?-25:0)+(t.cogsRatio<=28?20:t.cogsRatio<=35?15:t.cogsRatio<=40?8:t.cogsRatio<=45?2:-10)+(t.salaryRatio<=25?15:t.salaryRatio<=30?10:t.salaryRatio<=35?5:-5))));
   T("kv-margin","هامش "+t.margin.toFixed(1)+"% · صحة "+_hs+"/100");
@@ -8188,7 +8221,15 @@ function updateRpt(){
 }
 
 /* RENDER ALL */
-function renderAll(){calcRevTots();renderPurch();renderSuppList();renderSuppRpt();renderCatSum();renderItemsRpt();renderObligList();renderAdv();renderAdvLedger();loadCashFields();calcCash();updateDash();updateRpt();updLkChips();rebuildCatalogDatalist();}
+function renderAll(){calcRevTots();renderPurch();renderSuppList();renderSuppRpt();renderCatSum();renderItemsRpt();renderObligList();renderAdv();renderAdvLedger();loadCashFields();calcCash();updateDash();updateRpt();updLkChips();rebuildCatalogDatalist();_applyV67Visibility();}
+// v67: استعادة حالة الإخفاء للبطاقات (منحنى الإيرادات، أداء الأسبوع)
+function _applyV67Visibility(){
+  try{
+    if(localStorage.getItem('rh_hide_revcurve')==='1'){ var c=document.getElementById('revCurveCard'); if(c) c.style.display='none'; }
+    // أداء الأسبوع مخفي افتراضياً في v67 — لا تُظهره إلا إن المستخدم طلب
+    if(localStorage.getItem('rh_show_weekly')!=='1'){ var w=document.getElementById('weeklyCardNew'); if(w) w.style.display='none'; }
+  }catch(e){}
+}
 /* نسخة مُدمجة: تجمع الاستدعاءات المتتالية في 60ms في استدعاء واحد */
 var _renderAllTimer=null;
 function renderAllDebounced(){
