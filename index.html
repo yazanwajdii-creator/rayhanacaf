@@ -4525,7 +4525,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v69';
+const APP_VERSION='v70';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5435,7 +5435,8 @@ function openFinSummary(){
     html += hRow('هامش مجمل الربح', gm, 40, 30, false);
     html += hRow('هامش صافي الربح', t.margin, 15, 5, false);
     html += hRow('COGS من الإيراد', t.cogsRatio||0, 45, 60, true);
-    html += hRow('رواتب من الإيراد', t.salaryRatio||0, 25, 40, true);
+    // v70: تكلفة العمالة الحقيقية (شهري + يومي) بدل الرواتب الشهرية فقط
+    html += hRow('تكلفة العمالة (شهري+يومي)', t.laborRatio||0, 25, 40, true);
     html += hRow('مصاريف كلية من الإيراد', t.expRatio||0, 70, 85, true);
     html += '</div>';
 
@@ -6660,7 +6661,12 @@ function totals(){
   const salaryRatio=netSales>0?mSalPaid/netSales*100:0;
   const oblPaidRatio=netSales>0?oblPaid/netSales*100:0;
   const expRatio=netSales>0?totalExp/netSales*100:0;
-  
+  // v70 [إصلاح محاسبي]: تكلفة العمالة الحقيقية = رواتب شهرية + أجور يومية (pmts)
+  // المدفوعات اليومية للموظفات هي تكلفة عمالة فعلية مثل الرواتب — يجب أن تدخل النسبة.
+  // المقام = الإيراد الإجمالي (rev = نقد+فيزا+pmts) لأن pmts مخصومة مسبقاً من النقد.
+  const laborTotal=mSalPaid+pmts;
+  const laborRatio=rev>0?laborTotal/rev*100:0;
+
   return{
     cash,visa,pmts,netSales,rev,bycat,
     oblTotal,oblPaid,
@@ -6668,6 +6674,7 @@ function totals(){
     grossP,totalExp,profit,margin,advP,
     avgDaily,daysActive,
     cogsRatio,salaryRatio,oblPaidRatio,expRatio,
+    laborTotal,laborRatio,
     obls:d.obligations
   };
 }
@@ -9152,7 +9159,8 @@ function _buildExecutiveSummary(t, prev){
   rows.push(['هامش مجمل الربح', {v:gm/100,t:'n',s:8}, gm>=40?'✅ ممتاز': gm>=30?'⚠️ مقبول':'❌ منخفض']);
   rows.push(['هامش صافي الربح', {v:nm/100,t:'n',s:8}, nm>=15?'✅ ممتاز': nm>=5?'⚠️ مقبول':'❌ منخفض']);
   rows.push(['COGS من الإيراد', {v:cr/100,t:'n',s:8}, cr<=45?'✅ جيد': cr<=60?'⚠️ متوسط':'❌ مرتفع']);
-  rows.push(['نسبة الرواتب من الإيراد', {v:(t.salaryRatio||0)/100,t:'n',s:8}, (t.salaryRatio||0)<=25?'✅ صحي':(t.salaryRatio||0)<=40?'⚠️ مقبول':'❌ مرتفع']);
+  // v70: تكلفة العمالة الحقيقية (شهري + يومي)
+  rows.push(['تكلفة العمالة (شهري+يومي)', {v:(t.laborRatio||0)/100,t:'n',s:8}, (t.laborRatio||0)<=25?'✅ صحي':(t.laborRatio||0)<=40?'⚠️ مقبول':'❌ مرتفع']);
 
   return { name:'ملخّص تنفيذي', cols:[{w:32},{w:14},{w:14},{w:14},{w:13}], rows:rows };
 }
@@ -9424,7 +9432,8 @@ function _buildKPIs(t, prev){
 
   rows.push([{v:'═ نسب التكاليف ═', s:4}]);
   ratio('COGS / الإيراد', t.bycat.COGS, t.netSales, '≤ 45%', function(x){return x<=45?'✅ جيد': x<=60?'⚠️ متوسط':'❌ مرتفع';});
-  ratio('الرواتب / الإيراد', t.mSalPaid, t.netSales, '≤ 25%', function(x){return x<=25?'✅ صحي': x<=40?'⚠️ مقبول':'❌ مرتفع';});
+  // v70: تكلفة العمالة الحقيقية (رواتب شهرية + أجور يومية) / الإيراد الإجمالي
+  ratio('العمالة (شهري+يومي) / الإيراد', t.laborTotal, t.rev, '≤ 25%', function(x){return x<=25?'✅ صحي': x<=40?'⚠️ مقبول':'❌ مرتفع';});
   ratio('التزامات مدفوعة / الإيراد', t.oblPaid, t.netSales, '≤ 15%', function(x){return x<=15?'✅ مقبول':'⚠️ مراجعة';});
   ratio('إجمالي المصاريف / الإيراد', t.totalExp, t.netSales, '≤ 85%', function(x){return x<=70?'✅ ممتاز': x<=85?'⚠️ مقبول':'❌ غير صحي';});
   rows.push([]);
@@ -14757,37 +14766,70 @@ function iqMedian(arr){
   var m=Math.floor(a.length/2);
   return a.length%2 ? a[m] : (a[m-1]+a[m])/2;
 }
+// أسماء أيام الأسبوع بالعربي (للتحليل النمطي)
+var _AR_WEEKDAYS=['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+function _weekdayOfDay(dayNum){
+  try{
+    var ym=S.activeKey.split('-'); var y=parseInt(ym[0]); var mo=parseInt(ym[1]);
+    return new Date(y, mo-1, dayNum).getDay();
+  }catch(e){ return -1; }
+}
 function renderIQAnomalies(){
   var el=document.getElementById('iqAnomalies'); if(!el) return;
   var d=G(); var out=[];
-  // 1) أيام إيراد شاذّة — نقارن بالوسيط (لا يتأثر بالقيم المتطرّفة نفسها)
+  var ym=S.activeKey.split('-'); var mo=parseInt(ym[1]);
+
+  // 1) تحليل الأيام — تجميعي لا تكراري: أفضل/أضعف الأيام + النمط الأسبوعي
   var days=(d.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)>0;}).map(function(s){return {day:s.day,v:(s.cash||0)+(s.visa||0)};});
   if(days.length>=5){
     var med=iqMedian(days.map(function(x){return x.v;}));
-    days.forEach(function(x){
-      if(med>0 && x.v > med*1.75){
-        out.push('🟢 يوم '+x.day+': '+n3(x.v)+' JD — أعلى بـ '+((x.v/med-1)*100).toFixed(0)+'% من اليوم المعتاد ('+n3(med)+') — حلّل سبب التميّز وكرّره');
-      } else if(med>0 && x.v < med*0.45){
-        out.push('🔴 يوم '+x.day+': '+n3(x.v)+' JD — أدنى بـ '+((1-x.v/med)*100).toFixed(0)+'% من المعتاد — تحقّق: عطلة؟ نقص موظفين؟ خطأ إدخال؟');
-      }
-    });
+    var sorted=days.slice().sort(function(a,b){return b.v-a.v;});
+    var topDays=sorted.slice(0,3);
+    var lowDays=sorted.slice(-3).reverse();
+    // ملخّص الأيام القوية في سطر واحد
+    var topAvg=topDays.reduce(function(s,x){return s+x.v;},0)/topDays.length;
+    out.push('🟢 <b>أقوى ٣ أيام</b>: '+topDays.map(function(x){return x.day+'/'+mo;}).join('، ')+
+      ' (متوسط '+n3(topAvg)+' JD — أعلى بـ '+((topAvg/med-1)*100).toFixed(0)+'% من المعتاد). راجع: عروض؟ مناسبة؟ موظف معيّن؟');
+    // النمط الأسبوعي — أي يوم أسبوع هو الأقوى فعلاً
+    var byWd={}; days.forEach(function(x){ var wd=_weekdayOfDay(x.day); if(wd>=0){ if(!byWd[wd])byWd[wd]={sum:0,n:0}; byWd[wd].sum+=x.v; byWd[wd].n++; } });
+    var wdAvg=Object.keys(byWd).map(function(wd){return {wd:parseInt(wd),avg:byWd[wd].sum/byWd[wd].n};}).sort(function(a,b){return b.avg-a.avg;});
+    if(wdAvg.length>=3){
+      out.push('📅 <b>النمط الأسبوعي</b>: أقوى يوم هو <b style="color:var(--gn)">'+_AR_WEEKDAYS[wdAvg[0].wd]+'</b> (متوسط '+n3(wdAvg[0].avg)+') · أضعفه <b style="color:var(--rd)">'+_AR_WEEKDAYS[wdAvg[wdAvg.length-1].wd]+'</b> ('+n3(wdAvg[wdAvg.length-1].avg)+'). كثّف العروض في '+_AR_WEEKDAYS[wdAvg[wdAvg.length-1].wd]+'.');
+    }
+    // الأيام الضعيفة فعلاً (أقل من نصف المعتاد) — تجميعياً
+    var weakDays=days.filter(function(x){return x.v < med*0.45;});
+    if(weakDays.length){
+      out.push('🔴 <b>'+weakDays.length+' '+(weakDays.length===1?'يوم ضعيف':'أيام ضعيفة')+'</b>: '+weakDays.map(function(x){return x.day+'/'+mo;}).join('، ')+
+        ' (أقل من نصف المعتاد). تحقّق: عطلة رسمية؟ خطأ إدخال؟ نقص بضاعة؟');
+    }
   }
-  // 2) مشتريات شاذّة الحجم — أكبر من 3× الوسيط
+
+  // 2) المشتريات — تحليل ذكي: لا نُكرّر "فاتورة كبيرة" لكل جملة طبيعية
+  // نُجمّع، ونُنبّه فقط على ما هو شاذّ فعلاً (فاتورة تتجاوز 15% من إجمالي مشتريات الشهر)
   var ps=(d.purchases||[]).filter(function(p){return (p.amt||0)>0;});
   if(ps.length>=4){
+    var totalPurch=ps.reduce(function(s,p){return s+p.amt;},0);
     var pmed=iqMedian(ps.map(function(p){return p.amt;}));
-    ps.forEach(function(p){
-      if(pmed>0 && p.amt > pmed*3){
-        out.push('💸 فاتورة كبيرة غير اعتيادية: '+esc(p.sName||'—')+' بـ '+n3(p.amt)+' JD'+(p.desc?' ('+esc(p.desc)+')':'')+' — تأكّد أنها صحيحة ومصنّفة جيداً (الفاتورة المعتادة ~'+n3(pmed)+')');
-      }
-    });
+    // الفواتير "الكبيرة" = أكبر من 4× الوسيط (جملة طبيعية)
+    var bigOnes=ps.filter(function(p){return p.amt > pmed*4;});
+    // الشاذّة فعلاً = فاتورة واحدة تمثّل >12% من مشتريات الشهر كلّه
+    var trulyOdd=ps.filter(function(p){return totalPurch>0 && p.amt/totalPurch > 0.12;});
+    if(bigOnes.length){
+      var bigSum=bigOnes.reduce(function(s,p){return s+p.amt;},0);
+      out.push('💼 <b>'+bigOnes.length+' فاتورة جملة كبيرة</b> (إجمالي '+n3(bigSum)+' JD = '+(bigSum/totalPurch*100).toFixed(0)+'% من مشترياتك). هذا طبيعي للجملة — لكن وزّع الدفعات لتجنّب ضغط السيولة.');
+    }
+    if(trulyOdd.length){
+      var oddTop=trulyOdd.sort(function(a,b){return b.amt-a.amt;})[0];
+      out.push('⚠️ <b>فاتورة مركّزة</b>: «'+esc(oddTop.sName||'—')+'» بـ '+n3(oddTop.amt)+' JD وحدها = '+(oddTop.amt/totalPurch*100).toFixed(0)+'% من كل مشتريات الشهر. تأكّد من صحتها وفكّر في تقسيمها على موردين.');
+    }
   }
+
   // 3) قفزة مفاجئة في فاتورة مورد مقارنة بمتوسطه
   var supA=detectSupplierPriceAlert();
-  if(supA) out.push('📈 متوسط فاتورة "'+esc(supA.nm)+'" ارتفع '+supA.pct.toFixed(0)+'% عن الشهر السابق');
+  if(supA) out.push('📈 <b>تنبيه سعر</b>: متوسط فاتورة «'+esc(supA.nm)+'» ارتفع '+supA.pct.toFixed(0)+'% عن الشهر السابق — فاوض أو قارن مورداً بديلاً.');
 
   if(!out.length){ el.innerHTML='✅ لا يوجد شذوذ ملحوظ — أنماط الإيراد والمشتريات ضمن المعتاد.'+(days.length<4?'<br><span style="color:var(--tx4);font-size:11px">(يلزم 4 أيام بيانات على الأقل لكشف أدقّ)</span>':''); return; }
-  el.innerHTML = out.map(function(x){return '<div style="margin-bottom:6px">'+x+'</div>';}).join('');
+  el.innerHTML = out.map(function(x){return '<div style="margin-bottom:8px;line-height:1.6">'+x+'</div>';}).join('');
 }
 
 // ─── تحليل المتفرقات (فئة OTHER): ما هي فعلاً + أين يتسرّب المال ───

@@ -1,7 +1,7 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
-async function login(page) {
+async function login({ page }) {
   await page.goto('/index.html');
   await page.evaluate(() => { try { localStorage.setItem('rh_supa_disabled','1'); } catch(e){} });
   await page.reload();

@@ -1,7 +1,7 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
-async function login(page) {
+async function login({ page }) {
   await page.goto('/index.html');
   // امسح الـ Supabase auto-sync لتفادي تعديل البيانات أثناء الاختبار
   await page.evaluate(() => {
