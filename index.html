@@ -4432,7 +4432,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v60';
+const APP_VERSION='v61';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -8017,6 +8017,368 @@ function importJSON(ev){
 }
 
 // تصدير Excel احترافي يعمل أوفلاين بالكامل (ملف .xls بصيغة HTML منسّقة — يفتح في Excel/Sheets بالتنسيق)
+/* ═══════════════════════════════════════════════════════════════
+ * v61: مُصدِّر Excel حقيقي — يُولّد ملف .xlsx صحيح (ZIP داخلي)
+ * يحلّ بقّ Office Mobile الذي يرفض exportExcelPro (HTML-as-XLS)
+ * مع تقرير المدير اليومي كأول ورقة
+ * ═══════════════════════════════════════════════════════════════ */
+
+// CRC32 — مطلوب لـZIP
+var _crcT = (function(){var t=new Uint32Array(256);for(var i=0;i<256;i++){var c=i;for(var j=0;j<8;j++)c=(c&1)?0xEDB88320^(c>>>1):c>>>1;t[i]=c;}return t;})();
+function _crc32(buf){var c=-1;for(var i=0;i<buf.length;i++)c=_crcT[(c^buf[i])&0xFF]^(c>>>8);return (c^-1)>>>0;}
+
+// ZIP store-only writer
+function _makeZip(files){
+  var enc=new TextEncoder();
+  var blocks=[]; var central=[]; var offset=0;
+  files.forEach(function(f){
+    var nameB=enc.encode(f.name);
+    var dataB=typeof f.data==='string'?enc.encode(f.data):f.data;
+    var crc=_crc32(dataB);
+    var lfh=new Uint8Array(30); var dv=new DataView(lfh.buffer);
+    dv.setUint32(0,0x04034b50,true); dv.setUint16(4,20,true);
+    dv.setUint16(6,0x0800,true); /* UTF-8 flag */
+    dv.setUint16(8,0,true); dv.setUint16(10,0,true); dv.setUint16(12,0x21,true);
+    dv.setUint32(14,crc,true); dv.setUint32(18,dataB.length,true); dv.setUint32(22,dataB.length,true);
+    dv.setUint16(26,nameB.length,true); dv.setUint16(28,0,true);
+    blocks.push(lfh,nameB,dataB);
+    var cdh=new Uint8Array(46); var cv=new DataView(cdh.buffer);
+    cv.setUint32(0,0x02014b50,true); cv.setUint16(4,20,true); cv.setUint16(6,20,true);
+    cv.setUint16(8,0x0800,true); cv.setUint16(10,0,true); cv.setUint16(12,0,true); cv.setUint16(14,0x21,true);
+    cv.setUint32(16,crc,true); cv.setUint32(20,dataB.length,true); cv.setUint32(24,dataB.length,true);
+    cv.setUint16(28,nameB.length,true); cv.setUint16(30,0,true); cv.setUint16(32,0,true);
+    cv.setUint16(34,0,true); cv.setUint16(36,0,true); cv.setUint32(38,0,true); cv.setUint32(42,offset,true);
+    central.push(cdh,nameB);
+    offset+=lfh.length+nameB.length+dataB.length;
+  });
+  var cdSize=central.reduce(function(s,b){return s+b.length;},0);
+  var eocd=new Uint8Array(22); var ev=new DataView(eocd.buffer);
+  ev.setUint32(0,0x06054b50,true); ev.setUint16(8,files.length,true); ev.setUint16(10,files.length,true);
+  ev.setUint32(12,cdSize,true); ev.setUint32(16,offset,true);
+  return new Blob([].concat(blocks).concat(central).concat([eocd]),
+    {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+function _xmlEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function _colLetter(n){var s='';n=n+1;while(n>0){var r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;}
+
+// Build worksheet XML from rows
+// row = array of {v, t?:'n'|'s', s?:styleId}
+function _sheetXML(rows, cols){
+  var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  x+='<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+  x+='<sheetViews><sheetView rightToLeft="1" workbookViewId="0"/></sheetViews>';
+  x+='<sheetFormatPr defaultRowHeight="15"/>';
+  if(cols && cols.length){
+    x+='<cols>';
+    cols.forEach(function(c,i){ x+='<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+(c.w||14)+'" customWidth="1"/>'; });
+    x+='</cols>';
+  }
+  x+='<sheetData>';
+  rows.forEach(function(r,ri){
+    x+='<row r="'+(ri+1)+'">';
+    r.forEach(function(c,ci){
+      if(c===null||c===undefined||c==='') return;
+      var v=(typeof c==='object'?c.v:c);
+      var t=(typeof c==='object' && c.t)||(typeof v==='number'?'n':'s');
+      var s=(typeof c==='object' && c.s!==undefined)?c.s:0;
+      var ref=_colLetter(ci)+(ri+1);
+      if(t==='n'){
+        x+='<c r="'+ref+'" s="'+s+'"><v>'+v+'</v></c>';
+      } else {
+        x+='<c r="'+ref+'" s="'+s+'" t="inlineStr"><is><t xml:space="preserve">'+_xmlEsc(v)+'</t></is></c>';
+      }
+    });
+    x+='</row>';
+  });
+  x+='</sheetData></worksheet>';
+  return x;
+}
+
+// Minimal styles: 0=default, 1=bold, 2=bold-on-dark-green-bg (header), 3=number 0.000,
+// 4=bold-on-gold-bg (section), 5=bold-on-light-green-bg (total positive),
+// 6=bold-on-light-red-bg (total negative)
+var _STYLES_XML='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+'<numFmts count="1"><numFmt numFmtId="164" formatCode="0.000"/></numFmts>'+
+'<fonts count="3">'+
+'<font><sz val="11"/><name val="Calibri"/></font>'+
+'<font><b/><sz val="11"/><name val="Calibri"/></font>'+
+'<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'+
+'</fonts>'+
+'<fills count="6">'+
+'<fill><patternFill patternType="none"/></fill>'+
+'<fill><patternFill patternType="gray125"/></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FF1A3A2A"/></patternFill></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FFC8920F"/></patternFill></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FFDCFCE7"/></patternFill></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FFFEE2E2"/></patternFill></fill>'+
+'</fills>'+
+'<borders count="2">'+
+'<border><left/><right/><top/><bottom/></border>'+
+'<border><left style="thin"><color rgb="FFCCCCCC"/></left><right style="thin"><color rgb="FFCCCCCC"/></right><top style="thin"><color rgb="FFCCCCCC"/></top><bottom style="thin"><color rgb="FFCCCCCC"/></bottom></border>'+
+'</borders>'+
+'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+'<cellXfs count="7">'+
+'<xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1"/>'+
+'<xf numFmtId="0" fontId="1" fillId="0" borderId="1" applyBorder="1" applyFont="1"/>'+
+'<xf numFmtId="0" fontId="2" fillId="2" borderId="1" applyBorder="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+
+'<xf numFmtId="164" fontId="0" fillId="0" borderId="1" applyBorder="1" applyNumberFormat="1"/>'+
+'<xf numFmtId="0" fontId="2" fillId="3" borderId="1" applyBorder="1" applyFont="1" applyFill="1"/>'+
+'<xf numFmtId="164" fontId="1" fillId="4" borderId="1" applyBorder="1" applyFont="1" applyFill="1" applyNumberFormat="1"/>'+
+'<xf numFmtId="164" fontId="1" fillId="5" borderId="1" applyBorder="1" applyFont="1" applyFill="1" applyNumberFormat="1"/>'+
+'</cellXfs>'+
+'<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'+
+'</styleSheet>';
+
+// Build full XLSX from sheets: [{name, cols, rows}]
+function _buildXLSX(sheets){
+  var ctOverrides='';
+  var bookSheets='';
+  var bookRels='';
+  var files=[];
+  sheets.forEach(function(sh,i){
+    var n=i+1;
+    var path='xl/worksheets/sheet'+n+'.xml';
+    files.push({name:path, data:_sheetXML(sh.rows, sh.cols)});
+    ctOverrides+='<Override PartName="/'+path+'" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+    bookSheets+='<sheet name="'+_xmlEsc(sh.name)+'" sheetId="'+n+'" r:id="rId'+n+'"/>';
+    bookRels+='<Relationship Id="rId'+n+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+n+'.xml"/>';
+  });
+  var stylesRid='rId'+(sheets.length+1);
+  bookRels+='<Relationship Id="'+stylesRid+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>';
+
+  files.unshift(
+    {name:'[Content_Types].xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+      '<Default Extension="xml" ContentType="application/xml"/>'+
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
+      ctOverrides+'</Types>'},
+    {name:'_rels/.rels', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'+
+      '</Relationships>'},
+    {name:'xl/workbook.xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
+      '<sheets>'+bookSheets+'</sheets></workbook>'},
+    {name:'xl/_rels/workbook.xml.rels', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+bookRels+'</Relationships>'},
+    {name:'xl/styles.xml', data:_STYLES_XML}
+  );
+  return _makeZip(files);
+}
+
+// تقرير المدير اليومي — كل يوم: من استلم، نقد/فيزا/مدفوعات، مشتريات، سلف، التزامات، صافي
+function _buildManagerReport(){
+  var d=G(); var ym=S.activeKey.split('-'); var y=parseInt(ym[0]); var mo=parseInt(ym[1]);
+  var daysInMonth=new Date(y, mo, 0).getDate();
+  var t=totals();
+  var oblPaid=(d.obligations||[]).filter(function(o){return o.paid;}).reduce(function(s,o){return s+(o.amt||0);},0);
+  var mSalPaid=t.mSalPaid||0;
+
+  var rows=[];
+  // Title
+  rows.push([{v:'☕ ريحانة كافيه — التقرير اليومي للإدارة', s:4}]);
+  rows.push([{v:MN[mo-1]+' '+y+' · صادر '+new Date().toLocaleDateString('ar-JO'), s:1}]);
+  rows.push([]);
+  // Header
+  rows.push([
+    {v:'اليوم',s:2},{v:'التاريخ',s:2},{v:'مَن استلم',s:2},
+    {v:'نقدي',s:2},{v:'فيزا',s:2},{v:'مدفوعات يومية',s:2},
+    {v:'إجمالي الإيراد',s:2},{v:'مشتريات',s:2},{v:'سلف',s:2},
+    {v:'صافي اليوم (تقدير)',s:2},{v:'ملاحظات',s:2}
+  ]);
+
+  // اجمع لكل يوم
+  var salesByDay={}; (d.sales||[]).forEach(function(s){ if(s && s.day) salesByDay[s.day]=s; });
+  var purchByDay={}; (d.purchases||[]).forEach(function(p){
+    if(!p.date) return; var pd=parseInt(p.date.split('-')[2]||0);
+    purchByDay[pd]=(purchByDay[pd]||0)+(p.amt||0);
+  });
+  var advByDay={}; (d.advances||[]).forEach(function(a){
+    if(!a.date) return; var ad=parseInt(a.date.split('-')[2]||0);
+    advByDay[ad]=(advByDay[ad]||0)+(a.amt||0);
+  });
+
+  var totC=0,totV=0,totP=0,totPu=0,totAdv=0,totNet=0;
+  for(var dy=1; dy<=daysInMonth; dy++){
+    var s=salesByDay[dy]||{};
+    var c=s.cash||0, v=s.visa||0, pm=s.pmts||0;
+    var pu=purchByDay[dy]||0;
+    var av=advByDay[dy]||0;
+    var total=c+v;
+    var net=c+v-pu-av; // تقدير صافي اليوم (لا يشمل التزامات شهرية ولا رواتب)
+    totC+=c; totV+=v; totP+=pm; totPu+=pu; totAdv+=av; totNet+=net;
+    var dateStr=ym[0]+'-'+ym[1]+'-'+(dy<10?'0':'')+dy;
+    var hasAny=(c+v+pm+pu+av)>0;
+    rows.push([
+      {v:dy,t:'n'}, dateStr, s.receivedBy||(hasAny?'—':''),
+      {v:c,t:'n',s:3},{v:v,t:'n',s:3},{v:pm,t:'n',s:3},
+      {v:total,t:'n',s:3},{v:pu,t:'n',s:3},{v:av,t:'n',s:3},
+      {v:net,t:'n',s:net>=0?6:5},{v:s.notes||'',s:0}
+    ]);
+  }
+  // Totals row
+  rows.push([
+    {v:'الإجمالي',s:4},'','',
+    {v:totC,t:'n',s:5},{v:totV,t:'n',s:5},{v:totP,t:'n',s:5},
+    {v:totC+totV,t:'n',s:5},{v:totPu,t:'n',s:5},{v:totAdv,t:'n',s:5},
+    {v:totNet,t:'n',s:totNet>=0?6:5},''
+  ]);
+
+  rows.push([]);
+  // Monthly summary block
+  rows.push([{v:'═══ الملخّص الشهري ═══',s:4}]);
+  rows.push(['إجمالي الإيرادات (نقد+فيزا)',{v:totC+totV,t:'n',s:3}]);
+  rows.push(['مدفوعات أجور يومية (من النقد)',{v:totP,t:'n',s:3}]);
+  rows.push(['إجمالي المشتريات (COGS+تشغيلية+متفرقات)',{v:totPu,t:'n',s:3}]);
+  rows.push(['إجمالي السلف الممنوحة',{v:totAdv,t:'n',s:3}]);
+  rows.push(['الالتزامات المدفوعة (إيجار، كهرباء، جمعية...)',{v:oblPaid,t:'n',s:3}]);
+  rows.push(['الرواتب الشهرية المدفوعة',{v:mSalPaid,t:'n',s:3}]);
+  rows.push(['─────────────────────────────',{v:'',s:0}]);
+  rows.push([{v:'صافي ربح الشهر',s:1},{v:t.profit,t:'n',s:t.profit>=0?6:5}]);
+  rows.push([{v:'هامش الربح',s:1},{v:t.margin.toFixed(2)+'%'}]);
+
+  rows.push([]);
+  // Cash receivers breakdown
+  rows.push([{v:'═══ كاش حسب المُستلِم ═══',s:4}]);
+  rows.push(['المُستلِم','إجمالي النقد','عدد الأيام']);
+  var byRecv={};
+  (d.sales||[]).forEach(function(s){
+    if(!s.receivedBy) return;
+    if((s.cash||0)+(s.visa||0)+(s.pmts||0)<=0) return;
+    var r=s.receivedBy;
+    if(!byRecv[r]) byRecv[r]={cash:0,days:0};
+    byRecv[r].cash+=(s.cash||0);
+    byRecv[r].days++;
+  });
+  Object.keys(byRecv).sort().forEach(function(r){
+    rows.push([r,{v:byRecv[r].cash,t:'n',s:3},{v:byRecv[r].days,t:'n'}]);
+  });
+
+  rows.push([]);
+  rows.push([{v:'═══ مشتريات حسب المشتري ═══',s:4}]);
+  rows.push(['المشتري','إجمالي المشتريات','عدد الفواتير']);
+  var byBuy={};
+  (d.purchases||[]).forEach(function(p){
+    var b=p.buyer||'—';
+    if(!byBuy[b]) byBuy[b]={amt:0,n:0};
+    byBuy[b].amt+=(p.amt||0); byBuy[b].n++;
+  });
+  Object.keys(byBuy).sort().forEach(function(b){
+    rows.push([b,{v:byBuy[b].amt,t:'n',s:3},{v:byBuy[b].n,t:'n'}]);
+  });
+
+  return {
+    name:'تقرير المدير اليومي',
+    cols:[{w:7},{w:14},{w:13},{w:11},{w:11},{w:13},{w:14},{w:11},{w:9},{w:15},{w:26}],
+    rows:rows
+  };
+}
+
+// النسخة الجديدة — تُنتج .xlsx حقيقي يفتح في Office Mobile
+function exportExcelReal(){
+  var d=G(); var t=totals();
+  var ym=S.activeKey.split('-'); var y=ym[0]; var mo=parseInt(ym[1]); var mn=MN[mo-1];
+
+  // ورقة 1: التقرير اليومي للإدارة
+  var sheets=[_buildManagerReport()];
+
+  // ورقة 2: الإيرادات اليومية التفصيلية
+  var revRows=[
+    [{v:'📅 الإيرادات اليومية — '+mn+' '+y,s:4}],
+    [],
+    [{v:'اليوم',s:2},{v:'نقد',s:2},{v:'فيزا',s:2},{v:'مدفوعات',s:2},{v:'إجمالي',s:2},{v:'مَن استلم',s:2},{v:'ملاحظات',s:2}]
+  ];
+  var rC=0,rV=0,rP=0;
+  (d.sales||[]).forEach(function(s){
+    if((s.cash||0)+(s.visa||0)+(s.pmts||0)>0){
+      revRows.push([{v:s.day+'/'+mo,s:1},{v:s.cash||0,t:'n',s:3},{v:s.visa||0,t:'n',s:3},{v:s.pmts||0,t:'n',s:3},{v:(s.cash||0)+(s.visa||0),t:'n',s:3},s.receivedBy||'',s.notes||'']);
+      rC+=(s.cash||0); rV+=(s.visa||0); rP+=(s.pmts||0);
+    }
+  });
+  revRows.push([{v:'المجموع',s:4},{v:rC,t:'n',s:5},{v:rV,t:'n',s:5},{v:rP,t:'n',s:5},{v:rC+rV,t:'n',s:5},'','']);
+  sheets.push({name:'الإيرادات اليومية', cols:[{w:10},{w:11},{w:11},{w:11},{w:14},{w:13},{w:26}], rows:revRows});
+
+  // ورقة 3: المشتريات
+  var puRows=[
+    [{v:'🛒 المشتريات — '+mn+' '+y,s:4}],
+    [],
+    [{v:'التاريخ',s:2},{v:'المورد',s:2},{v:'الفئة',s:2},{v:'البيان',s:2},{v:'المبلغ',s:2},{v:'المشتري',s:2},{v:'فاتورة',s:2}]
+  ];
+  var pSorted=(d.purchases||[]).slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
+  pSorted.forEach(function(p){
+    puRows.push([p.date||'',p.sName||'',catLbl(p.cat||'COGS'),p.desc||'',{v:p.amt||0,t:'n',s:3},p.buyer||'',p.inv||'']);
+  });
+  puRows.push([{v:'الإجمالي',s:4},'','','',{v:pSorted.reduce(function(s,p){return s+(p.amt||0);},0),t:'n',s:5},'','']);
+  sheets.push({name:'المشتريات', cols:[{w:13},{w:22},{w:14},{w:30},{w:11},{w:13},{w:12}], rows:puRows});
+
+  // ورقة 4: الرواتب
+  var slRows=[
+    [{v:'💵 الرواتب والأجور — '+mn+' '+y,s:4}],
+    [],
+    [{v:'الموظف',s:2},{v:'النوع',s:2},{v:'الأساسي',s:2},{v:'البدلات',s:2},{v:'استقطاعات+سلف',s:2},{v:'أيام',s:2},{v:'الصافي',s:2},{v:'الحالة',s:2}]
+  ];
+  (S.monthlyEmps||[]).forEach(function(e){
+    var s=(d.mSal||{})[e.id]||{};
+    var adv=pendAdv(e.id);
+    var net=Math.max(0,(s.base||0)+(s.allow||0)-(s.ded||0)-adv);
+    slRows.push([e.name,'شهري',{v:s.base||0,t:'n',s:3},{v:s.allow||0,t:'n',s:3},{v:(s.ded||0)+adv,t:'n',s:3},'—',{v:net,t:'n',s:3},s.paid?'✅ مدفوع':'⏳ مستحق']);
+  });
+  (S.dailyEmps||[]).forEach(function(e){
+    var w=(d.dWages||{})[e.id]||{};
+    slRows.push([e.name,'يومي',{v:w.rate||0,t:'n',s:3},{v:0,t:'n',s:3},{v:0,t:'n',s:3},{v:(w.att||[]).length,t:'n'},{v:_dwTotal(w),t:'n',s:3},'—']);
+  });
+  sheets.push({name:'الرواتب', cols:[{w:14},{w:9},{w:11},{w:11},{w:14},{w:8},{w:13},{w:13}], rows:slRows});
+
+  // ورقة 5: السلف
+  var avRows=[
+    [{v:'💰 السلف — '+mn+' '+y,s:4}],
+    [],
+    [{v:'الموظف',s:2},{v:'التاريخ',s:2},{v:'المبلغ',s:2},{v:'الحالة',s:2},{v:'الملاحظة',s:2}]
+  ];
+  (d.advances||[]).forEach(function(a){
+    avRows.push([a.empName||'',a.date||'',{v:a.amt||0,t:'n',s:3},a.status||'',a.note||'']);
+  });
+  sheets.push({name:'السلف', cols:[{w:14},{w:13},{w:11},{w:14},{w:26}], rows:avRows});
+
+  // ورقة 6: الالتزامات
+  var obRows=[
+    [{v:'📋 الالتزامات — '+mn+' '+y,s:4}],
+    [],
+    [{v:'الالتزام',s:2},{v:'المبلغ',s:2},{v:'الحالة',s:2},{v:'استحقاق',s:2},{v:'دفعه',s:2}]
+  ];
+  (d.obligations||[]).forEach(function(o){
+    obRows.push([o.name||'',{v:o.amt||0,t:'n',s:3},o.paid?'✅ مدفوع':'⏳ غير مدفوع',o.due||'',o.paidBy||'']);
+  });
+  sheets.push({name:'الالتزامات', cols:[{w:22},{w:11},{w:14},{w:13},{w:12}], rows:obRows});
+
+  // ولّد الـxlsx ثم احفظ
+  var blob=_buildXLSX(sheets);
+  var fn='ريحانة_كافيه_'+mn+'_'+y+'.xlsx';
+  if(window.AndroidBridge && AndroidBridge.saveBlob){
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var b64=r.result.split(',')[1];
+        AndroidBridge.saveBlob(b64, fn, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        toast('📗 تم تصدير Excel احترافي'); log('تصدير Excel — '+mn+' '+y);
+      }catch(e){ _downloadBlob(blob,fn); }
+    };
+    r.readAsDataURL(blob); return;
+  }
+  _downloadBlob(blob,fn);
+  toast('📗 تم تصدير Excel احترافي'); log('تصدير Excel — '+mn+' '+y);
+}
+
+function _downloadBlob(blob, fn){
+  var url=URL.createObjectURL(blob); var a=document.createElement('a');
+  a.href=url; a.download=fn; document.body.appendChild(a); a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},1500);
+}
+
 function exportExcelPro(){
   var t=totals(), d=G(); var ym=S.activeKey.split('-'); var y=ym[0], mo=parseInt(ym[1]); var mn=MN[mo-1];
   var prevNet=(function(){var pm=S.months[getPrevMonthKey()];return pm?(pm.sales||[]).reduce(function(s,x){return s+(x.cash||0)+(x.visa||0);},0):0;})();
@@ -8067,7 +8429,9 @@ function exportExcelPro(){
   toast('📗 تم تصدير Excel احترافي'); log('تصدير Excel — '+mn+' '+y);
 }
 function exportExcel(){
-  // أوفلاين أولاً: ملف .xls منسّق بلا مكتبة خارجية (موثوق داخل التطبيق)
+  // v61: المُصدِّر الحقيقي أولاً — يُنتج .xlsx صحيح يفتح في Office Mobile
+  try{ return exportExcelReal(); }catch(e){ console.warn('excelReal:',e); }
+  // (احتياطي) HTML-as-XLS — قد يرفضه Office Mobile لكنه فالباك
   try{ return exportExcelPro(); }catch(e){ console.warn('excelPro:',e); }
   if(!window.XLSX){
     toast('⏳ جاري تحميل مكتبة Excel...');
