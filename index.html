@@ -4432,7 +4432,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v61';
+const APP_VERSION='v62';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -8100,26 +8100,29 @@ function _sheetXML(rows, cols){
 // 6=bold-on-light-red-bg (total negative)
 var _STYLES_XML='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
 '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
-'<numFmts count="1"><numFmt numFmtId="164" formatCode="0.000"/></numFmts>'+
-'<fonts count="3">'+
+'<numFmts count="2"><numFmt numFmtId="164" formatCode="0.000"/><numFmt numFmtId="165" formatCode="0.0%"/></numFmts>'+
+'<fonts count="4">'+
 '<font><sz val="11"/><name val="Calibri"/></font>'+
 '<font><b/><sz val="11"/><name val="Calibri"/></font>'+
 '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'+
+'<font><b/><sz val="14"/><color rgb="FF1A3A2A"/><name val="Calibri"/></font>'+
 '</fonts>'+
-'<fills count="6">'+
+'<fills count="7">'+
 '<fill><patternFill patternType="none"/></fill>'+
 '<fill><patternFill patternType="gray125"/></fill>'+
 '<fill><patternFill patternType="solid"><fgColor rgb="FF1A3A2A"/></patternFill></fill>'+
 '<fill><patternFill patternType="solid"><fgColor rgb="FFC8920F"/></patternFill></fill>'+
 '<fill><patternFill patternType="solid"><fgColor rgb="FFDCFCE7"/></patternFill></fill>'+
 '<fill><patternFill patternType="solid"><fgColor rgb="FFFEE2E2"/></patternFill></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FFEEF6FF"/></patternFill></fill>'+
 '</fills>'+
-'<borders count="2">'+
+'<borders count="3">'+
 '<border><left/><right/><top/><bottom/></border>'+
 '<border><left style="thin"><color rgb="FFCCCCCC"/></left><right style="thin"><color rgb="FFCCCCCC"/></right><top style="thin"><color rgb="FFCCCCCC"/></top><bottom style="thin"><color rgb="FFCCCCCC"/></bottom></border>'+
+'<border><bottom style="medium"><color rgb="FF1A3A2A"/></bottom></border>'+
 '</borders>'+
 '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
-'<cellXfs count="7">'+
+'<cellXfs count="11">'+
 '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1"/>'+
 '<xf numFmtId="0" fontId="1" fillId="0" borderId="1" applyBorder="1" applyFont="1"/>'+
 '<xf numFmtId="0" fontId="2" fillId="2" borderId="1" applyBorder="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+
@@ -8127,6 +8130,10 @@ var _STYLES_XML='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
 '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" applyBorder="1" applyFont="1" applyFill="1"/>'+
 '<xf numFmtId="164" fontId="1" fillId="4" borderId="1" applyBorder="1" applyFont="1" applyFill="1" applyNumberFormat="1"/>'+
 '<xf numFmtId="164" fontId="1" fillId="5" borderId="1" applyBorder="1" applyFont="1" applyFill="1" applyNumberFormat="1"/>'+
+'<xf numFmtId="3" fontId="3" fillId="6" borderId="2" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>'+
+'<xf numFmtId="165" fontId="0" fillId="0" borderId="1" applyBorder="1" applyNumberFormat="1"/>'+
+'<xf numFmtId="165" fontId="1" fillId="6" borderId="1" applyBorder="1" applyFont="1" applyFill="1" applyNumberFormat="1"/>'+
+'<xf numFmtId="164" fontId="1" fillId="6" borderId="1" applyBorder="1" applyFont="1" applyFill="1" applyNumberFormat="1"/>'+
 '</cellXfs>'+
 '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'+
 '</styleSheet>';
@@ -8278,13 +8285,403 @@ function _buildManagerReport(){
   };
 }
 
+/* ═══════════════════════════════════════════════════════════════
+ * v62: تقرير مالي شامل IFRS — قائمة الدخل، التدفقات النقدية، الذمم، KPIs
+ * ═══════════════════════════════════════════════════════════════ */
+
+// helper: احسب نسبة من الإيراد
+function _pctOf(num, den){ return den>0 ? (num/den*100) : 0; }
+
+// helper: احصل على totals الشهر السابق إن وُجد
+function _prevTotals(){
+  try{
+    var pk = getPrevMonthKey ? getPrevMonthKey() : null;
+    var pm = pk ? (S.months||{})[pk] : null;
+    if(!pm) return null;
+    var c=0,v=0,pmt=0,bc={COGS:0,OPS:0,ADM:0,MKT:0,OTHER:0,total:0};
+    (pm.sales||[]).forEach(function(s){c+=s.cash||0;v+=s.visa||0;pmt+=s.pmts||0;});
+    (pm.purchases||[]).forEach(function(p){var k=p.cat||'COGS';bc[k]=(bc[k]||0)+(p.amt||0);bc.total+=(p.amt||0);});
+    var op = (pm.obligations||[]).filter(function(o){return o.paid;}).reduce(function(s,o){return s+(o.amt||0);},0);
+    var ms=0; (S.monthlyEmps||[]).forEach(function(e){var s=(pm.mSal||{})[e.id]||{};if(s.paid){ms+=Math.max(0,(s.base||0)+(s.allow||0)-(s.ded||0));}});
+    var net=c+v;
+    return {netSales:net, cash:c, visa:v, pmts:pmt, bycat:bc, oblPaid:op, mSalPaid:ms,
+      totalExp:bc.total+op+ms, profit:net-(bc.total+op+ms), monthKey:pk};
+  }catch(e){ return null; }
+}
+
+// ورقة الملخّص التنفيذي — نظرة الإدارة في صفحة واحدة
+function _buildExecutiveSummary(t, prev){
+  var d=G(); var ym=S.activeKey.split('-'); var mn=MN[parseInt(ym[1])-1];
+  var rows=[];
+  rows.push([{v:'☕ ريحانة كافيه — التقرير المالي الشامل', s:7}]);
+  rows.push([{v:mn+' '+ym[0]+' · صادر '+new Date().toLocaleDateString('ar-JO'), s:1}]);
+  rows.push([{v:'إعداد بمعايير IFRS — أساس نقدي (Cash Basis)', s:0}]);
+  rows.push([]);
+
+  rows.push([{v:'═══ المؤشرات الرئيسية ═══', s:4}]);
+  rows.push(['البند', {v:'القيمة',s:1}, {v:'% من الإيراد',s:1}]);
+  rows.push(['صافي الإيرادات (نقد+فيزا)', {v:t.netSales,t:'n',s:10}, {v:1,t:'n',s:9}]);
+  rows.push(['تكلفة البضاعة المباعة (COGS)', {v:t.bycat.COGS,t:'n',s:3}, {v:_pctOf(t.bycat.COGS,t.netSales)/100,t:'n',s:8}]);
+  rows.push([{v:'مجمل الربح',s:1}, {v:t.grossP,t:'n',s:t.grossP>=0?6:5}, {v:_pctOf(t.grossP,t.netSales)/100,t:'n',s:8}]);
+  rows.push(['الرواتب المدفوعة', {v:t.mSalPaid,t:'n',s:3}, {v:_pctOf(t.mSalPaid,t.netSales)/100,t:'n',s:8}]);
+  rows.push(['الالتزامات المدفوعة (إيجار، كهرباء...)', {v:t.oblPaid,t:'n',s:3}, {v:_pctOf(t.oblPaid,t.netSales)/100,t:'n',s:8}]);
+  rows.push(['إجمالي المصاريف التشغيلية', {v:t.totalExp,t:'n',s:3}, {v:_pctOf(t.totalExp,t.netSales)/100,t:'n',s:8}]);
+  rows.push([{v:'صافي الربح',s:1}, {v:t.profit,t:'n',s:t.profit>=0?6:5}, {v:_pctOf(t.profit,t.netSales)/100,t:'n',s:t.profit>=0?9:8}]);
+
+  rows.push([]);
+  if(prev){
+    rows.push([{v:'═══ مقارنة بالشهر السابق ('+MN[parseInt(prev.monthKey.split('-')[1])-1]+') ═══', s:4}]);
+    rows.push(['البند', {v:'الحالي',s:1}, {v:'السابق',s:1}, {v:'التغيّر',s:1}, {v:'النسبة',s:1}]);
+    function diff(c, p){
+      var d=c-p; var pct=p!==0?(d/Math.abs(p)*100):0;
+      return [{v:c,t:'n',s:3}, {v:p,t:'n',s:3}, {v:d,t:'n',s:d>=0?6:5}, {v:pct.toFixed(1)+'%'}];
+    }
+    rows.push(['الإيرادات'].concat(diff(t.netSales, prev.netSales)));
+    rows.push(['COGS'].concat(diff(t.bycat.COGS, prev.bycat.COGS)));
+    rows.push(['المشتريات الإجمالية'].concat(diff(t.bycat.total, prev.bycat.total)));
+    rows.push(['التزامات مدفوعة'].concat(diff(t.oblPaid, prev.oblPaid)));
+    rows.push(['رواتب مدفوعة'].concat(diff(t.mSalPaid, prev.mSalPaid)));
+    rows.push([{v:'صافي الربح',s:1}].concat(diff(t.profit, prev.profit)));
+  }
+
+  rows.push([]);
+  rows.push([{v:'═══ تحذيرات ومستحقات ═══', s:4}]);
+  var unpaidObl = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;}).reduce(function(s,o){return s+(o.amt||0);},0);
+  var unpaidObCount = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;}).length;
+  var advOut = (d.advances||[]).filter(function(a){return a.status==='مستحقة'||a.status==='مسددة جزئياً';}).reduce(function(s,a){return s+(a.amt||0);},0);
+  rows.push(['التزامات معلَّقة لم تُدفع', {v:unpaidObl,t:'n',s:unpaidObl>0?5:3}, {v:unpaidObCount+' بند'}]);
+  rows.push(['رواتب مستحقة لم تُدفع', {v:t.mSalAccrued||0,t:'n',s:(t.mSalAccrued||0)>0?5:3}]);
+  rows.push(['سلف معلّقة على الموظفين (للقبض)', {v:advOut,t:'n',s:advOut>0?6:3}]);
+  rows.push(['مدفوعات يومية (بضاعة بالأجل)', {v:t.pmts,t:'n',s:3}]);
+
+  rows.push([]);
+  rows.push([{v:'═══ مؤشرات الصحة (نسب) ═══', s:4}]);
+  var gm = _pctOf(t.grossP, t.netSales);
+  var nm = _pctOf(t.profit, t.netSales);
+  var cr = _pctOf(t.bycat.COGS, t.netSales);
+  rows.push(['هامش مجمل الربح', {v:gm/100,t:'n',s:8}, gm>=40?'✅ ممتاز': gm>=30?'⚠️ مقبول':'❌ منخفض']);
+  rows.push(['هامش صافي الربح', {v:nm/100,t:'n',s:8}, nm>=15?'✅ ممتاز': nm>=5?'⚠️ مقبول':'❌ منخفض']);
+  rows.push(['COGS من الإيراد', {v:cr/100,t:'n',s:8}, cr<=45?'✅ جيد': cr<=60?'⚠️ متوسط':'❌ مرتفع']);
+  rows.push(['نسبة الرواتب من الإيراد', {v:(t.salaryRatio||0)/100,t:'n',s:8}, (t.salaryRatio||0)<=25?'✅ صحي':(t.salaryRatio||0)<=40?'⚠️ مقبول':'❌ مرتفع']);
+
+  return { name:'ملخّص تنفيذي', cols:[{w:32},{w:14},{w:14},{w:14},{w:13}], rows:rows };
+}
+
+// قائمة الدخل المُفصَّلة (IFRS-style P&L)
+function _buildIncomeStatement(t){
+  var d=G(); var ym=S.activeKey.split('-'); var mn=MN[parseInt(ym[1])-1];
+  var ns = t.netSales;
+  var rows = [];
+  rows.push([{v:'قائمة الدخل المُفصَّلة — '+mn+' '+ym[0], s:7}]);
+  rows.push([{v:'الأساس المُحاسبي: نقدي (Cash Basis) — يتوافق مع IFRS للمنشآت الصغيرة', s:0}]);
+  rows.push([]);
+  rows.push([{v:'البند',s:2},{v:'المبلغ (JD)',s:2},{v:'% من الإيراد',s:2}]);
+
+  rows.push([{v:'═ الإيرادات التشغيلية ═', s:4}]);
+  rows.push(['المبيعات النقدية', {v:t.cash,t:'n',s:3}, {v:_pctOf(t.cash,ns)/100,t:'n',s:8}]);
+  rows.push(['المبيعات بالفيزا', {v:t.visa,t:'n',s:3}, {v:_pctOf(t.visa,ns)/100,t:'n',s:8}]);
+  rows.push([{v:'إجمالي صافي الإيرادات',s:1}, {v:ns,t:'n',s:10}, {v:1,t:'n',s:9}]);
+  rows.push([]);
+
+  rows.push([{v:'═ تكلفة البضاعة المباعة ═', s:4}]);
+  rows.push(['(−) COGS', {v:-t.bycat.COGS,t:'n',s:5}, {v:_pctOf(t.bycat.COGS,ns)/100,t:'n',s:8}]);
+  rows.push([{v:'مجمل الربح (Gross Profit)',s:1}, {v:t.grossP,t:'n',s:t.grossP>=0?6:5}, {v:_pctOf(t.grossP,ns)/100,t:'n',s:9}]);
+  rows.push([]);
+
+  rows.push([{v:'═ المصاريف التشغيلية ═', s:4}]);
+  rows.push(['(−) الرواتب الشهرية المدفوعة', {v:-t.mSalPaid,t:'n',s:5}, {v:_pctOf(t.mSalPaid,ns)/100,t:'n',s:8}]);
+  if(t.bycat.OPS>0) rows.push(['(−) مصاريف تشغيلية (OPS)', {v:-t.bycat.OPS,t:'n',s:5}, {v:_pctOf(t.bycat.OPS,ns)/100,t:'n',s:8}]);
+  if(t.bycat.MKT>0) rows.push(['(−) مصاريف تسويق (MKT)', {v:-t.bycat.MKT,t:'n',s:5}, {v:_pctOf(t.bycat.MKT,ns)/100,t:'n',s:8}]);
+  if(t.bycat.ADM>0) rows.push(['(−) مصاريف إدارية (ADM)', {v:-t.bycat.ADM,t:'n',s:5}, {v:_pctOf(t.bycat.ADM,ns)/100,t:'n',s:8}]);
+  if(t.bycat.OTHER>0) rows.push(['(−) مصاريف أخرى', {v:-t.bycat.OTHER,t:'n',s:5}, {v:_pctOf(t.bycat.OTHER,ns)/100,t:'n',s:8}]);
+  (d.obligations||[]).filter(function(o){return o.paid && (o.amt||0)>0;}).forEach(function(o){
+    rows.push(['(−) '+(o.name||'التزام')+(o.paidBy?' (دفعه '+o.paidBy+')':''), {v:-(o.amt||0),t:'n',s:5}, {v:_pctOf(o.amt||0,ns)/100,t:'n',s:8}]);
+  });
+  var totOps = t.bycat.OPS + t.bycat.MKT + t.bycat.ADM + t.bycat.OTHER + t.mSalPaid + t.oblPaid;
+  rows.push([{v:'إجمالي المصاريف التشغيلية',s:1}, {v:-totOps,t:'n',s:5}, {v:_pctOf(totOps,ns)/100,t:'n',s:8}]);
+  rows.push([]);
+
+  rows.push([{v:'═ صافي الدخل التشغيلي (EBITDA) ═', s:4}]);
+  var ebitda = t.grossP - totOps;
+  rows.push([{v:'EBITDA',s:1}, {v:ebitda,t:'n',s:ebitda>=0?6:5}, {v:_pctOf(ebitda,ns)/100,t:'n',s:9}]);
+  rows.push([]);
+
+  rows.push([{v:'═ بنود غير تشغيلية ═', s:4}]);
+  rows.push(['الإهلاك والاستهلاك', {v:0,t:'n',s:3}, '(غير متتبَّع)']);
+  rows.push(['الفوائد المالية', {v:0,t:'n',s:3}, '(لا تنطبق)']);
+  rows.push(['الضريبة', {v:0,t:'n',s:3}, '(لا تنطبق)']);
+  rows.push([]);
+
+  rows.push([{v:'═ صافي الربح ═', s:4}]);
+  rows.push([{v:'صافي الربح',s:1}, {v:t.profit,t:'n',s:t.profit>=0?6:5}, {v:_pctOf(t.profit,ns)/100,t:'n',s:9}]);
+  rows.push([]);
+
+  // مستحقات للعلم
+  rows.push([{v:'═ بنود استحقاقية للعلم (لا تؤثر على الربح النقدي) ═', s:4}]);
+  rows.push(['رواتب مستحقة لم تُدفع', {v:-(t.mSalAccrued||0),t:'n',s:3}, '']);
+  var oblUnpaid = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;}).reduce(function(s,o){return s+(o.amt||0);},0);
+  rows.push(['التزامات معلَّقة لم تُدفع', {v:-oblUnpaid,t:'n',s:3}, '']);
+  rows.push(['صافي الربح المُحاسبي (لو دُفعت كل المستحقات)', {v:t.profit-(t.mSalAccrued||0)-oblUnpaid,t:'n',s:1}, '']);
+
+  return { name:'قائمة الدخل', cols:[{w:38},{w:16},{w:14}], rows:rows };
+}
+
+// قائمة التدفقات النقدية
+function _buildCashFlowStatement(t){
+  var d=G(); var ym=S.activeKey.split('-'); var mn=MN[parseInt(ym[1])-1];
+  var rows = [];
+  rows.push([{v:'قائمة التدفقات النقدية — '+mn+' '+ym[0], s:7}]);
+  rows.push([]);
+  rows.push([{v:'البند',s:2},{v:'تدفقات داخلة',s:2},{v:'تدفقات خارجة',s:2}]);
+
+  rows.push([{v:'═ الأنشطة التشغيلية ═', s:4}]);
+  rows.push(['المقبوض من العملاء (نقد+فيزا)', {v:t.netSales,t:'n',s:6}, '']);
+  rows.push(['(−) مدفوع للموردين (كل المشتريات)', '', {v:t.bycat.total,t:'n',s:5}]);
+  rows.push(['(−) مدفوع للرواتب الشهرية', '', {v:t.mSalPaid,t:'n',s:5}]);
+  rows.push(['(−) مدفوع لأجور يومية (من النقد)', '', {v:t.pmts,t:'n',s:5}]);
+  var advPaid = (d.advances||[]).reduce(function(s,a){return s+(a.amt||0);},0);
+  rows.push(['(−) سلف مدفوعة للموظفين', '', {v:advPaid,t:'n',s:5}]);
+  rows.push(['(−) مدفوع للالتزامات', '', {v:t.oblPaid,t:'n',s:5}]);
+  var netOps = t.netSales - t.bycat.total - t.mSalPaid - t.pmts - advPaid - t.oblPaid;
+  rows.push([{v:'صافي التدفق من الأنشطة التشغيلية',s:1}, {v:netOps>=0?netOps:0,t:'n',s:netOps>=0?6:0}, {v:netOps<0?-netOps:0,t:'n',s:netOps<0?5:0}]);
+  rows.push([]);
+
+  rows.push([{v:'═ الأنشطة الاستثمارية ═', s:4}]);
+  rows.push(['(لا توجد عمليات استثمارية)', {v:0,t:'n',s:3}, '']);
+  rows.push([]);
+
+  rows.push([{v:'═ الأنشطة التمويلية ═', s:4}]);
+  rows.push(['(لا توجد عمليات تمويلية)', {v:0,t:'n',s:3}, '']);
+  rows.push([]);
+
+  rows.push([{v:'═ ملخّص التدفقات ═', s:4}]);
+  rows.push([{v:'صافي التغيّر في النقد',s:1}, {v:netOps,t:'n',s:netOps>=0?6:5}, '']);
+  rows.push(['رصيد النقد في أول الفترة', {v:d.cashflow&&d.cashflow.opening||0,t:'n',s:3}, '']);
+  rows.push([{v:'الرصيد المُتوقَّع في نهاية الفترة',s:1}, {v:((d.cashflow&&d.cashflow.opening)||0)+netOps,t:'n',s:10}, '']);
+  rows.push(['الرصيد الفعلي', {v:d.cashflow&&d.cashflow.actual||0,t:'n',s:3}, '']);
+  var diff = ((d.cashflow&&d.cashflow.actual)||0) - (((d.cashflow&&d.cashflow.opening)||0)+netOps);
+  rows.push([{v:'فرق التسوية (فعلي − متوقَّع)',s:1}, {v:diff,t:'n',s:Math.abs(diff)<5?6:5}, '']);
+
+  return { name:'التدفقات النقدية', cols:[{w:38},{w:16},{w:16}], rows:rows };
+}
+
+// تحليل الإيرادات
+function _buildRevenueAnalysis(t){
+  var d=G(); var ym=S.activeKey.split('-'); var mn=MN[parseInt(ym[1])-1];
+  var rows = [];
+  rows.push([{v:'تحليل الإيرادات — '+mn+' '+ym[0], s:7}]);
+  rows.push([]);
+
+  rows.push([{v:'═ الإجماليات ═', s:4}]);
+  rows.push(['صافي الإيرادات (نقد+فيزا)', {v:t.netSales,t:'n',s:10}]);
+  rows.push(['عدد أيام النشاط', {v:t.daysActive||0,t:'n',s:1}]);
+  rows.push(['متوسّط يومي', {v:t.daysActive>0?t.netSales/t.daysActive:0,t:'n',s:3}]);
+  rows.push(['نسبة النقد', {v:_pctOf(t.cash,t.netSales)/100,t:'n',s:8}]);
+  rows.push(['نسبة الفيزا', {v:_pctOf(t.visa,t.netSales)/100,t:'n',s:8}]);
+  rows.push(['مدفوعات يومية (آجل)', {v:t.pmts,t:'n',s:3}]);
+  rows.push([]);
+
+  rows.push([{v:'═ الإيرادات حسب المُستلِم ═', s:4}]);
+  rows.push([{v:'المُستلِم',s:2},{v:'إجمالي النقد',s:2},{v:'مدفوعات يومية',s:2},{v:'عدد الأيام',s:2}]);
+  var byRecv={};
+  (d.sales||[]).forEach(function(s){
+    var amt=(s.cash||0)+(s.visa||0)+(s.pmts||0);
+    if(amt<=0) return;
+    var r=s.receivedBy||'غير محدّد';
+    if(!byRecv[r]) byRecv[r]={cash:0,pmts:0,days:0};
+    byRecv[r].cash+=(s.cash||0);
+    byRecv[r].pmts+=(s.pmts||0);
+    byRecv[r].days++;
+  });
+  Object.keys(byRecv).sort().forEach(function(r){
+    rows.push([r, {v:byRecv[r].cash,t:'n',s:3}, {v:byRecv[r].pmts,t:'n',s:3}, {v:byRecv[r].days,t:'n'}]);
+  });
+  rows.push([]);
+
+  rows.push([{v:'═ الأيام الأعلى والأدنى ═', s:4}]);
+  var actSales=(d.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)>0;});
+  if(actSales.length){
+    actSales.sort(function(a,b){return ((b.cash||0)+(b.visa||0))-((a.cash||0)+(a.visa||0));});
+    rows.push([{v:'الأيام الخمسة الأعلى:',s:1}]);
+    actSales.slice(0,5).forEach(function(s){
+      rows.push(['يوم '+s.day, {v:(s.cash||0)+(s.visa||0),t:'n',s:3}, s.receivedBy||'']);
+    });
+    rows.push([]);
+    rows.push([{v:'الأيام الخمسة الأدنى:',s:1}]);
+    actSales.slice(-5).reverse().forEach(function(s){
+      rows.push(['يوم '+s.day, {v:(s.cash||0)+(s.visa||0),t:'n',s:3}, s.receivedBy||'']);
+    });
+  }
+
+  return { name:'تحليل الإيرادات', cols:[{w:24},{w:14},{w:14},{w:12}], rows:rows };
+}
+
+// تحليل التكاليف
+function _buildCostAnalysis(t){
+  var d=G(); var ym=S.activeKey.split('-'); var mn=MN[parseInt(ym[1])-1];
+  var rows = [];
+  rows.push([{v:'تحليل التكاليف — '+mn+' '+ym[0], s:7}]);
+  rows.push([]);
+
+  rows.push([{v:'═ التكاليف حسب الفئة ═', s:4}]);
+  rows.push([{v:'الفئة',s:2},{v:'المبلغ',s:2},{v:'% من الإيراد',s:2},{v:'% من المشتريات',s:2}]);
+  var cats=[['COGS (بضاعة)',t.bycat.COGS],['OPS (تشغيلية)',t.bycat.OPS],['MKT (تسويق)',t.bycat.MKT],['ADM (إدارية)',t.bycat.ADM],['OTHER (متفرقات)',t.bycat.OTHER]];
+  cats.forEach(function(c){
+    rows.push([c[0], {v:c[1],t:'n',s:3}, {v:_pctOf(c[1],t.netSales)/100,t:'n',s:8}, {v:_pctOf(c[1],t.bycat.total)/100,t:'n',s:8}]);
+  });
+  rows.push([{v:'إجمالي المشتريات',s:1}, {v:t.bycat.total,t:'n',s:10}, {v:_pctOf(t.bycat.total,t.netSales)/100,t:'n',s:9}, {v:1,t:'n',s:9}]);
+  rows.push([]);
+
+  rows.push([{v:'═ أكبر 10 موردين (Concentration) ═', s:4}]);
+  rows.push([{v:'المورد',s:2},{v:'إجمالي',s:2},{v:'عدد الفواتير',s:2},{v:'% من المشتريات',s:2}]);
+  var sm={};
+  (d.purchases||[]).forEach(function(p){
+    var n=p.sName||'—';
+    if(!sm[n]) sm[n]={t:0,n:0};
+    sm[n].t+=(p.amt||0); sm[n].n++;
+  });
+  var top=Object.entries(sm).sort(function(a,b){return b[1].t-a[1].t;}).slice(0,10);
+  top.forEach(function(e){
+    rows.push([e[0], {v:e[1].t,t:'n',s:3}, {v:e[1].n,t:'n'}, {v:_pctOf(e[1].t,t.bycat.total)/100,t:'n',s:8}]);
+  });
+  if(top.length>=3){
+    var top3 = top.slice(0,3).reduce(function(s,e){return s+e[1].t;},0);
+    rows.push([{v:'تركّز أكبر 3 موردين',s:1},{v:top3,t:'n',s:1},'',{v:_pctOf(top3,t.bycat.total)/100,t:'n',s:9}]);
+  }
+  rows.push([]);
+
+  rows.push([{v:'═ المشتريات حسب المشتري ═', s:4}]);
+  rows.push([{v:'المشتري',s:2},{v:'الإجمالي',s:2},{v:'عدد الفواتير',s:2}]);
+  var byBuy={};
+  (d.purchases||[]).forEach(function(p){
+    var b=p.buyer||'غير محدّد';
+    if(!byBuy[b]) byBuy[b]={amt:0,n:0};
+    byBuy[b].amt+=(p.amt||0); byBuy[b].n++;
+  });
+  Object.keys(byBuy).sort().forEach(function(b){
+    rows.push([b, {v:byBuy[b].amt,t:'n',s:3}, {v:byBuy[b].n,t:'n'}]);
+  });
+
+  return { name:'تحليل التكاليف', cols:[{w:24},{w:14},{w:14},{w:14}], rows:rows };
+}
+
+// الذمم والالتزامات (Receivables & Payables)
+function _buildRecPay(t){
+  var d=G(); var ym=S.activeKey.split('-'); var mn=MN[parseInt(ym[1])-1];
+  var rows = [];
+  rows.push([{v:'الذمم والالتزامات — '+mn+' '+ym[0], s:7}]);
+  rows.push([]);
+
+  rows.push([{v:'═ ذمم مدينة (لنا) ═', s:4}]);
+  rows.push(['مدفوعات يومية (عملاء بالأجل)', {v:t.pmts,t:'n',s:3}]);
+  var advOut = (d.advances||[]).filter(function(a){return a.status==='مستحقة'||a.status==='مسددة جزئياً';});
+  var advOutSum = advOut.reduce(function(s,a){return s+(a.amt||0);},0);
+  rows.push(['سلف معلّقة على الموظفين', {v:advOutSum,t:'n',s:3}]);
+  rows.push([{v:'إجمالي الذمم المدينة',s:1}, {v:t.pmts+advOutSum,t:'n',s:10}]);
+  rows.push([]);
+  if(advOut.length){
+    rows.push([{v:'تفصيل السلف المعلّقة:',s:1}]);
+    rows.push([{v:'الموظف',s:2},{v:'التاريخ',s:2},{v:'المبلغ',s:2},{v:'الحالة',s:2},{v:'الملاحظة',s:2}]);
+    advOut.forEach(function(a){
+      rows.push([a.empName||'',a.date||'',{v:a.amt||0,t:'n',s:3},a.status||'',a.note||'']);
+    });
+    rows.push([]);
+  }
+
+  rows.push([{v:'═ ذمم دائنة (علينا) ═', s:4}]);
+  rows.push(['رواتب مستحقة لم تُدفع', {v:t.mSalAccrued||0,t:'n',s:3}]);
+  var oblUnpaid = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;});
+  var oblUnpaidSum = oblUnpaid.reduce(function(s,o){return s+(o.amt||0);},0);
+  rows.push(['التزامات معلّقة', {v:oblUnpaidSum,t:'n',s:3}]);
+  rows.push([{v:'إجمالي الذمم الدائنة',s:1}, {v:(t.mSalAccrued||0)+oblUnpaidSum,t:'n',s:10}]);
+  rows.push([]);
+  if(oblUnpaid.length){
+    rows.push([{v:'تفصيل الالتزامات المعلّقة:',s:1}]);
+    rows.push([{v:'الالتزام',s:2},{v:'المبلغ',s:2},{v:'الاستحقاق',s:2}]);
+    oblUnpaid.forEach(function(o){
+      rows.push([o.name||'',{v:o.amt||0,t:'n',s:3},o.due||'']);
+    });
+    rows.push([]);
+  }
+
+  rows.push([{v:'═ صافي رأس المال العامل ═', s:4}]);
+  var wc = (t.pmts+advOutSum) - ((t.mSalAccrued||0)+oblUnpaidSum);
+  rows.push([{v:'صافي رأس المال العامل (الذمم المدينة − الدائنة)',s:1}, {v:wc,t:'n',s:wc>=0?6:5}]);
+  rows.push(['ملاحظة: قيمة موجبة تعني فائض سيولة مستحقّة، سالبة تعني عجز التزامات يجب تسديدها', {v:'',s:0}]);
+
+  return { name:'الذمم والالتزامات', cols:[{w:36},{w:16},{w:14},{w:14},{w:20}], rows:rows };
+}
+
+// مؤشرات الأداء والنسب المالية
+function _buildKPIs(t, prev){
+  var d=G(); var ym=S.activeKey.split('-'); var mn=MN[parseInt(ym[1])-1];
+  var rows = [];
+  rows.push([{v:'مؤشرات الأداء والنسب المالية — '+mn+' '+ym[0], s:7}]);
+  rows.push([]);
+
+  rows.push([{v:'═ نسب الربحية ═', s:4}]);
+  rows.push([{v:'النسبة',s:2},{v:'القيمة',s:2},{v:'المعيار الصحي',s:2},{v:'التقييم',s:2}]);
+  function ratio(label, num, den, healthy, stamp){
+    var v = den>0 ? num/den : 0;
+    var ev = stamp ? stamp(v*100) : '';
+    rows.push([label, {v:v,t:'n',s:8}, healthy, ev]);
+  }
+  ratio('هامش مجمل الربح', t.grossP, t.netSales, '≥ 40%', function(x){return x>=40?'✅ ممتاز': x>=30?'⚠️ مقبول':'❌ منخفض';});
+  ratio('هامش صافي الربح', t.profit, t.netSales, '≥ 15%', function(x){return x>=15?'✅ ممتاز': x>=5?'⚠️ مقبول':'❌ منخفض';});
+  var ebitda = t.grossP - (t.bycat.OPS+t.bycat.MKT+t.bycat.ADM+t.bycat.OTHER+t.mSalPaid+t.oblPaid);
+  ratio('هامش EBITDA', ebitda, t.netSales, '≥ 20%', function(x){return x>=20?'✅ ممتاز': x>=10?'⚠️ مقبول':'❌ منخفض';});
+  rows.push([]);
+
+  rows.push([{v:'═ نسب التكاليف ═', s:4}]);
+  ratio('COGS / الإيراد', t.bycat.COGS, t.netSales, '≤ 45%', function(x){return x<=45?'✅ جيد': x<=60?'⚠️ متوسط':'❌ مرتفع';});
+  ratio('الرواتب / الإيراد', t.mSalPaid, t.netSales, '≤ 25%', function(x){return x<=25?'✅ صحي': x<=40?'⚠️ مقبول':'❌ مرتفع';});
+  ratio('التزامات مدفوعة / الإيراد', t.oblPaid, t.netSales, '≤ 15%', function(x){return x<=15?'✅ مقبول':'⚠️ مراجعة';});
+  ratio('إجمالي المصاريف / الإيراد', t.totalExp, t.netSales, '≤ 85%', function(x){return x<=70?'✅ ممتاز': x<=85?'⚠️ مقبول':'❌ غير صحي';});
+  rows.push([]);
+
+  rows.push([{v:'═ مؤشرات تشغيلية ═', s:4}]);
+  rows.push(['متوسّط الإيراد اليومي', {v:t.daysActive>0?t.netSales/t.daysActive:0,t:'n',s:3}, 'مقارنة وقت تواريخ نظيرة']);
+  rows.push(['عدد أيام النشاط', {v:t.daysActive||0,t:'n'}, '']);
+  rows.push(['نسبة استخدام الفيزا', {v:_pctOf(t.visa,t.netSales)/100,t:'n',s:8}, '']);
+  rows.push([]);
+
+  if(prev){
+    rows.push([{v:'═ المقارنة بالشهر السابق ═', s:4}]);
+    rows.push([{v:'المؤشر',s:2},{v:'الحالي',s:2},{v:'السابق',s:2},{v:'التغيّر %',s:2}]);
+    function delta(label, c, p){
+      var d=c-p; var pct=p!==0?(d/Math.abs(p)*100):0;
+      rows.push([label, {v:c,t:'n',s:3}, {v:p,t:'n',s:3}, {v:pct.toFixed(1)+'%'}]);
+    }
+    delta('الإيرادات', t.netSales, prev.netSales);
+    delta('COGS', t.bycat.COGS, prev.bycat.COGS);
+    delta('المشتريات الإجمالية', t.bycat.total, prev.bycat.total);
+    delta('التزامات مدفوعة', t.oblPaid, prev.oblPaid);
+    delta('رواتب مدفوعة', t.mSalPaid, prev.mSalPaid);
+    delta('صافي الربح', t.profit, prev.profit);
+  }
+
+  return { name:'مؤشرات الأداء', cols:[{w:30},{w:14},{w:18},{w:18}], rows:rows };
+}
+
 // النسخة الجديدة — تُنتج .xlsx حقيقي يفتح في Office Mobile
 function exportExcelReal(){
   var d=G(); var t=totals();
   var ym=S.activeKey.split('-'); var y=ym[0]; var mo=parseInt(ym[1]); var mn=MN[mo-1];
+  var prev = _prevTotals();
 
-  // ورقة 1: التقرير اليومي للإدارة
-  var sheets=[_buildManagerReport()];
+  // ترتيب الأوراق بمنطق محاسبي محترف:
+  // 1. ملخّص → 2. قائمة الدخل → 3. تدفقات نقدية → 4. تقرير يومي
+  // 5. تحليل إيرادات → 6. تحليل تكاليف → 7. ذمم والتزامات → 8. KPIs → 9-12 تفاصيل
+  var sheets=[
+    _buildExecutiveSummary(t, prev),
+    _buildIncomeStatement(t),
+    _buildCashFlowStatement(t),
+    _buildManagerReport(),
+    _buildRevenueAnalysis(t),
+    _buildCostAnalysis(t),
+    _buildRecPay(t),
+    _buildKPIs(t, prev)
+  ];
 
   // ورقة 2: الإيرادات اليومية التفصيلية
   var revRows=[
