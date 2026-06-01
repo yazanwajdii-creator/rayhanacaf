@@ -441,7 +441,7 @@ tfoot td{background:linear-gradient(135deg,#1A0E0A,#0F172A)!important;color:#fff
 .sec-lbl::after{content:'';flex:1;height:1px;background:var(--br)}
 
 /* FAB */
-.fab{position:fixed;bottom:20px;left:16px;width:42px;height:42px;background:var(--sap);color:#fff;border:none;border-radius:50%;font-size:17px;cursor:pointer;box-shadow:0 3px 12px rgba(0,112,242,.4);z-index:400;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.fab{position:fixed;bottom:20px;left:16px;width:44px;height:44px;background:var(--sap);color:#fff;border:none;border-radius:50%;font-size:18px;cursor:pointer;box-shadow:0 3px 12px rgba(0,112,242,.4);z-index:400;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .fab:hover{background:var(--sap-d)}.fab:active{transform:scale(.9)}
 
 /* LOG */
@@ -1830,6 +1830,48 @@ body.dark .ss-card{background:var(--surf)}
 .mt-arrow{transition:transform .25s;font-size:14px}
 .mt-arrow.open{transform:rotate(180deg)}
 .month-table-wrap{overflow:hidden;transition:max-height .35s ease;max-height:0}
+
+/* v63: ملخّص مالي احترافي — مستوحى من Apple Pay / Stripe Dashboard */
+.fin-sh{max-width:600px;max-height:96vh;overflow-y:auto;border-radius:24px 24px 0 0;padding:0}
+.fin-hdr{padding:14px 16px 12px;border-bottom:1px solid var(--br);position:sticky;top:0;background:var(--bg);z-index:10;display:flex;align-items:center;gap:8px}
+.fin-title{font-size:17px;font-weight:700;color:var(--tx);letter-spacing:-0.2px}
+.fin-subtitle{font-size:11.5px;color:var(--tx3);margin-top:2px}
+.fin-hero{background:linear-gradient(135deg,#1a3a2a 0%,#0c2118 100%);color:#fff;padding:26px 16px 22px;text-align:center;border-radius:18px;margin:14px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(26,58,42,.25)}
+.fin-hero::before{content:'';position:absolute;top:-40px;left:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(200,146,15,.18) 0%,transparent 70%);pointer-events:none}
+.fin-hero-loss{background:linear-gradient(135deg,#7f1d1d 0%,#3f0a0a 100%)}
+.fin-hero-label{font-size:12px;opacity:.85;margin-bottom:6px;font-weight:500;letter-spacing:.5px}
+.fin-hero-value{font-size:44px;font-weight:800;letter-spacing:-2px;line-height:1;direction:ltr;display:inline-block}
+.fin-hero-unit{font-size:14px;opacity:.7;margin-top:6px;font-weight:500}
+.fin-hero-meta{margin-top:14px;font-size:11.5px;display:flex;justify-content:center;gap:16px;opacity:.95;flex-wrap:wrap}
+.fin-hero-meta span{background:rgba(255,255,255,.1);padding:5px 12px;border-radius:20px;font-weight:600}
+.fin-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 14px;margin-bottom:14px}
+.fin-kpi{background:var(--bg2);border:1px solid var(--br);border-radius:14px;padding:12px 8px;text-align:center;transition:transform .15s}
+.fin-kpi:active{transform:scale(.97)}
+.fin-kpi-ico{font-size:22px;height:26px;line-height:26px;margin-bottom:4px}
+.fin-kpi-lbl{font-size:9.5px;color:var(--tx3);font-weight:700;margin-bottom:4px;letter-spacing:.3px}
+.fin-kpi-val{font-size:14.5px;font-weight:800;color:var(--tx);direction:ltr;letter-spacing:-.3px}
+.fin-section{background:var(--bg2);border:1px solid var(--br);border-radius:14px;padding:14px 16px;margin:0 14px 12px}
+.fin-sec-title{font-size:13px;font-weight:700;color:var(--tx);margin-bottom:10px;display:flex;align-items:center;gap:7px;padding-bottom:8px;border-bottom:1px solid var(--br)}
+.fin-pl-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px;color:var(--tx)}
+.fin-pl-row.fin-pl-sub{color:var(--tx3);font-size:11.5px;padding-right:8px}
+.fin-pl-row.fin-pl-total{font-weight:700;border-top:1px solid var(--br);padding-top:8px;margin-top:6px;font-size:13px}
+.fin-pl-row.fin-pl-grand{font-weight:800;font-size:15px;border-top:2px solid var(--tx);padding-top:10px;margin-top:8px;letter-spacing:-.2px}
+.fin-pl-amount{font-weight:700;direction:ltr;font-variant-numeric:tabular-nums}
+.fin-pl-amount.pos{color:#16a34a}
+.fin-pl-amount.neg{color:#dc2626}
+.fin-list{display:flex;flex-direction:column;gap:6px}
+.fin-list-row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:9px 11px;background:var(--bg);border-radius:10px;border:1px solid transparent;transition:border-color .15s}
+.fin-list-row:hover{border-color:var(--br)}
+.fin-list-name{font-weight:600;color:var(--tx)}
+.fin-list-meta{font-size:10.5px;color:var(--tx3);margin-top:1px}
+.fin-list-val{font-weight:700;color:var(--tx);direction:ltr;font-variant-numeric:tabular-nums}
+.fin-health-row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--br)}
+.fin-health-row:last-child{border-bottom:none}
+.fin-health-row b{font-variant-numeric:tabular-nums}
+.fin-health-ok{color:#16a34a}
+.fin-health-warn{color:#c8920f}
+.fin-health-bad{color:#dc2626}
+.fin-foot{padding:14px;border-top:1px solid var(--br);background:var(--bg);position:sticky;bottom:0}
 .month-table-wrap.open{max-height:3000px}
 </style>
 </head>
@@ -2048,6 +2090,8 @@ body.dark .ss-card{background:var(--surf)}
         </div>
       </div>
 
+      <!-- v63: زرّ بارز للملخّص المالي الاحترافي -->
+      <div style="margin:14px 0 8px"><button onclick="openFinSummary()" style="width:100%;font-size:14px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#1a3a2a,#0c2118);color:#fff;border:none;border-radius:14px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(26,58,42,.2);cursor:pointer"><span style="font-size:18px">📊</span><span>الملخّص المالي الشامل</span></button></div>
       <!-- v55: موجز للمشاركة — يولّد نصاً جاهزاً لإرساله للمالك عبر واتساب -->
       <div style="margin:10px 0 6px"><button class="btn btn-g" onclick="shareDailyBriefing()" style="width:100%;font-size:13px;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><span>📋</span><span>موجز اليوم — جاهز للمشاركة على واتساب</span></button></div>
       <!-- v58: تشخيص بياناتك — لاكتشاف فوري لأي نقص -->
@@ -3747,6 +3791,23 @@ create policy "allow_all" on rh_store
   <div class="btn-row" style="margin-top:10px"><button class="btn btn-p" style="flex:1" onclick="copyBriefing()">📋 نسخ</button><button class="btn btn-g" style="flex:1" onclick="shareBriefingNative()">📤 مشاركة</button><button class="btn btn-ghost" onclick="cmo('moBriefing')">إغلاق</button></div>
 </div></div>
 
+<!-- v63: الملخّص المالي الاحترافي — صفحة واحدة لكل ما يهمّ المدير -->
+<div class="mo-ov" id="moFinSum" onclick="moOut(event,'moFinSum')">
+<div class="mo-sh fin-sh"><div class="mo-bar"></div>
+  <div class="fin-hdr">
+    <button class="mo-x" style="position:static;flex-shrink:0" onclick="cmo('moFinSum')">×</button>
+    <div style="flex:1;text-align:center">
+      <div class="fin-title">📊 الملخّص المالي</div>
+      <div class="fin-subtitle" id="finSubt">—</div>
+    </div>
+    <div style="width:30px;flex-shrink:0"></div>
+  </div>
+  <div id="finBody"></div>
+  <div class="fin-foot">
+    <button class="btn btn-p" style="width:100%;font-size:14px;padding:13px;font-weight:700" onclick="exportExcel();cmo('moFinSum')">📗 تصدير التقرير الكامل (Excel — 13 ورقة IFRS)</button>
+  </div>
+</div></div>
+
 <!-- v58: تشخيص بياناتك — يعرض الحقيقة الصلبة عن كل شهر -->
 <div class="mo-ov" id="moDiag" onclick="moOut(event,'moDiag')">
 <div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moDiag')">×</button>
@@ -4432,7 +4493,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v62';
+const APP_VERSION='v63';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5045,6 +5106,141 @@ function _runForcePushIfNeeded(){
       // اترك العلامة — يُحاول لاحقاً
     });
   }, 2500);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * v63: ملخّص مالي احترافي — صفحة واحدة، تصميم Apple Pay/Stripe
+ * ═══════════════════════════════════════════════════════════════ */
+function openFinSummary(){
+  try {
+    var t = totals(); var d = G();
+    var ym = S.activeKey.split('-'); var mn = MN[parseInt(ym[1])-1];
+    var prev = (typeof _prevTotals === 'function') ? _prevTotals() : null;
+
+    T('finSubt', mn + ' ' + ym[0] + ' · ' + new Date().toLocaleDateString('ar-JO'));
+
+    var html = '';
+    // Hero
+    var heroCls = t.profit >= 0 ? '' : ' fin-hero-loss';
+    var momTxt = '';
+    if(prev && prev.profit !== 0){
+      var pct = (t.profit - prev.profit) / Math.abs(prev.profit) * 100;
+      var arrow = pct >= 0 ? '↑' : '↓';
+      momTxt = arrow + ' ' + Math.abs(pct).toFixed(0) + '% عن السابق';
+    }
+    html += '<div class="fin-hero' + heroCls + '">';
+    html += '<div class="fin-hero-label">صافي الربح — ' + mn + '</div>';
+    html += '<div class="fin-hero-value">' + n3(t.profit) + '</div>';
+    html += '<div class="fin-hero-unit">دينار أردني (JD)</div>';
+    html += '<div class="fin-hero-meta">';
+    html += '<span>هامش ' + t.margin.toFixed(1) + '%</span>';
+    if(momTxt) html += '<span>' + momTxt + '</span>';
+    html += '<span>' + (t.daysActive||0) + ' يوم نشط</span>';
+    html += '</div></div>';
+
+    // KPI grid 3×2
+    html += '<div class="fin-kpis">';
+    html += '<div class="fin-kpi"><div class="fin-kpi-ico">💰</div><div class="fin-kpi-lbl">الإيرادات</div><div class="fin-kpi-val">' + n3(t.netSales) + '</div></div>';
+    html += '<div class="fin-kpi"><div class="fin-kpi-ico">📦</div><div class="fin-kpi-lbl">COGS</div><div class="fin-kpi-val">' + n3(t.bycat.COGS) + '</div></div>';
+    html += '<div class="fin-kpi"><div class="fin-kpi-ico">🌿</div><div class="fin-kpi-lbl">مجمل الربح</div><div class="fin-kpi-val">' + n3(t.grossP) + '</div></div>';
+    html += '<div class="fin-kpi"><div class="fin-kpi-ico">💵</div><div class="fin-kpi-lbl">رواتب مدفوعة</div><div class="fin-kpi-val">' + n3(t.mSalPaid) + '</div></div>';
+    html += '<div class="fin-kpi"><div class="fin-kpi-ico">🏠</div><div class="fin-kpi-lbl">التزامات</div><div class="fin-kpi-val">' + n3(t.oblPaid) + '</div></div>';
+    html += '<div class="fin-kpi"><div class="fin-kpi-ico">📋</div><div class="fin-kpi-lbl">مصاريف كلية</div><div class="fin-kpi-val">' + n3(t.totalExp) + '</div></div>';
+    html += '</div>';
+
+    // قائمة الدخل المختصرة
+    html += '<div class="fin-section">';
+    html += '<div class="fin-sec-title">📈 قائمة الدخل المُختصرة (IFRS)</div>';
+    html += '<div class="fin-pl-row fin-pl-sub"><span>المبيعات النقدية</span><span class="fin-pl-amount pos">+' + n3(t.cash) + '</span></div>';
+    html += '<div class="fin-pl-row fin-pl-sub"><span>المبيعات بالفيزا</span><span class="fin-pl-amount pos">+' + n3(t.visa) + '</span></div>';
+    html += '<div class="fin-pl-row fin-pl-total"><span>صافي الإيرادات</span><span class="fin-pl-amount pos">' + n3(t.netSales) + '</span></div>';
+    html += '<div class="fin-pl-row"><span>(−) تكلفة البضاعة COGS</span><span class="fin-pl-amount neg">−' + n3(t.bycat.COGS) + '</span></div>';
+    html += '<div class="fin-pl-row fin-pl-total"><span>مجمل الربح</span><span class="fin-pl-amount ' + (t.grossP>=0?'pos':'neg') + '">' + n3(t.grossP) + '</span></div>';
+    if(t.mSalPaid>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) رواتب شهرية</span><span class="fin-pl-amount neg">−' + n3(t.mSalPaid) + '</span></div>';
+    if(t.bycat.OPS>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) مصاريف تشغيلية</span><span class="fin-pl-amount neg">−' + n3(t.bycat.OPS) + '</span></div>';
+    if(t.bycat.MKT>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) تسويق</span><span class="fin-pl-amount neg">−' + n3(t.bycat.MKT) + '</span></div>';
+    if(t.bycat.ADM>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) إدارية</span><span class="fin-pl-amount neg">−' + n3(t.bycat.ADM) + '</span></div>';
+    if(t.bycat.OTHER>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) متفرقات</span><span class="fin-pl-amount neg">−' + n3(t.bycat.OTHER) + '</span></div>';
+    if(t.oblPaid>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) التزامات مدفوعة</span><span class="fin-pl-amount neg">−' + n3(t.oblPaid) + '</span></div>';
+    html += '<div class="fin-pl-row fin-pl-grand"><span>صافي الربح</span><span class="fin-pl-amount ' + (t.profit>=0?'pos':'neg') + '">' + n3(t.profit) + ' JD</span></div>';
+    html += '</div>';
+
+    // الكاش حسب المُستلِم
+    var byRecv = {};
+    (d.sales||[]).forEach(function(s){
+      if((s.cash||0)+(s.visa||0)+(s.pmts||0) <= 0) return;
+      var r = s.receivedBy || 'غير محدّد';
+      if(!byRecv[r]) byRecv[r] = {cash:0, visa:0, days:0};
+      byRecv[r].cash += (s.cash||0);
+      byRecv[r].visa += (s.visa||0);
+      byRecv[r].days++;
+    });
+    var rKeys = Object.keys(byRecv).sort(function(a,b){return byRecv[b].cash - byRecv[a].cash;});
+    if(rKeys.length){
+      html += '<div class="fin-section">';
+      html += '<div class="fin-sec-title">💵 الكاش حسب المُستلِم</div>';
+      html += '<div class="fin-list">';
+      rKeys.forEach(function(r){
+        html += '<div class="fin-list-row"><div><div class="fin-list-name">👤 ' + esc(r) + '</div><div class="fin-list-meta">' + byRecv[r].days + ' يوم · فيزا ' + n3(byRecv[r].visa) + '</div></div><div class="fin-list-val">' + n3(byRecv[r].cash) + ' JD</div></div>';
+      });
+      html += '</div></div>';
+    }
+
+    // أعلى موردين
+    var sm = {};
+    (d.purchases||[]).forEach(function(p){
+      var n = p.sName || '—';
+      if(!sm[n]) sm[n] = {amt:0, n:0};
+      sm[n].amt += (p.amt||0); sm[n].n++;
+    });
+    var topS = Object.entries(sm).sort(function(a,b){return b[1].amt - a[1].amt;}).slice(0,5);
+    if(topS.length){
+      html += '<div class="fin-section">';
+      html += '<div class="fin-sec-title">🛒 أعلى ٥ موردين</div>';
+      html += '<div class="fin-list">';
+      topS.forEach(function(e){
+        html += '<div class="fin-list-row"><div><div class="fin-list-name">' + esc(e[0]) + '</div><div class="fin-list-meta">' + e[1].n + ' فاتورة</div></div><div class="fin-list-val">' + n3(e[1].amt) + ' JD</div></div>';
+      });
+      html += '</div></div>';
+    }
+
+    // مؤشرات الصحة
+    html += '<div class="fin-section">';
+    html += '<div class="fin-sec-title">📊 مؤشرات الصحة المالية</div>';
+    function hRow(label, val, healthyMin, warnMin, inverted){
+      var ok = inverted ? val <= healthyMin : val >= healthyMin;
+      var warn = inverted ? val <= warnMin : val >= warnMin;
+      var cls = ok ? 'fin-health-ok' : warn ? 'fin-health-warn' : 'fin-health-bad';
+      var ico = ok ? '✅' : warn ? '⚠️' : '❌';
+      return '<div class="fin-health-row"><span>' + label + '</span><span class="' + cls + '"><b>' + ico + ' ' + val.toFixed(1) + '%</b></span></div>';
+    }
+    var gm = t.netSales>0 ? t.grossP/t.netSales*100 : 0;
+    html += hRow('هامش مجمل الربح', gm, 40, 30, false);
+    html += hRow('هامش صافي الربح', t.margin, 15, 5, false);
+    html += hRow('COGS من الإيراد', t.cogsRatio||0, 45, 60, true);
+    html += hRow('رواتب من الإيراد', t.salaryRatio||0, 25, 40, true);
+    html += hRow('مصاريف كلية من الإيراد', t.expRatio||0, 70, 85, true);
+    html += '</div>';
+
+    // تحذيرات
+    var unpaidObl = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;}).reduce(function(s,o){return s+(o.amt||0);},0);
+    var advOut = (d.advances||[]).filter(function(a){return a.status==='مستحقة'||a.status==='مسددة جزئياً';}).reduce(function(s,a){return s+(a.amt||0);},0);
+    if(unpaidObl > 0 || (t.mSalAccrued||0) > 0 || advOut > 0){
+      html += '<div class="fin-section" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.04)">';
+      html += '<div class="fin-sec-title" style="color:#dc2626">⚠️ تنبيهات مستحقات</div>';
+      if(unpaidObl > 0) html += '<div class="fin-pl-row"><span>التزامات لم تُدفع بعد</span><span class="fin-pl-amount neg">' + n3(unpaidObl) + ' JD</span></div>';
+      if((t.mSalAccrued||0) > 0) html += '<div class="fin-pl-row"><span>رواتب مستحقة (غير مدفوعة)</span><span class="fin-pl-amount neg">' + n3(t.mSalAccrued) + ' JD</span></div>';
+      if(advOut > 0) html += '<div class="fin-pl-row"><span>سلف معلّقة على الموظفين</span><span class="fin-pl-amount pos">' + n3(advOut) + ' JD</span></div>';
+      html += '</div>';
+    }
+
+    var body = document.getElementById('finBody');
+    if(body) body.innerHTML = html;
+    openMo('moFinSum');
+  } catch(e){
+    console.error('openFinSummary:', e);
+    toast('⚠️ تعذّر عرض الملخّص: ' + e.message);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
