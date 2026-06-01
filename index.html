@@ -4497,7 +4497,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v65';
+const APP_VERSION='v66';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5183,6 +5183,135 @@ function openFinSummary(){
     html += '<div class="fin-pl-row" style="margin-top:6px"><span>نسبة العمالة من الإيراد الإجمالي</span><span class="fin-pl-amount" style="color:' + (laborRatioTrue<=30?'#16a34a':laborRatioTrue<=45?'#c8920f':'#dc2626') + '">' + laborRatioTrue.toFixed(1) + '٪</span></div>';
     html += '<div style="font-size:10.5px;color:var(--tx4);margin-top:8px;padding:8px 10px;background:rgba(245,158,11,.06);border-radius:8px;line-height:1.6;text-align:right">💡 الإيراد الإجمالي = نقد + فيزا + مدفوعات. المعيار الصحي ≤30٪. النسبة المعروضة في «المؤشرات» تستخدم الرواتب الشهرية فقط (للمقارنة المحاسبية).</div>';
     html += '</div>';
+
+    // v66: تقرير المسؤوليات — صافي يزن + صافي عبدالرحمن + رصيد الفيزا = الربح النهائي الموحّد
+    try {
+      // اجمع البيانات حسب المسؤول
+      var cashByP={}, purchByP={}, oblByP={}, salByP={};
+      (d.sales||[]).forEach(function(s){
+        if(!s.receivedBy) return;
+        cashByP[s.receivedBy] = (cashByP[s.receivedBy]||0) + (s.cash||0);
+      });
+      (d.purchases||[]).forEach(function(p){
+        if(!p.buyer) return;
+        purchByP[p.buyer] = (purchByP[p.buyer]||0) + (p.amt||0);
+      });
+      (d.obligations||[]).forEach(function(o){
+        if(!o.paid || !o.paidBy) return;
+        oblByP[o.paidBy] = (oblByP[o.paidBy]||0) + (o.amt||0);
+      });
+      (S.monthlyEmps||[]).forEach(function(e){
+        var sObj = (d.mSal||{})[e.id] || {};
+        if(!sObj.paid || !sObj.paidBy) return;
+        var adv = (typeof pendAdv==='function') ? pendAdv(e.id) : 0;
+        var net = Math.max(0, (sObj.base||0)+(sObj.allow||0)-(sObj.ded||0)-adv);
+        salByP[sObj.paidBy] = (salByP[sObj.paidBy]||0) + net;
+      });
+
+      // احسب الصافي لكل شخص + رصيد الفيزا
+      var persons = ['يزن','عبدالرحمن'];
+      var netByP = {};
+      persons.forEach(function(p){
+        netByP[p] = (cashByP[p]||0) - (purchByP[p]||0) - (oblByP[p]||0) - (salByP[p]||0);
+      });
+      var visaTotal = t.visa || 0;
+      var visaObl = oblByP['فيزا'] || 0;
+      var visaSal = salByP['فيزا'] || 0;
+      var visaBalance = visaTotal - visaObl - visaSal;
+      var unifiedProfit = persons.reduce(function(s,p){return s+netByP[p];},0) + visaBalance;
+
+      html += '<div class="fin-section" style="border-color:rgba(16,185,129,.3);background:linear-gradient(135deg,rgba(16,185,129,.05),rgba(5,150,105,.02))">';
+      html += '<div class="fin-sec-title" style="color:#065f46">👥 تقرير المسؤوليات — تتبّع المال حسب المسؤول</div>';
+
+      // البطل
+      html += '<div style="background:linear-gradient(135deg,#065f46,#022c22);color:#fff;padding:18px;border-radius:14px;text-align:center;margin-bottom:14px">';
+      html += '<div style="font-size:11px;opacity:.85;margin-bottom:6px;letter-spacing:.3px">الربح النهائي الموحَّد</div>';
+      html += '<div style="font-size:11px;opacity:.7;margin-bottom:8px">= صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>';
+      html += '<div style="font-size:34px;font-weight:800;letter-spacing:-1px;direction:ltr">'+n3(unifiedProfit)+' JD</div>';
+      html += '</div>';
+
+      // 3 بطاقات: يزن / عبدالرحمن / الفيزا
+      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">';
+      persons.forEach(function(p, idx){
+        var c = idx===0 ? '#3b82f6' : '#a16207';
+        html += '<div style="background:var(--bg2);border:2px solid '+c+';border-radius:12px;padding:10px;text-align:center">';
+        html += '<div style="font-size:11px;color:'+c+';font-weight:700;margin-bottom:4px">👤 '+p+'</div>';
+        html += '<div style="font-size:15px;font-weight:800;color:var(--tx);direction:ltr">'+n3(netByP[p])+'</div>';
+        html += '<div style="font-size:9px;color:var(--tx4);margin-top:2px">JD</div>';
+        html += '</div>';
+      });
+      html += '<div style="background:var(--bg2);border:2px solid #16a34a;border-radius:12px;padding:10px;text-align:center">';
+      html += '<div style="font-size:11px;color:#16a34a;font-weight:700;margin-bottom:4px">💳 فيزا</div>';
+      html += '<div style="font-size:15px;font-weight:800;color:var(--tx);direction:ltr">'+n3(visaBalance)+'</div>';
+      html += '<div style="font-size:9px;color:var(--tx4);margin-top:2px">JD</div>';
+      html += '</div>';
+      html += '</div>';
+
+      // تفصيل كل شخص
+      persons.forEach(function(p, idx){
+        var c = idx===0 ? '#3b82f6' : '#a16207';
+        var cash = cashByP[p] || 0;
+        var purch = purchByP[p] || 0;
+        var obl = oblByP[p] || 0;
+        var sal = salByP[p] || 0;
+        html += '<div style="background:var(--bg);border:1px solid var(--br);border-right:4px solid '+c+';border-radius:10px;padding:10px 12px;margin-bottom:8px">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;color:'+c+';font-size:13px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--br)">';
+        html += '<span>👤 '+p+'</span><span style="direction:ltr">'+n3(netByP[p])+' JD</span></div>';
+        html += '<div class="fin-pl-row" style="padding:3px 0"><span>+ نقد استلمه</span><span class="fin-pl-amount pos" style="direction:ltr">+'+n3(cash)+'</span></div>';
+        if(purch>0) html += '<div class="fin-pl-row" style="padding:3px 0"><span>− مشتريات</span><span class="fin-pl-amount neg" style="direction:ltr">−'+n3(purch)+'</span></div>';
+        if(obl>0) html += '<div class="fin-pl-row" style="padding:3px 0"><span>− التزامات دفعها</span><span class="fin-pl-amount neg" style="direction:ltr">−'+n3(obl)+'</span></div>';
+        if(sal>0) html += '<div class="fin-pl-row" style="padding:3px 0"><span>− رواتب دفعها</span><span class="fin-pl-amount neg" style="direction:ltr">−'+n3(sal)+'</span></div>';
+        html += '</div>';
+      });
+
+      // الفيزا
+      html += '<div style="background:var(--bg);border:1px solid var(--br);border-right:4px solid #16a34a;border-radius:10px;padding:10px 12px;margin-bottom:8px">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;color:#16a34a;font-size:13px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--br)">';
+      html += '<span>💳 رصيد الفيزا</span><span style="direction:ltr">'+n3(visaBalance)+' JD</span></div>';
+      html += '<div class="fin-pl-row" style="padding:3px 0"><span>+ مبيعات الفيزا</span><span class="fin-pl-amount pos" style="direction:ltr">+'+n3(visaTotal)+'</span></div>';
+      if(visaObl>0) html += '<div class="fin-pl-row" style="padding:3px 0"><span>− التزامات من الفيزا</span><span class="fin-pl-amount neg" style="direction:ltr">−'+n3(visaObl)+'</span></div>';
+      if(visaSal>0) html += '<div class="fin-pl-row" style="padding:3px 0"><span>− رواتب من الفيزا</span><span class="fin-pl-amount neg" style="direction:ltr">−'+n3(visaSal)+'</span></div>';
+      html += '</div>';
+
+      // توزيع بصري
+      var totCashAll = persons.reduce(function(s,p){return s+(cashByP[p]||0);},0) || 1;
+      var totPurchAll = persons.reduce(function(s,p){return s+(purchByP[p]||0);},0) || 1;
+      html += '<div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--br)">';
+      html += '<div style="font-size:11.5px;color:var(--tx3);font-weight:700;margin-bottom:8px">📊 توزيع النقد المستلم</div>';
+      persons.forEach(function(p, idx){
+        var c = idx===0 ? '#3b82f6' : '#a16207';
+        var pct = ((cashByP[p]||0)/totCashAll*100);
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:11px">';
+        html += '<span style="width:70px;color:'+c+';font-weight:700">'+p+'</span>';
+        html += '<div style="flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden"><div style="width:'+pct.toFixed(0)+'%;height:100%;background:'+c+'"></div></div>';
+        html += '<span style="width:45px;text-align:left;font-variant-numeric:tabular-nums">'+pct.toFixed(0)+'٪</span>';
+        html += '</div>';
+      });
+      html += '<div style="font-size:11.5px;color:var(--tx3);font-weight:700;margin-top:10px;margin-bottom:8px">🛒 توزيع المشتريات</div>';
+      persons.forEach(function(p, idx){
+        var c = idx===0 ? '#3b82f6' : '#a16207';
+        var pct = ((purchByP[p]||0)/totPurchAll*100);
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:11px">';
+        html += '<span style="width:70px;color:'+c+';font-weight:700">'+p+'</span>';
+        html += '<div style="flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden"><div style="width:'+pct.toFixed(0)+'%;height:100%;background:'+c+'"></div></div>';
+        html += '<span style="width:45px;text-align:left;font-variant-numeric:tabular-nums">'+pct.toFixed(0)+'٪</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+
+      // غير موزع (مشتريات/إيراد بدون buyer/receivedBy)
+      var unsignedCash = (t.cash||0) - persons.reduce(function(s,p){return s+(cashByP[p]||0);},0);
+      var unsignedPurch = (t.bycat.total||0) - persons.reduce(function(s,p){return s+(purchByP[p]||0);},0);
+      if(unsignedCash > 0 || unsignedPurch > 0){
+        html += '<div style="margin-top:10px;padding:8px 10px;background:rgba(245,158,11,.08);border-radius:8px;font-size:10.5px;color:var(--tx3);text-align:right">';
+        html += '⚠️ <b>غير موزّع</b> (لم يُحدَّد المسؤول): ';
+        if(unsignedCash>0) html += 'إيراد '+n3(unsignedCash)+' JD';
+        if(unsignedCash>0 && unsignedPurch>0) html += ' · ';
+        if(unsignedPurch>0) html += 'مشتريات '+n3(unsignedPurch)+' JD';
+        html += '</div>';
+      }
+      html += '</div>';
+    } catch(e){ console.warn('responsibility:', e); }
 
     // v64: الربح على الأساس الاستحقاقي — بعد افتراض دفع كل المستحقات
     var unpaidOblForAccrual = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;}).reduce(function(s,o){return s+(o.amt||0);},0);
@@ -17105,8 +17234,36 @@ async function syncPullSafe(opts){
 // === Hook: استبدل supaSync القديم بالواجهة الجديدة ===
 async function supaSyncV2(direction, opts){
   if(direction === 'push'){
+    // v66 [إصلاح بقّ كبير]: كانت ترجع فوراً قبل اكتمال الرفع
+    // → المستخدم يرى "تم الرفع" لكن الرفع لم يحدث بعد (أو فشل)
+    // الآن ننتظر اكتمال العامل فعلاً (أو فشله بمهلة 30 ثانية)
     syncEnqueuePush();
-    return;
+    return await new Promise(function(resolve, reject){
+      var startTime = Date.now();
+      var lastAttempts = -1;
+      var checker = setInterval(function(){
+        var head = _queueGetHead();
+        if(!head){
+          // القائمة فارغة = الرفع اكتمل بنجاح
+          clearInterval(checker);
+          resolve(true);
+          return;
+        }
+        // محاولات تزداد = فشل + retry جارٍ
+        if(head.attempts > 3 && head.attempts > lastAttempts){
+          clearInterval(checker);
+          reject(new Error('فشل الرفع بعد '+head.attempts+' محاولات — تحقّق من الإنترنت'));
+          return;
+        }
+        lastAttempts = head.attempts;
+        // مهلة 30 ثانية
+        if(Date.now() - startTime > 30000){
+          clearInterval(checker);
+          reject(new Error('انتهت المهلة (30ث) — الرفع لم يكتمل، سيُعاد لاحقاً في الخلفية'));
+          return;
+        }
+      }, 250);
+    });
   }
   if(direction === 'pull'){
     return await syncPullSafe(opts || {});
