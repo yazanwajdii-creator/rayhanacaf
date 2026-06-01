@@ -2812,7 +2812,7 @@ body.dark .ss-card{background:var(--surf)}
     <!-- SUPPLIERS -->
     <div id="supp" class="pg">
       <div class="card">
-        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">📦</span>دليل الموردين</div><button class="btn btn-p btn-sm" onclick="openMo('moSupp')">➕ مورد جديد</button></div>
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">📦</span>دليل الموردين</div><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-sm" onclick="mergeDuplicateSuppliers()" title="دمج الموردين المكررين">🔗 دمج المكرر</button><button class="btn btn-p btn-sm" onclick="openMo('moSupp')">➕ مورد جديد</button></div></div>
         <div class="card-body" id="suppList"></div>
       </div>
       <div class="card">
@@ -4525,7 +4525,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v68';
+const APP_VERSION='v69';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5180,6 +5180,19 @@ function openFinSummary(){
     html += '<div class="fin-kpi"><div class="fin-kpi-ico">📋</div><div class="fin-kpi-lbl">مصاريف كلية</div><div class="fin-kpi-val">' + n3(t.totalExp) + '</div></div>';
     html += '</div>';
 
+    // v69: احسب ما دُفع من الفيزا (التزامات + رواتب بـ paidBy='فيزا') لعرض الرصيد الصافي
+    var _visaPaidObl = (d.obligations||[]).filter(function(o){return o.paid && o.paidBy==='فيزا';}).reduce(function(s,o){return s+(o.amt||0);},0);
+    var _visaPaidSal = 0;
+    (S.monthlyEmps||[]).forEach(function(e){
+      var sObj=(d.mSal||{})[e.id]||{};
+      if(sObj.paid && sObj.paidBy==='فيزا'){
+        var adv=(typeof pendAdv==='function')?pendAdv(e.id):0;
+        _visaPaidSal += Math.max(0,(sObj.base||0)+(sObj.allow||0)-(sObj.ded||0)-adv);
+      }
+    });
+    var _visaPaidTotal = _visaPaidObl + _visaPaidSal;
+    var _visaNet = (t.visa||0) - _visaPaidTotal;
+
     // قائمة الدخل المختصرة
     html += '<div class="fin-section">';
     html += '<div class="fin-sec-title">📈 قائمة الدخل المُختصرة (IFRS)</div>';
@@ -5196,6 +5209,17 @@ function openFinSummary(){
     if(t.oblPaid>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) التزامات مدفوعة</span><span class="fin-pl-amount neg">−' + n3(t.oblPaid) + '</span></div>';
     html += '<div class="fin-pl-row fin-pl-grand"><span>صافي الربح</span><span class="fin-pl-amount ' + (t.profit>=0?'pos':'neg') + '">' + n3(t.profit) + ' JD</span></div>';
     html += '<div style="font-size:10.5px;color:var(--tx4);margin-top:8px;padding:8px 10px;background:rgba(59,130,246,.06);border-radius:8px;line-height:1.6;text-align:right">💡 <b>صيغة الربح:</b> (نقد + فيزا) − COGS − رواتب مدفوعة − تشغيلية − تسويق − إدارية − متفرقات − التزامات مدفوعة. الأجور اليومية (pmts) خُصمت مسبقاً من النقد فلا تُحسب ثانية.</div>';
+    html += '</div>';
+
+    // v69: رصيد الفيزا الفعلي — يعكس أي مبلغ دُفع من الفيزا (استجابة لطلب يزن)
+    html += '<div class="fin-section" style="border-color:rgba(245,158,11,.3);background:linear-gradient(135deg,rgba(245,158,11,.05),rgba(217,119,6,.02))">';
+    html += '<div class="fin-sec-title" style="color:#b45309">💳 رصيد الفيزا الفعلي</div>';
+    html += '<div class="fin-pl-row"><span>+ مبيعات الفيزا</span><span class="fin-pl-amount pos">+' + n3(t.visa||0) + '</span></div>';
+    if(_visaPaidObl>0) html += '<div class="fin-pl-row fin-pl-sub"><span>− التزامات مدفوعة من الفيزا</span><span class="fin-pl-amount neg">−' + n3(_visaPaidObl) + '</span></div>';
+    if(_visaPaidSal>0) html += '<div class="fin-pl-row fin-pl-sub"><span>− رواتب مدفوعة من الفيزا</span><span class="fin-pl-amount neg">−' + n3(_visaPaidSal) + '</span></div>';
+    if(_visaPaidTotal===0) html += '<div class="fin-pl-row fin-pl-sub" style="color:var(--tx4)"><span>لم يُدفع أي مبلغ من الفيزا بعد</span><span></span></div>';
+    html += '<div class="fin-pl-row fin-pl-grand" style="border-top-color:#b45309"><span>رصيد الفيزا الفعلي</span><span class="fin-pl-amount ' + (_visaNet>=0?'pos':'neg') + '">' + n3(_visaNet) + ' JD</span></div>';
+    html += '<div style="font-size:10.5px;color:var(--tx4);margin-top:8px;padding:8px 10px;background:rgba(245,158,11,.06);border-radius:8px;line-height:1.6;text-align:right">💡 «مبيعات الفيزا» تبقى ثابتة كإيراد، لكن «الرصيد الفعلي» يُطرَح منه كل ما دفعته بالفيزا (كهرباء، رواتب...). أي تعديل على «من دفع = فيزا» ينعكس هنا فوراً.</div>';
     html += '</div>';
 
     // v65: تكلفة العمالة الحقيقية = شهري + يومي — كما طلب يزن
@@ -7593,6 +7617,71 @@ function renderSuppList(){const c=$("suppList");if(!c)return;if(!S.suppliers.len
 function editSupp(i){if(!_requireManager())return;const s=S.suppliers[i];if(!s)return;$("suppTit").textContent="✏️ تعديل المورد";$("suppEI").value=i;$("sName").value=s.name;$("sCat").value=s.cat;$("sNote").value=s.note||"";openMo("moSupp");}
 function saveSupp(){const n=$("sName").value.trim(),c=$("sCat").value,nt=$("sNote").value.trim();if(!n){toast("⚠️ أدخل اسم المورد");return;}const ei=$("suppEI").value;if(ei!==""){S.suppliers[parseInt(ei)]={...S.suppliers[parseInt(ei)],name:n,cat:c,note:nt};}else{S.suppliers.push({id:"s"+Date.now(),name:n,cat:c,note:nt});}buildPurchSupp();renderSuppList();renderSuppRpt();cmo("moSupp");$("suppEI").value="";$("suppTit").textContent="📦 إضافة مورد";["sName","sNote"].forEach(id=>$(id).value="");saveAll();toast("✅ تم الحفظ");}
 function delSupp(i){if(CR!=="manager"){toast("⚠️ صلاحية المدير");return;}var sp=S.suppliers[i];if(!sp)return;var _u=(G().purchases||[]).filter(function(p){return p.sId===sp.id||p.sName===sp.name;}).length;if(!confirm(`حذف المورد "${sp.name}"؟${_u>0?'\n⚠️ لديه '+_u+' فاتورة مسجّلة لن تُحذف لكنها ستفقد ارتباطها بالمورد.':''}`))return;undoSnapshot('حذف مورد: '+sp.name);log('حذف مورد — '+sp.name,{action:'delete',entity:'supplier',before:sp});S.suppliers.splice(i,1);buildPurchSupp();renderSuppList();renderSuppRpt();saveAll();toast("🗑️ تم الحذف · اضغط ↶ للتراجع");}
+/* v69: دمج الموردين المكررين — يوحّد الأسماء المتشابهة (متفرقات/متفرفات) في مورد واحد
+ * يُعيد توجيه كل الفواتير عبر كل الأشهر للمورد الموحَّد، ثم يحذف المكرر.
+ * استجابة لطلب يزن: "المتفرقات اكثر من خيار ادمجهم داخل خيار واحد فقط"
+ */
+function _normalizeName(name){
+  // توحيد للمقارنة: أزل المسافات، وحّد متفرقات/متفرفات، أزل التشكيل
+  return String(name||'').trim()
+    .replace(/\s+/g,'')
+    .replace(/متفرفات/g,'متفرقات')   // الخطأ الإملائي الشائع
+    .replace(/[ًٌٍَُِّْ]/g,'')
+    .replace(/ة/g,'ه')
+    .replace(/[أإآ]/g,'ا');
+}
+function mergeDuplicateSuppliers(){
+  if(!_requireManager()) return;
+  var sups = S.suppliers || [];
+  // جمّع الموردين حسب الاسم المُطبَّع
+  var groups = {};
+  sups.forEach(function(s){
+    var key = _normalizeName(s.name);
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(s);
+  });
+  // اعثر على المجموعات التي فيها أكثر من مورد
+  var dupGroups = Object.keys(groups).filter(function(k){ return groups[k].length > 1; });
+  if(!dupGroups.length){
+    toast('✅ لا يوجد موردون مكررون');
+    return;
+  }
+  // ابنِ ملخّصاً للتأكيد
+  var summary = dupGroups.map(function(k){
+    var names = groups[k].map(function(s){return '«'+s.name+'»';}).join(' + ');
+    return '• ' + names + ' → ' + groups[k][0].name;
+  }).join('\n');
+  if(!confirm('🔗 دمج الموردين المكررين:\n\n' + summary + '\n\nسيُعاد توجيه كل الفواتير للمورد الأول في كل مجموعة. متابعة؟')){
+    return;
+  }
+  undoSnapshot('دمج موردين مكررين');
+  var totalReassigned = 0, totalRemoved = 0;
+  dupGroups.forEach(function(k){
+    var grp = groups[k];
+    var keeper = grp[0];                 // نُبقي الأول
+    var losers = grp.slice(1);           // نحذف البقية
+    var loserIds = losers.map(function(s){return s.id;});
+    var loserNames = losers.map(function(s){return s.name;});
+    // أعد توجيه الفواتير في كل الأشهر
+    Object.keys(S.months || {}).forEach(function(mk){
+      var purch = (S.months[mk].purchases) || [];
+      purch.forEach(function(p){
+        if(loserIds.indexOf(p.sId) !== -1 || loserNames.indexOf(p.sName) !== -1){
+          p.sId = keeper.id;
+          p.sName = keeper.name;
+          totalReassigned++;
+        }
+      });
+    });
+    // احذف الموردين الزائدين من القائمة
+    S.suppliers = S.suppliers.filter(function(s){ return loserIds.indexOf(s.id) === -1; });
+    totalRemoved += losers.length;
+  });
+  buildPurchSupp(); renderSuppList(); renderSuppRpt(); renderPurch(); renderAll(); saveAll();
+  log('دمج موردين: حُذف '+totalRemoved+' مكرر، أُعيد توجيه '+totalReassigned+' فاتورة');
+  toast('✅ دُمج '+totalRemoved+' مورد مكرر · '+totalReassigned+' فاتورة أُعيد توجيهها · ↶ للتراجع');
+}
+
 function renderSuppRpt(){
   const c=$("suppRpt");if(!c)return;
   const sm={};G().purchases.forEach(p=>{if(!sm[p.sName])sm[p.sName]={t:0,n:0};sm[p.sName].t+=p.amt;sm[p.sName].n++;});
