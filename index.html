@@ -4525,7 +4525,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v70';
+const APP_VERSION='v71';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5222,19 +5222,23 @@ function openFinSummary(){
     html += '<div style="font-size:10.5px;color:var(--tx4);margin-top:8px;padding:8px 10px;background:rgba(245,158,11,.06);border-radius:8px;line-height:1.6;text-align:right">💡 «مبيعات الفيزا» تبقى ثابتة كإيراد، لكن «الرصيد الفعلي» يُطرَح منه كل ما دفعته بالفيزا (كهرباء، رواتب...). أي تعديل على «من دفع = فيزا» ينعكس هنا فوراً.</div>';
     html += '</div>';
 
-    // v65: تكلفة العمالة الحقيقية = شهري + يومي — كما طلب يزن
-    var totalLabor = (t.mSalPaid||0) + (t.pmts||0);
+    // v71: تكلفة العمالة الحقيقية = رواتب شهرية مدفوعة + أجور يومية + سلف مُسلَّمة
+    // الإصلاح: السلف (مثل سلف هاني 125) هي مال خرج فعلاً من الصندوق للعمالة
+    // وكانت ناقصة من الحساب رغم أنها تُخصم من الراتب لاحقاً
+    var totalAdvancesGiven = (d.advances||[]).reduce(function(s,a){return s+(a.amt||0);},0);
+    var totalLabor = (t.mSalPaid||0) + (t.pmts||0) + totalAdvancesGiven;
     var grossRev = (t.cash||0) + (t.visa||0) + (t.pmts||0);
     var laborRatioTrue = grossRev>0 ? (totalLabor/grossRev*100) : 0;
-    var monthlyOnlyRatio = (t.netSales>0) ? (t.mSalPaid/t.netSales*100) : 0;
     html += '<div class="fin-section" style="border-color:rgba(245,158,11,.25);background:linear-gradient(135deg,rgba(245,158,11,.04),rgba(217,119,6,.02))">';
-    html += '<div class="fin-sec-title" style="color:#b45309">👥 تكلفة العمالة الحقيقية (شهري + يومي)</div>';
+    html += '<div class="fin-sec-title" style="color:#b45309">👥 تكلفة العمالة الحقيقية (شهري + يومي + سلف)</div>';
     html += '<div class="fin-pl-row"><span>الرواتب الشهرية المدفوعة</span><span class="fin-pl-amount neg">' + n3(t.mSalPaid) + '</span></div>';
     html += '<div class="fin-pl-row"><span>الأجور اليومية المدفوعة (من النقد)</span><span class="fin-pl-amount neg">' + n3(t.pmts) + '</span></div>';
+    if(totalAdvancesGiven>0) html += '<div class="fin-pl-row"><span>السلف المُسلَّمة للموظفين</span><span class="fin-pl-amount neg">' + n3(totalAdvancesGiven) + '</span></div>';
     html += '<div class="fin-pl-row fin-pl-total"><span>إجمالي تكلفة العمالة</span><span class="fin-pl-amount neg">' + n3(totalLabor) + ' JD</span></div>';
     html += '<div class="fin-pl-row" style="margin-top:6px"><span>نسبة العمالة من الإيراد الإجمالي</span><span class="fin-pl-amount" style="color:' + (laborRatioTrue<=30?'#16a34a':laborRatioTrue<=45?'#c8920f':'#dc2626') + '">' + laborRatioTrue.toFixed(1) + '٪</span></div>';
-    html += '<div style="font-size:10.5px;color:var(--tx4);margin-top:8px;padding:8px 10px;background:rgba(245,158,11,.06);border-radius:8px;line-height:1.6;text-align:right">💡 الإيراد الإجمالي = نقد + فيزا + مدفوعات. المعيار الصحي ≤30٪. النسبة المعروضة في «المؤشرات» تستخدم الرواتب الشهرية فقط (للمقارنة المحاسبية).</div>';
+    html += '<div style="font-size:10.5px;color:var(--tx4);margin-top:8px;padding:8px 10px;background:rgba(245,158,11,.06);border-radius:8px;line-height:1.6;text-align:right">💡 السلف مال حقيقي خرج للموظفين هذا الشهر — تُحسب كتكلفة عمالة. عند دفع الراتب لاحقاً، الصافي فقط يُضاف (السلف لا تُحسب مرتين). الإيراد الإجمالي = نقد+فيزا+pmts.</div>';
     html += '</div>';
+
 
     // v66: تقرير المسؤوليات — صافي يزن + صافي عبدالرحمن + رصيد الفيزا = الربح النهائي الموحّد
     try {
@@ -6661,10 +6665,11 @@ function totals(){
   const salaryRatio=netSales>0?mSalPaid/netSales*100:0;
   const oblPaidRatio=netSales>0?oblPaid/netSales*100:0;
   const expRatio=netSales>0?totalExp/netSales*100:0;
-  // v70 [إصلاح محاسبي]: تكلفة العمالة الحقيقية = رواتب شهرية + أجور يومية (pmts)
-  // المدفوعات اليومية للموظفات هي تكلفة عمالة فعلية مثل الرواتب — يجب أن تدخل النسبة.
-  // المقام = الإيراد الإجمالي (rev = نقد+فيزا+pmts) لأن pmts مخصومة مسبقاً من النقد.
-  const laborTotal=mSalPaid+pmts;
+  // v71 [إصلاح محاسبي ثانٍ]: تكلفة العمالة = رواتب شهرية مدفوعة + أجور يومية + سلف مُسلَّمة
+  // السلف مال خرج فعلاً من الصندوق للموظفين هذا الشهر — يجب أن تُحسب كتكلفة عمالة.
+  // عند دفع الراتب لاحقاً، الصافي فقط يُضاف (السلف لا تُحسب مرتين لأن الراتب يخصمها).
+  const totalAdvancesGiven=(d.advances||[]).reduce(function(s,a){return s+(a.amt||0);},0);
+  const laborTotal=mSalPaid+pmts+totalAdvancesGiven;
   const laborRatio=rev>0?laborTotal/rev*100:0;
 
   return{
@@ -6674,7 +6679,7 @@ function totals(){
     grossP,totalExp,profit,margin,advP,
     avgDaily,daysActive,
     cogsRatio,salaryRatio,oblPaidRatio,expRatio,
-    laborTotal,laborRatio,
+    laborTotal,laborRatio,totalAdvancesGiven,
     obls:d.obligations
   };
 }
