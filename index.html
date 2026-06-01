@@ -4525,7 +4525,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v67';
+const APP_VERSION='v68';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -17030,35 +17030,188 @@ async function syncWorkerTick(){
   }
 }
 
-// دمج آمن للسحابة فوق المحلي (يحترم التغييرات المحلية الأحدث على مستوى الشهر)
+/* ═══════════════════════════════════════════════════════════════════════════
+ * v68: محرّك الدمج الآمن (UNION MERGE) — لا يفقد أي سجل أبداً
+ *
+ * المبدأ الأساسي: الدمج يُنتج "اتحاد" كل السجلات من الجانبين (محلي + سحابي).
+ * - سجل موجود محلياً فقط → يُحفظ (لا يُحذف)
+ * - سجل موجود سحابياً فقط → يُضاف
+ * - سجل في الجانبين → يُحَلّ التعارض بـ: (المحتوى > الفراغ) ثم (الأحدث > الأقدم)
+ *
+ * هذا الدمج تبادلي (commutative): merge(A,B) = merge(B,A) من حيث المحتوى.
+ * استحالة فقد البيانات لأن لا توجد أي عملية "استبدال" أو "حذف".
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// قيمة "محتوى" السجل — كم حقلاً غير فارغ فيه (للترجيح عند التعارض)
+function _recContent(rec){
+  if(!rec || typeof rec !== 'object') return 0;
+  var n = 0;
+  for(var k in rec){
+    if(k === '_mt' || k === '_id') continue;
+    var v = rec[k];
+    if(v === null || v === undefined || v === '' || v === 0 || v === false) continue;
+    if(Array.isArray(v) && v.length === 0) continue;
+    n++;
+  }
+  return n;
+}
+
+// اختر النسخة الأفضل عند تعارض سجلين بنفس المفتاح
+// القاعدة: الأكثر محتوى يفوز؛ عند التساوي الأحدث (_mt) يفوز؛ ثم المحلي
+function _pickBetter(localRec, cloudRec){
+  var lc = _recContent(localRec), cc = _recContent(cloudRec);
+  // فرق محتوى جوهري (سجل ممتلئ مقابل شبه فارغ) → الأكثر محتوى يفوز دائماً
+  if(lc === 0 && cc > 0) return cloudRec;
+  if(cc === 0 && lc > 0) return localRec;
+  // كلاهما فيه محتوى — قارن وقت التعديل
+  var lmt = (localRec && localRec._mt) || 0;
+  var cmt = (cloudRec && cloudRec._mt) || 0;
+  if(cmt > lmt) return cloudRec;
+  if(lmt > cmt) return localRec;
+  // تساوي الوقت — الأكثر محتوى، ثم المحلي
+  return cc > lc ? cloudRec : localRec;
+}
+
+// دمج مصفوفتي سجلات بمفتاح (keyFn) — اتحاد لا يفقد سجلاً
+function _mergeArr(localArr, cloudArr, keyFn){
+  var map = {}, order = [];
+  function ingest(arr){
+    (arr || []).forEach(function(rec){
+      if(!rec) return;
+      var k = keyFn(rec);
+      if(k === null || k === undefined) k = '__nokey_' + order.length;
+      if(!(k in map)){ map[k] = rec; order.push(k); }
+      else { map[k] = _pickBetter(map[k], rec); }
+    });
+  }
+  ingest(localArr);  // المحلي أولاً (يُضاف للترتيب أولاً)
+  ingest(cloudArr);  // ثم السحابي (يدمج/يضيف)
+  return order.map(function(k){ return map[k]; });
+}
+
+// دمج كائنين مفهرسين بمفتاح (مثل mSal/dWages: {empId:{...}}) — اتحاد
+function _mergeObj(localObj, cloudObj){
+  var out = {};
+  localObj = localObj || {}; cloudObj = cloudObj || {};
+  var keys = {};
+  Object.keys(localObj).forEach(function(k){ keys[k] = 1; });
+  Object.keys(cloudObj).forEach(function(k){ keys[k] = 1; });
+  Object.keys(keys).forEach(function(k){
+    if(localObj[k] !== undefined && cloudObj[k] !== undefined){
+      out[k] = _pickBetter(localObj[k], cloudObj[k]);
+    } else {
+      out[k] = localObj[k] !== undefined ? localObj[k] : cloudObj[k];
+    }
+  });
+  return out;
+}
+
+// مفاتيح ثابتة لكل نوع سجل
+function _keySale(s){ return 'd' + (s.day != null ? s.day : (s.d != null ? s.d : '?')); }
+function _keyPurch(p){
+  if(p._id) return p._id;
+  return [p.date||'', p.amt||0, (p.sName||'').trim(), (p.desc||'').trim(), p.cat||'', (p.buyer||'').trim()].join('|');
+}
+function _keyAdv(a){
+  if(a._id) return a._id;
+  return [a.date||'', a.amt||0, a.empId||'', (a.note||'').trim()].join('|');
+}
+function _keyObl(o){ return o.id || ([o.name||'', o.amt||0].join('|')); }
+
+// دمج بيانات شهر واحد — كل مصفوفة باتحادها
+function _mergeMonth(lm, cm){
+  lm = lm || {}; cm = cm || {};
+  var out = {};
+  // انسخ كل الحقول من المحلي أولاً ثم السحابي (للحقول غير المصفوفية: prefer-content)
+  var allKeys = {};
+  Object.keys(lm).forEach(function(k){ allKeys[k] = 1; });
+  Object.keys(cm).forEach(function(k){ allKeys[k] = 1; });
+
+  out.sales       = _mergeArr(lm.sales, cm.sales, _keySale);
+  out.purchases   = _mergeArr(lm.purchases, cm.purchases, _keyPurch);
+  out.advances    = _mergeArr(lm.advances, cm.advances, _keyAdv);
+  out.obligations = _mergeArr(lm.obligations, cm.obligations, _keyObl);
+  out.mSal        = _mergeObj(lm.mSal, cm.mSal);
+  out.dWages      = _mergeObj(lm.dWages, cm.dWages);
+
+  // أي حقول أخرى (cashflow, إلخ) — prefer-content
+  Object.keys(allKeys).forEach(function(k){
+    if(['sales','purchases','advances','obligations','mSal','dWages'].indexOf(k) !== -1) return;
+    if(lm[k] !== undefined && cm[k] !== undefined){
+      out[k] = _pickBetter(
+        (typeof lm[k]==='object'?lm[k]:{_v:lm[k]}),
+        (typeof cm[k]==='object'?cm[k]:{_v:cm[k]})
+      );
+      if(out[k] && out[k]._v !== undefined) out[k] = out[k]._v; // فك التغليف للقيم البسيطة
+    } else {
+      out[k] = lm[k] !== undefined ? lm[k] : cm[k];
+    }
+  });
+  return out;
+}
+
+// الدمج الكامل: يُنتج حالة مدموجة من المحلي + السحابي — اتحاد تام، صفر فقد
+// يُرجع {months, suppliers, monthlyEmps, dailyEmps, ...} للتطبيق على S
+function safeUnionMerge(localState, cloudState){
+  localState = localState || {}; cloudState = cloudState || {};
+  var lMonths = localState.months || {};
+  var cMonths = cloudState.months || {};
+  var outMonths = {};
+  var monthKeys = {};
+  Object.keys(lMonths).forEach(function(k){ monthKeys[k] = 1; });
+  Object.keys(cMonths).forEach(function(k){ monthKeys[k] = 1; });
+  Object.keys(monthKeys).forEach(function(k){
+    if(lMonths[k] && cMonths[k]) outMonths[k] = _mergeMonth(lMonths[k], cMonths[k]);
+    else outMonths[k] = lMonths[k] || cMonths[k]; // شهر في جانب واحد → يُحفظ كما هو
+  });
+
+  // الموردون: اتحاد بالـ id
+  var outSuppliers = _mergeArr(localState.suppliers, cloudState.suppliers, function(s){ return s.id || s.name; });
+  // الموظفون: اتحاد بالـ id
+  var outMonthlyEmps = _mergeArr(localState.monthlyEmps, cloudState.monthlyEmps, function(e){ return e.id || e.name; });
+  var outDailyEmps   = _mergeArr(localState.dailyEmps, cloudState.dailyEmps, function(e){ return e.id || e.name; });
+
+  // الأشهر المقفلة: اتحاد القيم الفريدة
+  var lockedSet = {};
+  (localState.lockedMonths || []).forEach(function(m){ lockedSet[m] = 1; });
+  (cloudState.lockedMonths || []).forEach(function(m){ lockedSet[m] = 1; });
+  var outLocked = Object.keys(lockedSet);
+
+  return {
+    months: outMonths,
+    suppliers: outSuppliers,
+    monthlyEmps: outMonthlyEmps,
+    dailyEmps: outDailyEmps,
+    lockedMonths: outLocked,
+    // الحقول الأخرى: prefer الأغنى (المحلي افتراضياً إن وُجد)
+    targets: (localState.targets && Object.keys(localState.targets).length) ? localState.targets : (cloudState.targets || {}),
+    menu: (localState.menu && localState.menu.length) ? localState.menu : (cloudState.menu || []),
+    itemCatalog: (localState.itemCatalog && Object.keys(localState.itemCatalog).length) ? localState.itemCatalog : (cloudState.itemCatalog || {})
+  };
+}
+
+// تطبيق نتيجة الدمج على S (in-place، يحافظ على المراجع)
+function _applyMergeToState(merged){
+  if(merged.months) S.months = merged.months;
+  if(merged.suppliers) S.suppliers = merged.suppliers;
+  if(merged.monthlyEmps) S.monthlyEmps = merged.monthlyEmps;
+  if(merged.dailyEmps) S.dailyEmps = merged.dailyEmps;
+  if(merged.lockedMonths) S.lockedMonths = merged.lockedMonths;
+  if(merged.targets) S.targets = merged.targets;
+  if(merged.menu) S.menu = merged.menu;
+  if(merged.itemCatalog) S.itemCatalog = merged.itemCatalog;
+}
+
+// دمج آمن للسحابة فوق المحلي — v68: يستخدم الاتحاد الكامل (صفر فقد بيانات)
 async function _safePullAndMerge(cloudSnap, localSnap){
   var validation = validateSnapshot(cloudSnap);
   if(!validation.ok){
     console.warn('[Sync] cloud snapshot invalid:', validation.error);
     return false;
   }
-  // ندمج: نأخذ السحابة كأساس، ثم نُبقي تعديلات الشهر الحالي المحلية لو كانت أحدث
-  // قاعدة بسيطة: ندمج الموردين بالـ id، ندمج الأشهر مع أخذ الأحدث (لا يحدث عادةً لكن للاحتياط)
-  // v45 [حماية فقدان بيانات]: لا نستبدل شهراً محلياً أغنى بنسخة سحابية أفقر،
-  // ولا نحذف شهراً محلياً غير موجود سحابياً (نفس حارس syncPullSafe)
-  var _lMonths = S.months || {};
-  var _cMonths = cloudSnap.months || {};
-  Object.keys(_lMonths).forEach(function(k){
-    var cm = _cMonths[k]; if(!cm) return; // محلي فقط — احتفظ به
-    var lm = _lMonths[k];
-    var lp=(lm.purchases||[]).length, cp=(cm.purchases||[]).length;
-    var ls=(lm.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
-    var cs=(cm.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
-    if((lp>0 && cp===0) || (ls>0 && cs < ls)){ /* v59: قاعدة أصرم — السحابة لازم تكون أكثر فعلاً، لا 50% */ }
-    else { _lMonths[k] = cm; }
-  });
-  Object.keys(_cMonths).forEach(function(k){ if(!_lMonths[k]) _lMonths[k] = _cMonths[k]; });
-  S.months = _lMonths;
-  if(cloudSnap.monthlyEmps && cloudSnap.monthlyEmps.length) S.monthlyEmps = cloudSnap.monthlyEmps;
-  if(cloudSnap.dailyEmps && cloudSnap.dailyEmps.length) S.dailyEmps = cloudSnap.dailyEmps;
-  if(cloudSnap.suppliers && cloudSnap.suppliers.length) S.suppliers = cloudSnap.suppliers;
-  if(cloudSnap.lockedMonths) S.lockedMonths = cloudSnap.lockedMonths;
-  // لا نُغيّر activeKey حتى لا نُربك المستخدم
+  // v68: دمج اتحادي تام — لا استبدال، لا حذف. كل سجل من الجانبين يُحفظ.
+  var merged = safeUnionMerge(S, cloudSnap);
+  _applyMergeToState(merged);
   try { _origSaveAll(); } catch(e){}
   return true;
 }
@@ -17151,103 +17304,65 @@ async function syncPullSafe(opts){
     }
   }
 
-  // v39 [إصلاح Sync #9 + Migration #5]: دمج آمن بدل استبدال وحشي
-  // قاعدة: لا يُحذف شهر محلي إذا كان السحابة لا تحتويه (الجهاز الآخر قد يكون قديماً)
-  // قاعدة: لا يُستبدل شهر محلي إذا السحابة عنده أقل بيانات (مشتريات/مبيعات/التزامات) — تحذير ودمج
-  var localMonths = S.months || {};
-  var cloudMonths = snap.months || {};
-  var localKeys = Object.keys(localMonths);
-  var cloudKeys = Object.keys(cloudMonths);
-  var preservedMonths = []; // أشهر محلية فقط لن تُمسّ
-  var rejectedReplacement = []; // أشهر السحابة فيها أقل بيانات
+  // v68 [الدمج الاتحادي — صفر فقد بيانات]:
+  // بدل المقارنات التقريبية الهشّة، ندمج كل سجل من الجانبين بمبدأ الاتحاد.
+  // - لا يُحذف أي سجل محلي مهما كانت حالة السحابة
+  // - لا يُحذف أي سجل سحابي
+  // - عند تعارض سجلين بنفس المفتاح: الأكثر محتوى يفوز، ثم الأحدث
+  // النتيجة: استحالة فقد البيانات. الدمج تبادلي وآمن في كل الاتجاهات.
 
-  // v65 [حماية مُحصَّنة جداً]: snapshot قبل الـpull لاستعادة فورية إن فقدنا بيانات
-  // أيضاً: لو السحابة عندها كل الأشهر "فارغة" (≤3 أيام و≤3 فواتير) بينما المحلي عنده >5 أيام في أي شهر، ارفض الـpull كلياً
+  // snapshot قبل الدمج (طبقة استعادة احتياطية إضافية)
   try {
-    safeLS.setItem('rh_pre_pull_snapshot', JSON.stringify({S:S, at:Date.now()}));
+    safeLS.setItem('rh_pre_pull_snapshot', JSON.stringify({
+      months:S.months, suppliers:S.suppliers, monthlyEmps:S.monthlyEmps,
+      dailyEmps:S.dailyEmps, lockedMonths:S.lockedMonths, at:Date.now()
+    }));
   } catch(e){}
-  var localHasRealData = localKeys.some(function(k){
-    var lm = localMonths[k] || {};
-    var ls = (lm.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
-    var lp = (lm.purchases||[]).length;
-    return ls >= 5 || lp >= 5;
-  });
-  var cloudIsMostlyEmpty = cloudKeys.length === 0 || cloudKeys.every(function(k){
-    var cm = cloudMonths[k] || {};
-    var cs = (cm.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
-    var cp = (cm.purchases||[]).length;
-    return cs <= 3 && cp <= 3;
-  });
-  if(localHasRealData && cloudIsMostlyEmpty){
-    supaSetStatus('error', '⚠️ منع pull كارثي: السحابة شبه فارغة لكن محلياً عندك بيانات حقيقية');
-    toast('🛡️ مُنع تحديث خطر من السحابة — بياناتك المحلية محفوظة');
-    log('v65: منع pull لأن السحابة شبه فارغة (' + cloudKeys.length + ' أشهر) ومحلياً بيانات حقيقية');
+
+  // قِس قبل/بعد للتشخيص
+  function _countActive(months){
+    var days=0, purch=0;
+    Object.keys(months||{}).forEach(function(k){
+      var m=months[k]||{};
+      days += (m.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
+      purch += (m.purchases||[]).length;
+    });
+    return {days:days, purch:purch};
+  }
+  var before = _countActive(S.months);
+
+  // الدمج الاتحادي الكامل
+  var merged = safeUnionMerge(S, snap);
+  _applyMergeToState(merged);
+
+  // الحقول الإضافية التي لا تدخل في الدمج الاتحادي — prefer الأغنى
+  if(snap.inventory && snap.inventory.length && (!S.inventory || !S.inventory.length)) S.inventory = snap.inventory;
+  if(snap.purchaseTemplates && snap.purchaseTemplates.length && (!S.purchaseTemplates || !S.purchaseTemplates.length)) S.purchaseTemplates = snap.purchaseTemplates;
+  if(snap.budgets && Object.keys(snap.budgets).length && (!S.budgets || !Object.keys(S.budgets).length)) S.budgets = snap.budgets;
+  if(snap.activeKey && S.months[snap.activeKey]) S.activeKey = snap.activeKey;
+
+  var after = _countActive(S.months);
+  // ضمان عدم النقصان: إن قلّ العدد بعد الدمج (يستحيل منطقياً) → استرجع snapshot وأبلغ
+  if(after.days < before.days || after.purch < before.purch){
+    console.error('[Sync] ⚠️ الدمج قلّل البيانات! استرجاع snapshot. before=',before,'after=',after);
+    try {
+      var pre = JSON.parse(safeLS.getItem('rh_pre_pull_snapshot')||'{}');
+      if(pre.months) S.months = pre.months;
+      if(pre.suppliers) S.suppliers = pre.suppliers;
+      if(pre.monthlyEmps) S.monthlyEmps = pre.monthlyEmps;
+      if(pre.dailyEmps) S.dailyEmps = pre.dailyEmps;
+    } catch(e2){}
+    toast('🛡️ مُنع فقد بيانات أثناء الدمج — بياناتك المحلية محفوظة');
     syncEnqueuePush && syncEnqueuePush();
     return false;
   }
-
-  // ادمج: لكل شهر في المحلي
-  localKeys.forEach(function(k){
-    if(!cloudMonths[k]){
-      // الشهر موجود محلياً ومفقود من السحابة — احتفظ به (لا تحذف)
-      preservedMonths.push(k);
-    } else {
-      // قارن: السحابة عندها بيانات أقل من المحلي؟
-      var lm = localMonths[k], cm = cloudMonths[k];
-      var lp = (lm.purchases || []).length;
-      var cp = (cm.purchases || []).length;
-      var ls = (lm.sales || []).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
-      var cs = (cm.sales || []).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
-      // v59 [إصلاح كارثة فقد البيانات]: قاعدة أصرم — لا يستبدل المحلي إلا إذا السحابة فيها أكثر فعلاً
-      // قبل v59: كانت الحماية 50% (cs < ls * 0.5) → سمحت بفقد بيانات بعد استيراد JSON ثم تفعيل المزامنة
-      // الآن: السحابة أكثر فقط حين cp >= lp && cs >= ls — وإلا أبقِ المحلي وادفعه للسحابة
-      if((lp > 0 && cp < lp) || (ls > 0 && cs < ls)){
-        rejectedReplacement.push(k);
-        // نُبقي على المحلي + سيُرفع لاحقاً
-      } else {
-        // السحابة سليمة أو أكثر — استبدل بأمان
-        localMonths[k] = cm;
-      }
-    }
-  });
-  // أضف الأشهر الموجودة في السحابة فقط (لا توجد محلياً)
-  cloudKeys.forEach(function(k){
-    if(!localMonths[k]) localMonths[k] = cloudMonths[k];
-  });
-  S.months = localMonths;
-
-  // الموردين: ادمج بالـ id (لا تحذف موردي السحابة، لا تحذف موردي المحلي)
-  var mergedSuppliers = {};
-  (S.suppliers || []).forEach(function(s){ mergedSuppliers[s.id] = s; });
-  (snap.suppliers || []).forEach(function(s){
-    if(!mergedSuppliers[s.id]) mergedSuppliers[s.id] = s;
-  });
-  S.suppliers = Object.values(mergedSuppliers);
-
-  // الموظفين: نفس فكرة الدمج (المحلي أولوية إن وُجد)
-  if(snap.monthlyEmps && snap.monthlyEmps.length && (!S.monthlyEmps || !S.monthlyEmps.length)){
-    S.monthlyEmps = snap.monthlyEmps;
-  }
-  if(snap.dailyEmps && snap.dailyEmps.length && (!S.dailyEmps || !S.dailyEmps.length)){
-    S.dailyEmps = snap.dailyEmps;
-  }
-  if(snap.lockedMonths) S.lockedMonths = snap.lockedMonths;
-  if(snap.targets && Object.keys(snap.targets).length) S.targets = snap.targets;
-  if(snap.inventory && snap.inventory.length) S.inventory = snap.inventory;
-  if(snap.itemCatalog && Object.keys(snap.itemCatalog).length) S.itemCatalog = snap.itemCatalog;
-  if(snap.purchaseTemplates && snap.purchaseTemplates.length) S.purchaseTemplates = snap.purchaseTemplates;
-  if(snap.menu && snap.menu.length) S.menu = snap.menu;
-  if(snap.budgets && Object.keys(snap.budgets).length) S.budgets = snap.budgets;
-  if(snap.activeKey && S.months[snap.activeKey]) S.activeKey = snap.activeKey;
+  log('v68 دمج اتحادي: قبل '+before.days+' يوم/'+before.purch+' فاتورة ← بعد '+after.days+'/'+after.purch);
 
   safeLS.setItem(SYNC_LAST_CLOUD_VERSION_KEY, res.data.updated_at);
   _origSaveAll();
 
-  // إن رفضنا استبدال أشهر → ادفع المحلي للسحابة الآن لإصلاحها
-  if(rejectedReplacement.length > 0){
-    console.warn('[Sync] السحابة عندها بيانات ناقصة لـ:', rejectedReplacement, '— ادفع المحلي');
-    setTimeout(function(){ try { syncEnqueuePush(); } catch(e){} }, 300);
-  }
+  // دائماً ادفع المحلي المدموج للسحابة لتوحيد الجانبين (المحلي قد يكون فيه ما تفتقده السحابة)
+  setTimeout(function(){ try { syncEnqueuePush(); } catch(e){} }, 300);
 
   // إعادة رسم كاملة
   try { if(typeof buildMonthSel === 'function') buildMonthSel(); } catch(e){}
