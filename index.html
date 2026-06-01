@@ -4497,7 +4497,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v64';
+const APP_VERSION='v65';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5160,13 +5160,28 @@ function openFinSummary(){
     html += '<div class="fin-pl-row fin-pl-total"><span>صافي الإيرادات</span><span class="fin-pl-amount pos">' + n3(t.netSales) + '</span></div>';
     html += '<div class="fin-pl-row"><span>(−) تكلفة البضاعة COGS</span><span class="fin-pl-amount neg">−' + n3(t.bycat.COGS) + '</span></div>';
     html += '<div class="fin-pl-row fin-pl-total"><span>مجمل الربح</span><span class="fin-pl-amount ' + (t.grossP>=0?'pos':'neg') + '">' + n3(t.grossP) + '</span></div>';
-    if(t.mSalPaid>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) رواتب شهرية</span><span class="fin-pl-amount neg">−' + n3(t.mSalPaid) + '</span></div>';
+    if(t.mSalPaid>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) رواتب شهرية مدفوعة</span><span class="fin-pl-amount neg">−' + n3(t.mSalPaid) + '</span></div>';
     if(t.bycat.OPS>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) مصاريف تشغيلية</span><span class="fin-pl-amount neg">−' + n3(t.bycat.OPS) + '</span></div>';
     if(t.bycat.MKT>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) تسويق</span><span class="fin-pl-amount neg">−' + n3(t.bycat.MKT) + '</span></div>';
     if(t.bycat.ADM>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) إدارية</span><span class="fin-pl-amount neg">−' + n3(t.bycat.ADM) + '</span></div>';
     if(t.bycat.OTHER>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) متفرقات</span><span class="fin-pl-amount neg">−' + n3(t.bycat.OTHER) + '</span></div>';
     if(t.oblPaid>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) التزامات مدفوعة</span><span class="fin-pl-amount neg">−' + n3(t.oblPaid) + '</span></div>';
     html += '<div class="fin-pl-row fin-pl-grand"><span>صافي الربح</span><span class="fin-pl-amount ' + (t.profit>=0?'pos':'neg') + '">' + n3(t.profit) + ' JD</span></div>';
+    html += '<div style="font-size:10.5px;color:var(--tx4);margin-top:8px;padding:8px 10px;background:rgba(59,130,246,.06);border-radius:8px;line-height:1.6;text-align:right">💡 <b>صيغة الربح:</b> (نقد + فيزا) − COGS − رواتب مدفوعة − تشغيلية − تسويق − إدارية − متفرقات − التزامات مدفوعة. الأجور اليومية (pmts) خُصمت مسبقاً من النقد فلا تُحسب ثانية.</div>';
+    html += '</div>';
+
+    // v65: تكلفة العمالة الحقيقية = شهري + يومي — كما طلب يزن
+    var totalLabor = (t.mSalPaid||0) + (t.pmts||0);
+    var grossRev = (t.cash||0) + (t.visa||0) + (t.pmts||0);
+    var laborRatioTrue = grossRev>0 ? (totalLabor/grossRev*100) : 0;
+    var monthlyOnlyRatio = (t.netSales>0) ? (t.mSalPaid/t.netSales*100) : 0;
+    html += '<div class="fin-section" style="border-color:rgba(245,158,11,.25);background:linear-gradient(135deg,rgba(245,158,11,.04),rgba(217,119,6,.02))">';
+    html += '<div class="fin-sec-title" style="color:#b45309">👥 تكلفة العمالة الحقيقية (شهري + يومي)</div>';
+    html += '<div class="fin-pl-row"><span>الرواتب الشهرية المدفوعة</span><span class="fin-pl-amount neg">' + n3(t.mSalPaid) + '</span></div>';
+    html += '<div class="fin-pl-row"><span>الأجور اليومية المدفوعة (من النقد)</span><span class="fin-pl-amount neg">' + n3(t.pmts) + '</span></div>';
+    html += '<div class="fin-pl-row fin-pl-total"><span>إجمالي تكلفة العمالة</span><span class="fin-pl-amount neg">' + n3(totalLabor) + ' JD</span></div>';
+    html += '<div class="fin-pl-row" style="margin-top:6px"><span>نسبة العمالة من الإيراد الإجمالي</span><span class="fin-pl-amount" style="color:' + (laborRatioTrue<=30?'#16a34a':laborRatioTrue<=45?'#c8920f':'#dc2626') + '">' + laborRatioTrue.toFixed(1) + '٪</span></div>';
+    html += '<div style="font-size:10.5px;color:var(--tx4);margin-top:8px;padding:8px 10px;background:rgba(245,158,11,.06);border-radius:8px;line-height:1.6;text-align:right">💡 الإيراد الإجمالي = نقد + فيزا + مدفوعات. المعيار الصحي ≤30٪. النسبة المعروضة في «المؤشرات» تستخدم الرواتب الشهرية فقط (للمقارنة المحاسبية).</div>';
     html += '</div>';
 
     // v64: الربح على الأساس الاستحقاقي — بعد افتراض دفع كل المستحقات
@@ -7802,6 +7817,7 @@ function askPaidBy(title, callback){
       '<div style="display:flex;flex-direction:column;gap:8px">' +
         '<button class="askpb-btn" data-payer="يزن" style="padding:13px;border-radius:10px;border:1.5px solid var(--br);background:var(--surf2);color:var(--tx);font-weight:700;cursor:pointer;font-size:14px;font-family:inherit">👤 يزن</button>' +
         '<button class="askpb-btn" data-payer="عبدالرحمن" style="padding:13px;border-radius:10px;border:1.5px solid var(--br);background:var(--surf2);color:var(--tx);font-weight:700;cursor:pointer;font-size:14px;font-family:inherit">👤 عبدالرحمن</button>' +
+        '<button class="askpb-btn" data-payer="فيزا" style="padding:13px;border-radius:10px;border:1.5px solid var(--br);background:var(--surf2);color:var(--tx);font-weight:700;cursor:pointer;font-size:14px;font-family:inherit">💳 فيزا (شركة)</button>' +
         '<div style="display:flex;gap:6px;margin-top:4px">' +
           '<input type="text" id="askpbCustom" placeholder="اسم آخر..." class="inp" style="flex:1;height:38px;font-size:13px">' +
           '<button id="askpbCustomBtn" class="btn btn-p" style="height:38px;padding:0 14px">إضافة</button>' +
@@ -16974,6 +16990,31 @@ async function syncPullSafe(opts){
   var cloudKeys = Object.keys(cloudMonths);
   var preservedMonths = []; // أشهر محلية فقط لن تُمسّ
   var rejectedReplacement = []; // أشهر السحابة فيها أقل بيانات
+
+  // v65 [حماية مُحصَّنة جداً]: snapshot قبل الـpull لاستعادة فورية إن فقدنا بيانات
+  // أيضاً: لو السحابة عندها كل الأشهر "فارغة" (≤3 أيام و≤3 فواتير) بينما المحلي عنده >5 أيام في أي شهر، ارفض الـpull كلياً
+  try {
+    safeLS.setItem('rh_pre_pull_snapshot', JSON.stringify({S:S, at:Date.now()}));
+  } catch(e){}
+  var localHasRealData = localKeys.some(function(k){
+    var lm = localMonths[k] || {};
+    var ls = (lm.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
+    var lp = (lm.purchases||[]).length;
+    return ls >= 5 || lp >= 5;
+  });
+  var cloudIsMostlyEmpty = cloudKeys.length === 0 || cloudKeys.every(function(k){
+    var cm = cloudMonths[k] || {};
+    var cs = (cm.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;}).length;
+    var cp = (cm.purchases||[]).length;
+    return cs <= 3 && cp <= 3;
+  });
+  if(localHasRealData && cloudIsMostlyEmpty){
+    supaSetStatus('error', '⚠️ منع pull كارثي: السحابة شبه فارغة لكن محلياً عندك بيانات حقيقية');
+    toast('🛡️ مُنع تحديث خطر من السحابة — بياناتك المحلية محفوظة');
+    log('v65: منع pull لأن السحابة شبه فارغة (' + cloudKeys.length + ' أشهر) ومحلياً بيانات حقيقية');
+    syncEnqueuePush && syncEnqueuePush();
+    return false;
+  }
 
   // ادمج: لكل شهر في المحلي
   localKeys.forEach(function(k){
