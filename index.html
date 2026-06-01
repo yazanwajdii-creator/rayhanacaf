@@ -3804,6 +3804,10 @@ create policy "allow_all" on rh_store
   </div>
   <div id="finBody"></div>
   <div class="fin-foot">
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="btn btn-g" style="flex:1;font-size:13px;padding:11px;font-weight:700" onclick="shareFinSummaryImage()">📤 مشاركة (صورة منسّقة)</button>
+      <button class="btn btn-ghost" style="flex:1;font-size:13px;padding:11px;font-weight:700" onclick="shareFinSummaryHTML()">📋 نسخ كنص</button>
+    </div>
     <button class="btn btn-p" style="width:100%;font-size:14px;padding:13px;font-weight:700" onclick="exportExcel();cmo('moFinSum')">📗 تصدير التقرير الكامل (Excel — 13 ورقة IFRS)</button>
   </div>
 </div></div>
@@ -4493,7 +4497,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v63';
+const APP_VERSION='v64';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5165,6 +5169,23 @@ function openFinSummary(){
     html += '<div class="fin-pl-row fin-pl-grand"><span>صافي الربح</span><span class="fin-pl-amount ' + (t.profit>=0?'pos':'neg') + '">' + n3(t.profit) + ' JD</span></div>';
     html += '</div>';
 
+    // v64: الربح على الأساس الاستحقاقي — بعد افتراض دفع كل المستحقات
+    var unpaidOblForAccrual = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;}).reduce(function(s,o){return s+(o.amt||0);},0);
+    var accrualProfit = t.profit - unpaidOblForAccrual - (t.mSalAccrued||0);
+    html += '<div class="fin-section" style="border-color:rgba(123,77,191,.25);background:linear-gradient(135deg,rgba(123,77,191,.04),rgba(91,47,166,.02))">';
+    html += '<div class="fin-sec-title" style="color:#5B2FA6">⚖️ الربح على الأساس الاستحقاقي (Accrual)</div>';
+    html += '<div class="fin-pl-row fin-pl-sub" style="font-size:11px;color:var(--tx4);line-height:1.5;border-bottom:1px solid var(--br);padding-bottom:8px;margin-bottom:8px;display:block;text-align:right">الربح النقدي الحالي يفترض دفع التزاماتك بالكامل. التزاماتك غير المدفوعة + الرواتب المستحقة ستُخصَم من الربح عند دفعها.</div>';
+    html += '<div class="fin-pl-row"><span>صافي الربح النقدي (الحالي)</span><span class="fin-pl-amount ' + (t.profit>=0?'pos':'neg') + '">' + n3(t.profit) + '</span></div>';
+    if(unpaidOblForAccrual>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) التزامات لم تُدفع بعد</span><span class="fin-pl-amount neg">−' + n3(unpaidOblForAccrual) + '</span></div>';
+    if((t.mSalAccrued||0)>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) رواتب مستحقة لم تُدفع</span><span class="fin-pl-amount neg">−' + n3(t.mSalAccrued) + '</span></div>';
+    html += '<div class="fin-pl-row fin-pl-grand" style="border-top-color:#5B2FA6"><span>الربح بعد سداد كل المستحقات</span><span class="fin-pl-amount ' + (accrualProfit>=0?'pos':'neg') + '">' + n3(accrualProfit) + ' JD</span></div>';
+    var advOutAcc = (d.advances||[]).filter(function(a){return a.status==='مستحقة'||a.status==='مسددة جزئياً';}).reduce(function(s,a){return s+(a.amt||0);},0);
+    if(advOutAcc>0){
+      html += '<div class="fin-pl-row fin-pl-sub" style="margin-top:6px;border-top:1px dashed var(--br);padding-top:8px"><span>(+) سلف معلّقة قابلة للاسترداد</span><span class="fin-pl-amount pos">+' + n3(advOutAcc) + '</span></div>';
+      html += '<div class="fin-pl-row fin-pl-total" style="font-size:12.5px"><span>الربح المتوقَّع بعد استرداد السلف</span><span class="fin-pl-amount ' + ((accrualProfit+advOutAcc)>=0?'pos':'neg') + '">' + n3(accrualProfit+advOutAcc) + ' JD</span></div>';
+    }
+    html += '</div>';
+
     // الكاش حسب المُستلِم
     var byRecv = {};
     (d.sales||[]).forEach(function(s){
@@ -5241,6 +5262,259 @@ function openFinSummary(){
     console.error('openFinSummary:', e);
     toast('⚠️ تعذّر عرض الملخّص: ' + e.message);
   }
+}
+
+// v64: تصدير الملخّص المالي كصورة PNG مُنسَّقة (لا لقطة شاشة)
+function shareFinSummaryImage(){
+  try {
+    var t = totals(); var d = G();
+    var ym = S.activeKey.split('-'); var mn = MN[parseInt(ym[1])-1];
+    var prev = (typeof _prevTotals === 'function') ? _prevTotals() : null;
+
+    var W = 800, PADDING = 24;
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = 100; // مبدئي، نعدّله بعد القياس
+    var ctx = canvas.getContext('2d');
+
+    // مرحلة 1: قِس الارتفاع المطلوب
+    var blocks = [];
+    function pushBlock(type, data, height){ blocks.push({type:type, data:data, h:height}); }
+
+    pushBlock('title', mn+' '+ym[0]+' · صادر '+new Date().toLocaleDateString('ar-JO'), 88);
+    pushBlock('hero', {profit:t.profit, margin:t.margin, days:t.daysActive||0}, 220);
+    pushBlock('kpi6', t, 130);
+
+    // قائمة الدخل
+    var pl = [];
+    pl.push(['نقد', t.cash, 'pos']);
+    pl.push(['فيزا', t.visa, 'pos']);
+    pl.push(['صافي الإيرادات', t.netSales, 'total']);
+    pl.push(['(−) COGS', -t.bycat.COGS, 'neg']);
+    pl.push(['مجمل الربح', t.grossP, 'total']);
+    if(t.mSalPaid>0) pl.push(['(−) رواتب مدفوعة', -t.mSalPaid, 'neg']);
+    if(t.bycat.OPS>0) pl.push(['(−) مصاريف تشغيلية', -t.bycat.OPS, 'neg']);
+    if(t.bycat.MKT>0) pl.push(['(−) تسويق', -t.bycat.MKT, 'neg']);
+    if(t.bycat.ADM>0) pl.push(['(−) إدارية', -t.bycat.ADM, 'neg']);
+    if(t.bycat.OTHER>0) pl.push(['(−) متفرقات', -t.bycat.OTHER, 'neg']);
+    if(t.oblPaid>0) pl.push(['(−) التزامات مدفوعة', -t.oblPaid, 'neg']);
+    pl.push(['صافي الربح', t.profit, 'grand']);
+    pushBlock('pl', pl, 36 + pl.length*30 + 18);
+
+    // الأساس الاستحقاقي
+    var unpaidObl = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;}).reduce(function(s,o){return s+(o.amt||0);},0);
+    var accProfit = t.profit - unpaidObl - (t.mSalAccrued||0);
+    var acc = [['صافي الربح النقدي', t.profit, 'normal']];
+    if(unpaidObl>0) acc.push(['(−) التزامات لم تُدفع', -unpaidObl, 'neg']);
+    if((t.mSalAccrued||0)>0) acc.push(['(−) رواتب مستحقة', -(t.mSalAccrued||0), 'neg']);
+    acc.push(['الربح بعد سداد كل المستحقات', accProfit, 'grand']);
+    pushBlock('acc', acc, 36 + acc.length*30 + 18);
+
+    var totalH = PADDING*2 + blocks.reduce(function(s,b){return s+b.h+12;},0);
+    canvas.height = totalH;
+
+    // مرحلة 2: ارسم
+    // خلفية
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, W, totalH);
+    ctx.direction = 'rtl';
+    ctx.textAlign = 'right';
+    var font = 'system-ui, -apple-system, "Segoe UI", Tahoma, Arial';
+
+    var y = PADDING;
+    blocks.forEach(function(b){
+      if(b.type === 'title'){
+        // عنوان كافيه
+        ctx.fillStyle = '#1a3a2a';
+        ctx.font = 'bold 24px '+font;
+        ctx.fillText('☕ ريحانة كافيه — الملخّص المالي', W-PADDING, y+24);
+        ctx.fillStyle = '#64748b';
+        ctx.font = '14px '+font;
+        ctx.fillText(b.data, W-PADDING, y+52);
+        // خط فاصل
+        ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(PADDING, y+76); ctx.lineTo(W-PADDING, y+76); ctx.stroke();
+      }
+      else if(b.type === 'hero'){
+        // بطاقة بطل
+        var grad = ctx.createLinearGradient(0, y, 0, y+b.h);
+        if(b.data.profit >= 0){ grad.addColorStop(0,'#1a3a2a'); grad.addColorStop(1,'#0c2118'); }
+        else { grad.addColorStop(0,'#7f1d1d'); grad.addColorStop(1,'#3f0a0a'); }
+        ctx.fillStyle = grad;
+        _roundRect(ctx, PADDING, y, W-PADDING*2, b.h-12, 16); ctx.fill();
+        // النص
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = '14px '+font; ctx.textAlign = 'center';
+        ctx.fillText('صافي الربح — ' + mn, W/2, y+32);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 56px '+font;
+        ctx.fillText(n3(b.data.profit) + ' JD', W/2, y+98);
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.font = '15px '+font;
+        ctx.fillText('هامش ' + b.data.margin.toFixed(1) + '٪  •  ' + b.data.days + ' يوم نشط', W/2, y+138);
+        // مقارنة
+        if(prev && prev.profit !== 0){
+          var pct = (t.profit - prev.profit) / Math.abs(prev.profit) * 100;
+          var arrow = pct >= 0 ? '↑' : '↓';
+          ctx.font = 'bold 13px '+font;
+          ctx.fillStyle = pct>=0 ? '#86efac' : '#fca5a5';
+          ctx.fillText(arrow + ' ' + Math.abs(pct).toFixed(0) + '٪ عن الشهر السابق', W/2, y+170);
+        }
+        ctx.textAlign = 'right';
+      }
+      else if(b.type === 'kpi6'){
+        // شبكة 3×2
+        var t_ = b.data;
+        var kpis = [
+          ['💰 الإيرادات', n3(t_.netSales), '#dcfce7'],
+          ['📦 COGS', n3(t_.bycat.COGS), '#fef3c7'],
+          ['🌿 مجمل الربح', n3(t_.grossP), '#dbeafe'],
+          ['💵 رواتب', n3(t_.mSalPaid), '#fce7f3'],
+          ['🏠 التزامات', n3(t_.oblPaid), '#ede9fe'],
+          ['📋 إجمالي مصاريف', n3(t_.totalExp), '#fee2e2']
+        ];
+        var cw = (W-PADDING*2-16)/3, ch = (b.h-12-8)/2;
+        kpis.forEach(function(k, i){
+          var col = i % 3, row = Math.floor(i/3);
+          var x = PADDING + col*(cw+8);
+          var ky = y + row*(ch+8);
+          ctx.fillStyle = k[2];
+          _roundRect(ctx, x, ky, cw, ch, 12); ctx.fill();
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 12px '+font; ctx.textAlign = 'center';
+          ctx.fillText(k[0], x+cw/2, ky+24);
+          ctx.font = 'bold 18px '+font;
+          ctx.fillText(k[1], x+cw/2, ky+ch-14);
+        });
+        ctx.textAlign = 'right';
+      }
+      else if(b.type === 'pl' || b.type === 'acc'){
+        // بطاقة قائمة الدخل
+        ctx.fillStyle = '#fff';
+        _roundRect(ctx, PADDING, y, W-PADDING*2, b.h-12, 14); ctx.fill();
+        ctx.strokeStyle = b.type==='acc'?'#a78bfa':'#e2e8f0'; ctx.lineWidth = 1;
+        _roundRect(ctx, PADDING, y, W-PADDING*2, b.h-12, 14); ctx.stroke();
+        ctx.fillStyle = b.type==='acc'?'#5B2FA6':'#1a3a2a';
+        ctx.font = 'bold 16px '+font;
+        ctx.fillText(b.type==='pl' ? '📈 قائمة الدخل المُختصرة (IFRS)' : '⚖️ الربح على الأساس الاستحقاقي', W-PADDING-12, y+30);
+        ctx.strokeStyle = '#e2e8f0'; ctx.beginPath(); ctx.moveTo(PADDING+12, y+44); ctx.lineTo(W-PADDING-12, y+44); ctx.stroke();
+        var py = y + 70;
+        b.data.forEach(function(row){
+          var label = row[0], val = row[1], kind = row[2];
+          if(kind === 'grand'){
+            ctx.strokeStyle = b.type==='acc'?'#5B2FA6':'#0f172a'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(PADDING+12, py-6); ctx.lineTo(W-PADDING-12, py-6); ctx.stroke();
+            ctx.font = 'bold 16px '+font;
+            ctx.fillStyle = '#0f172a';
+            ctx.textAlign = 'right'; ctx.fillText(label, W-PADDING-12, py+12);
+            ctx.fillStyle = val>=0 ? '#16a34a' : '#dc2626';
+            ctx.textAlign = 'left'; ctx.fillText(n3(val) + ' JD', PADDING+12, py+12);
+            ctx.textAlign = 'right';
+            py += 24;
+          } else if(kind === 'total'){
+            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(PADDING+12, py-4); ctx.lineTo(W-PADDING-12, py-4); ctx.stroke();
+            ctx.font = 'bold 14px '+font;
+            ctx.fillStyle = '#0f172a';
+            ctx.textAlign = 'right'; ctx.fillText(label, W-PADDING-12, py+10);
+            ctx.fillStyle = val>=0 ? '#16a34a' : '#dc2626';
+            ctx.textAlign = 'left'; ctx.fillText(n3(val), PADDING+12, py+10);
+            ctx.textAlign = 'right';
+            py += 28;
+          } else {
+            ctx.font = '13px '+font;
+            ctx.fillStyle = '#475569';
+            ctx.textAlign = 'right'; ctx.fillText(label, W-PADDING-12, py+8);
+            ctx.fillStyle = kind === 'pos' ? '#16a34a' : kind === 'neg' ? '#dc2626' : '#475569';
+            ctx.textAlign = 'left';
+            ctx.fillText((kind==='pos'?'+':'') + n3(val), PADDING+12, py+8);
+            ctx.textAlign = 'right';
+            py += 26;
+          }
+        });
+      }
+      y += b.h;
+    });
+
+    // ذيل
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '11px '+font; ctx.textAlign = 'center';
+    ctx.fillText('ريحانة كافيه · إصدار ' + (typeof APP_VERSION==='string'?APP_VERSION:'') + ' · ' + new Date().toLocaleString('ar-JO'), W/2, totalH-10);
+    ctx.textAlign = 'right';
+
+    // صدّر
+    canvas.toBlob(function(blob){
+      var fname = 'الملخّص_المالي_'+mn+'_'+ym[0]+'.png';
+      if(window.AndroidBridge && AndroidBridge.saveBlob){
+        var r = new FileReader();
+        r.onload = function(){
+          var b64 = r.result.split(',')[1];
+          try { AndroidBridge.saveBlob(b64, fname, 'image/png'); toast('✅ حُفظت الصورة في Downloads'); }
+          catch(e){ _downloadBlob(blob, fname); }
+        };
+        r.readAsDataURL(blob);
+      } else if(navigator.share && navigator.canShare && navigator.canShare({files:[new File([blob], fname, {type:'image/png'})]})){
+        navigator.share({files:[new File([blob], fname, {type:'image/png'})], title:'الملخّص المالي'});
+      } else {
+        _downloadBlob(blob, fname);
+      }
+      toast('📤 جاهز للمشاركة');
+    }, 'image/png');
+  } catch(e){
+    console.error('shareFinSummaryImage:', e);
+    toast('⚠️ تعذّر التصدير: ' + e.message);
+  }
+}
+
+function _roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+// v64: تصدير الملخّص كنصّ منسّق (للنسخ/اللصق على واتساب)
+function shareFinSummaryHTML(){
+  try {
+    var t = totals(); var d = G();
+    var ym = S.activeKey.split('-'); var mn = MN[parseInt(ym[1])-1];
+    var unpaidObl = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;}).reduce(function(s,o){return s+(o.amt||0);},0);
+    var accProfit = t.profit - unpaidObl - (t.mSalAccrued||0);
+    var lines = [];
+    lines.push('☕ ريحانة كافيه — الملخّص المالي');
+    lines.push(mn + ' ' + ym[0]);
+    lines.push('━━━━━━━━━━━━━━━━━━━');
+    lines.push('💰 الإيرادات: ' + n3(t.netSales) + ' JD');
+    lines.push('   نقد: ' + n3(t.cash) + ' · فيزا: ' + n3(t.visa));
+    lines.push('📦 COGS: ' + n3(t.bycat.COGS));
+    lines.push('🌿 مجمل الربح: ' + n3(t.grossP) + ' (' + (t.netSales>0?(t.grossP/t.netSales*100).toFixed(1):'0') + '٪)');
+    lines.push('━━━━━━━━━━━━━━━━━━━');
+    if(t.mSalPaid>0) lines.push('💵 رواتب مدفوعة: ' + n3(t.mSalPaid));
+    if(t.bycat.OPS>0) lines.push('🔧 تشغيلية: ' + n3(t.bycat.OPS));
+    if(t.oblPaid>0) lines.push('🏠 التزامات مدفوعة: ' + n3(t.oblPaid));
+    lines.push('━━━━━━━━━━━━━━━━━━━');
+    lines.push('💎 صافي الربح النقدي: ' + n3(t.profit) + ' JD');
+    lines.push('   هامش ' + t.margin.toFixed(1) + '٪');
+    if(unpaidObl>0 || (t.mSalAccrued||0)>0){
+      lines.push('');
+      lines.push('⚠️ مستحقات لم تُدفع:');
+      if(unpaidObl>0) lines.push('   التزامات: ' + n3(unpaidObl));
+      if((t.mSalAccrued||0)>0) lines.push('   رواتب: ' + n3(t.mSalAccrued));
+      lines.push('⚖️ الربح بعد سدادها: ' + n3(accProfit) + ' JD');
+    }
+    lines.push('');
+    lines.push('— صادر ' + new Date().toLocaleDateString('ar-JO'));
+    var txt = lines.join('\n');
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){
+        toast('📋 نُسخ — الصقه في واتساب');
+      }).catch(function(){ toast('📋 ' + txt.slice(0,40) + '...'); });
+    } else {
+      toast(txt.slice(0,80));
+    }
+  } catch(e){ toast('⚠️ ' + e.message); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -5762,13 +6036,41 @@ function voiceStart(){
     _voiceRec.lang = 'ar-JO';
     _voiceRec.continuous = false;
     _voiceRec.interimResults = true;
-    _voiceRec.maxAlternatives = 1;
+    _voiceRec.maxAlternatives = 3; // v64: بدائل للتعرّف ضعيف الثقة
     _voiceRec.onresult = function(ev){
       var txt = '';
+      var lastConf = 0;
+      var alternatives = [];
       for(var i=ev.resultIndex; i<ev.results.length; i++){
         txt += ev.results[i][0].transcript;
+        if(ev.results[i].isFinal){
+          lastConf = ev.results[i][0].confidence || 0;
+          // اجمع البدائل
+          for(var j=1; j<ev.results[i].length; j++){
+            var alt = ev.results[i][j];
+            if(alt && alt.transcript && alt.transcript !== ev.results[i][0].transcript){
+              alternatives.push(alt.transcript);
+            }
+          }
+        }
       }
       var ta = $('voiceText'); if(ta){ ta.value = txt; voiceParseLive(); }
+      // v64: مؤشّر الثقة + بدائل
+      if(lastConf > 0){
+        var stat = $('voiceStatus');
+        if(stat){
+          var pct = Math.round(lastConf * 100);
+          var ico = lastConf > 0.8 ? '🟢' : lastConf > 0.5 ? '🟡' : '🔴';
+          var msg = ico + ' دقّة التعرّف ' + pct + '٪';
+          if(lastConf < 0.6){
+            msg += ' — يُنصح بإعادة المحاولة أو تحرير النص';
+          }
+          stat.innerHTML = msg;
+          if(alternatives.length){
+            stat.innerHTML += '<div style="margin-top:8px;font-size:11px;color:var(--tx3)">💡 بدائل: <span style="cursor:pointer;text-decoration:underline" onclick="$(\'voiceText\').value=this.textContent.trim();voiceParseLive()">' + alternatives.slice(0,2).join('</span> · <span style="cursor:pointer;text-decoration:underline" onclick="$(\'voiceText\').value=this.textContent.trim();voiceParseLive()">') + '</span></div>';
+          }
+        }
+      }
     };
     _voiceRec.onerror = function(e){
       _voiceListening = false; _voiceMicUI(false);
@@ -8260,11 +8562,18 @@ function _colLetter(n){var s='';n=n+1;while(n>0){var r=(n-1)%26;s=String.fromCha
 
 // Build worksheet XML from rows
 // row = array of {v, t?:'n'|'s', s?:styleId}
-function _sheetXML(rows, cols){
+// opts: {freezeRow?: number, mergeTitle?: number} — v64
+function _sheetXML(rows, cols, opts){
+  opts = opts || {};
   var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
   x+='<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
-  x+='<sheetViews><sheetView rightToLeft="1" workbookViewId="0"/></sheetViews>';
-  x+='<sheetFormatPr defaultRowHeight="15"/>';
+  // v64: تجميد رؤوس الجداول
+  var freezeXml = '';
+  if(opts.freezeRow && opts.freezeRow > 0){
+    freezeXml = '<pane ySplit="'+opts.freezeRow+'" topLeftCell="A'+(opts.freezeRow+1)+'" activePane="bottomLeft" state="frozen"/>';
+  }
+  x+='<sheetViews><sheetView rightToLeft="1" workbookViewId="0">'+freezeXml+'</sheetView></sheetViews>';
+  x+='<sheetFormatPr defaultRowHeight="18"/>';
   if(cols && cols.length){
     x+='<cols>';
     cols.forEach(function(c,i){ x+='<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+(c.w||14)+'" customWidth="1"/>'; });
@@ -8272,7 +8581,11 @@ function _sheetXML(rows, cols){
   }
   x+='<sheetData>';
   rows.forEach(function(r,ri){
-    x+='<row r="'+(ri+1)+'">';
+    // v64: ارتفاع أكبر للعنوان والرؤوس
+    var rh = '';
+    if(ri === 0) rh = ' ht="28" customHeight="1"';
+    else if(r.length && typeof r[0]==='object' && r[0].s===2) rh = ' ht="22" customHeight="1"'; // header row
+    x+='<row r="'+(ri+1)+'"'+rh+'>';
     r.forEach(function(c,ci){
       if(c===null||c===undefined||c==='') return;
       var v=(typeof c==='object'?c.v:c);
@@ -8287,7 +8600,13 @@ function _sheetXML(rows, cols){
     });
     x+='</row>';
   });
-  x+='</sheetData></worksheet>';
+  x+='</sheetData>';
+  // v64: دمج خلية العنوان (الصف الأول) إن وُجد عدد أعمدة
+  if(opts.mergeTitle && cols && cols.length>1){
+    var lastCol = _colLetter(cols.length-1);
+    x+='<mergeCells count="1"><mergeCell ref="A1:'+lastCol+'1"/></mergeCells>';
+  }
+  x+='</worksheet>';
   return x;
 }
 
@@ -8343,7 +8662,7 @@ function _buildXLSX(sheets){
   sheets.forEach(function(sh,i){
     var n=i+1;
     var path='xl/worksheets/sheet'+n+'.xml';
-    files.push({name:path, data:_sheetXML(sh.rows, sh.cols)});
+    files.push({name:path, data:_sheetXML(sh.rows, sh.cols, {freezeRow: sh.freezeRow, mergeTitle: sh.mergeTitle!==false})});
     ctOverrides+='<Override PartName="/'+path+'" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
     bookSheets+='<sheet name="'+_xmlEsc(sh.name)+'" sheetId="'+n+'" r:id="rId'+n+'"/>';
     bookRels+='<Relationship Id="rId'+n+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+n+'.xml"/>';
@@ -8475,7 +8794,7 @@ function _buildManagerReport(){
   });
 
   return {
-    name:'تقرير المدير اليومي',
+    name:'تقرير المدير اليومي', freezeRow:4,
     cols:[{w:7},{w:14},{w:13},{w:11},{w:11},{w:13},{w:14},{w:11},{w:9},{w:15},{w:26}],
     rows:rows
   };
@@ -8893,7 +9212,7 @@ function exportExcelReal(){
     }
   });
   revRows.push([{v:'المجموع',s:4},{v:rC,t:'n',s:5},{v:rV,t:'n',s:5},{v:rP,t:'n',s:5},{v:rC+rV,t:'n',s:5},'','']);
-  sheets.push({name:'الإيرادات اليومية', cols:[{w:10},{w:11},{w:11},{w:11},{w:14},{w:13},{w:26}], rows:revRows});
+  sheets.push({name:'الإيرادات اليومية', freezeRow:3, cols:[{w:10},{w:11},{w:11},{w:11},{w:14},{w:13},{w:26}], rows:revRows});
 
   // ورقة 3: المشتريات
   var puRows=[
@@ -8906,7 +9225,7 @@ function exportExcelReal(){
     puRows.push([p.date||'',p.sName||'',catLbl(p.cat||'COGS'),p.desc||'',{v:p.amt||0,t:'n',s:3},p.buyer||'',p.inv||'']);
   });
   puRows.push([{v:'الإجمالي',s:4},'','','',{v:pSorted.reduce(function(s,p){return s+(p.amt||0);},0),t:'n',s:5},'','']);
-  sheets.push({name:'المشتريات', cols:[{w:13},{w:22},{w:14},{w:30},{w:11},{w:13},{w:12}], rows:puRows});
+  sheets.push({name:'المشتريات', freezeRow:3, cols:[{w:13},{w:22},{w:14},{w:30},{w:11},{w:13},{w:12}], rows:puRows});
 
   // ورقة 4: الرواتب
   var slRows=[
@@ -8924,7 +9243,7 @@ function exportExcelReal(){
     var w=(d.dWages||{})[e.id]||{};
     slRows.push([e.name,'يومي',{v:w.rate||0,t:'n',s:3},{v:0,t:'n',s:3},{v:0,t:'n',s:3},{v:(w.att||[]).length,t:'n'},{v:_dwTotal(w),t:'n',s:3},'—']);
   });
-  sheets.push({name:'الرواتب', cols:[{w:14},{w:9},{w:11},{w:11},{w:14},{w:8},{w:13},{w:13}], rows:slRows});
+  sheets.push({name:'الرواتب', freezeRow:3, cols:[{w:14},{w:9},{w:11},{w:11},{w:14},{w:8},{w:13},{w:13}], rows:slRows});
 
   // ورقة 5: السلف
   var avRows=[
@@ -8935,7 +9254,7 @@ function exportExcelReal(){
   (d.advances||[]).forEach(function(a){
     avRows.push([a.empName||'',a.date||'',{v:a.amt||0,t:'n',s:3},a.status||'',a.note||'']);
   });
-  sheets.push({name:'السلف', cols:[{w:14},{w:13},{w:11},{w:14},{w:26}], rows:avRows});
+  sheets.push({name:'السلف', freezeRow:3, cols:[{w:14},{w:13},{w:11},{w:14},{w:26}], rows:avRows});
 
   // ورقة 6: الالتزامات
   var obRows=[
@@ -8946,7 +9265,7 @@ function exportExcelReal(){
   (d.obligations||[]).forEach(function(o){
     obRows.push([o.name||'',{v:o.amt||0,t:'n',s:3},o.paid?'✅ مدفوع':'⏳ غير مدفوع',o.due||'',o.paidBy||'']);
   });
-  sheets.push({name:'الالتزامات', cols:[{w:22},{w:11},{w:14},{w:13},{w:12}], rows:obRows});
+  sheets.push({name:'الالتزامات', freezeRow:3, cols:[{w:22},{w:11},{w:14},{w:13},{w:12}], rows:obRows});
 
   // ولّد الـxlsx ثم احفظ
   var blob=_buildXLSX(sheets);
@@ -11622,6 +11941,51 @@ function cafeAdvisor(){
           dogs.length+' منتج قليل المبيع ومنخفض الربح: '+dogs.slice(0,3).map(function(x){return esc(x.name);}).join('، ')+'.',
           'أعد تسعيرها أو احذفها لتبسيط المنيو وتقليل الهدر.');
       }
+    }
+  }catch(e){}
+
+  // v64 [تحليل إضافي 1]: تركّز الموردين — اعتماد مفرط على مورد واحد = خطر تشغيلي
+  try{
+    var pBySup={};
+    (G().purchases||[]).forEach(function(p){ var n=p.sName||'؟'; pBySup[n]=(pBySup[n]||0)+(p.amt||0); });
+    var topSupArr=Object.entries(pBySup).sort(function(a,b){return b[1]-a[1];});
+    if(topSupArr.length && (t.bycat.total||0)>0){
+      var topSup=topSupArr[0];
+      var concPct=topSup[1]/t.bycat.total*100;
+      if(concPct>35){
+        add(concPct>50?'warn':'info', topSup[1]*0.1, '🏪', 'تركّز عالٍ على مورد واحد ('+concPct.toFixed(0)+'٪)',
+          'مورد «'+esc(topSup[0])+'» يستحوذ على '+concPct.toFixed(0)+'٪ ('+n3(topSup[1])+' JD) من مشترياتك. إن توقف أو رفع أسعاره، تتأثر بشدّة.',
+          'وزّع المشتريات على ٣ موردين على الأقل لكل صنف، وفاوض على أسعار تفضيلية مقابل الكمية.');
+      }
+    }
+  }catch(e){}
+
+  // v64 [تحليل إضافي 2]: المدفوعات اليومية بالأجل — تستنزف السيولة
+  try{
+    if(t.netSales>0){
+      var creditRatio=t.pmts/t.netSales*100;
+      if(creditRatio>15){
+        add(creditRatio>30?'warn':'info', t.pmts*0.3, '⏰', 'بيع بالأجل مرتفع ('+creditRatio.toFixed(0)+'٪)',
+          'المدفوعات اليومية '+n3(t.pmts)+' JD = '+creditRatio.toFixed(0)+'٪ من إيرادك. هذا مال «في الجو» لم يصل صندوقك.',
+          'حدّد سقفاً للأجل لكل عميل، وحصّل قبل ٧ أيام. كلّما زاد الأجل، قلّت قدرتك على دفع موردين/رواتب في موعدها.');
+      }
+    }
+  }catch(e){}
+
+  // v64 [تحليل إضافي 3]: تركيز الكاش حسب المُستلِم — رقابة داخلية
+  try{
+    var byRec={};
+    (G().sales||[]).forEach(function(s){
+      if(!s.receivedBy||((s.cash||0)+(s.visa||0))<=0) return;
+      if(!byRec[s.receivedBy]) byRec[s.receivedBy]={cash:0,days:0};
+      byRec[s.receivedBy].cash+=(s.cash||0);
+      byRec[s.receivedBy].days++;
+    });
+    var recKeys=Object.keys(byRec);
+    if(recKeys.length===1 && t.daysActive>=10){
+      add('info', 0, '🔐', 'شخص واحد يستلم كل الكاش',
+        '«'+esc(recKeys[0])+'» استلم كل المبالغ النقدية في '+byRec[recKeys[0]].days+' يوم. هذا يضعف الرقابة الداخلية.',
+        'دوّر استلام الكاش بين شخصين على الأقل أو طبّق فصل المهام (من يستلم ≠ من يُدوِّن).');
     }
   }catch(e){}
 
