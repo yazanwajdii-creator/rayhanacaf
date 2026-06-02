@@ -2593,7 +2593,7 @@ body.dark .ss-card{background:var(--surf)}
 
 
       <div class="card" style="margin-top:10px">
-        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">⚖</span>حساب المسؤولين — يزن · عبدالرحمن</div></div>
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">⚖</span>حساب المسؤوليات — يزن · عبدالرحمن</div></div>
         <div class="card-body">
           <div style="font-size:10px;color:var(--tx4);text-align:center;margin-bottom:10px;padding:6px;background:var(--surf3);border-radius:6px">💡 النقد المستلم = صافي بعد خصم يوميات الموظفين من الموظفة</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
@@ -4590,7 +4590,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v76';
+const APP_VERSION='v77';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5261,9 +5261,9 @@ function openRespReport(){
     html += '<div class="resp-tile"><div class="resp-tile-ico">💳</div><div class="resp-tile-lbl">فيزا</div><div class="resp-tile-val">' + n3(visaBalance) + '</div><div class="resp-tile-unit">JD</div></div>';
     html += '</div></div>';
 
-    // ═══ تفاصيل المسؤولين (بطاقتان جنباً) ═══
+    // ═══ تفاصيل المسؤوليات (بطاقتان جنباً) ═══
     html += '<div class="resp-section">';
-    html += '<div class="resp-section-title">🎲 تفاصيل المسؤولين</div>';
+    html += '<div class="resp-section-title">⚖️ تفاصيل المسؤوليات</div>';
     html += '<div class="resp-card-2col">';
     persons.forEach(function(p){
       var clas = p==='يزن' ? 'r-yz' : 'r-ab';
@@ -5473,7 +5473,7 @@ function openFinSummary(){
         salByP[sObj.paidBy] = (salByP[sObj.paidBy]||0) + net;
       });
       // v72 [إصلاح بقّ]: السلف التي منحها كل مسؤول يجب أن تُخصم من صافيه
-      // كان tot يزن خاطئ بـ100 (سلف منحها لهاني) — الآن مطابق لشاشة "حساب المسؤولين"
+      // كان tot يزن خاطئ بـ100 (سلف منحها لهاني) — الآن مطابق لشاشة "حساب المسؤوليات"
       (d.advances||[]).forEach(function(a){
         if(!a.paidBy) return;
         advByP[a.paidBy] = (advByP[a.paidBy]||0) + (a.amt||0);
