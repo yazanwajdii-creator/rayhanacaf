@@ -4525,7 +4525,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v71';
+const APP_VERSION='v72';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5197,7 +5197,7 @@ function openFinSummary(){
     html += '<div class="fin-section">';
     html += '<div class="fin-sec-title">📈 قائمة الدخل المُختصرة (IFRS)</div>';
     html += '<div class="fin-pl-row fin-pl-sub"><span>المبيعات النقدية</span><span class="fin-pl-amount pos">+' + n3(t.cash) + '</span></div>';
-    html += '<div class="fin-pl-row fin-pl-sub"><span>المبيعات بالفيزا</span><span class="fin-pl-amount pos">+' + n3(t.visa) + '</span></div>';
+    html += '<div class="fin-pl-row fin-pl-sub"><span>المبيعات بالفيزا (إجمالي)' + (_visaPaidTotal>0 ? ' <span style="font-size:9.5px;color:var(--tx4);font-weight:400">— الرصيد الفعلي ' + n3(_visaNet) + ' بعد خصم ' + n3(_visaPaidTotal) + '</span>' : '') + '</span><span class="fin-pl-amount pos">+' + n3(t.visa) + '</span></div>';
     html += '<div class="fin-pl-row fin-pl-total"><span>صافي الإيرادات</span><span class="fin-pl-amount pos">' + n3(t.netSales) + '</span></div>';
     html += '<div class="fin-pl-row"><span>(−) تكلفة البضاعة COGS</span><span class="fin-pl-amount neg">−' + n3(t.bycat.COGS) + '</span></div>';
     html += '<div class="fin-pl-row fin-pl-total"><span>مجمل الربح</span><span class="fin-pl-amount ' + (t.grossP>=0?'pos':'neg') + '">' + n3(t.grossP) + '</span></div>';
@@ -5243,7 +5243,7 @@ function openFinSummary(){
     // v66: تقرير المسؤوليات — صافي يزن + صافي عبدالرحمن + رصيد الفيزا = الربح النهائي الموحّد
     try {
       // اجمع البيانات حسب المسؤول
-      var cashByP={}, purchByP={}, oblByP={}, salByP={};
+      var cashByP={}, purchByP={}, oblByP={}, salByP={}, advByP={};
       (d.sales||[]).forEach(function(s){
         if(!s.receivedBy) return;
         cashByP[s.receivedBy] = (cashByP[s.receivedBy]||0) + (s.cash||0);
@@ -5263,12 +5263,18 @@ function openFinSummary(){
         var net = Math.max(0, (sObj.base||0)+(sObj.allow||0)-(sObj.ded||0)-adv);
         salByP[sObj.paidBy] = (salByP[sObj.paidBy]||0) + net;
       });
+      // v72 [إصلاح بقّ]: السلف التي منحها كل مسؤول يجب أن تُخصم من صافيه
+      // كان tot يزن خاطئ بـ100 (سلف منحها لهاني) — الآن مطابق لشاشة "حساب المسؤولين"
+      (d.advances||[]).forEach(function(a){
+        if(!a.paidBy) return;
+        advByP[a.paidBy] = (advByP[a.paidBy]||0) + (a.amt||0);
+      });
 
       // احسب الصافي لكل شخص + رصيد الفيزا
       var persons = ['يزن','عبدالرحمن'];
       var netByP = {};
       persons.forEach(function(p){
-        netByP[p] = (cashByP[p]||0) - (purchByP[p]||0) - (oblByP[p]||0) - (salByP[p]||0);
+        netByP[p] = (cashByP[p]||0) - (purchByP[p]||0) - (oblByP[p]||0) - (salByP[p]||0) - (advByP[p]||0);
       });
       var visaTotal = t.visa || 0;
       var visaObl = oblByP['فيزا'] || 0;
@@ -5310,12 +5316,14 @@ function openFinSummary(){
         var purch = purchByP[p] || 0;
         var obl = oblByP[p] || 0;
         var sal = salByP[p] || 0;
+        var adv = advByP[p] || 0;
         html += '<div style="background:var(--bg);border:1px solid var(--br);border-right:4px solid '+c+';border-radius:10px;padding:10px 12px;margin-bottom:8px">';
         html += '<div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;color:'+c+';font-size:13px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--br)">';
         html += '<span>👤 '+p+'</span><span style="direction:ltr">'+n3(netByP[p])+' JD</span></div>';
         html += '<div class="fin-pl-row" style="padding:3px 0"><span>+ نقد استلمه</span><span class="fin-pl-amount pos" style="direction:ltr">+'+n3(cash)+'</span></div>';
         if(purch>0) html += '<div class="fin-pl-row" style="padding:3px 0"><span>− مشتريات</span><span class="fin-pl-amount neg" style="direction:ltr">−'+n3(purch)+'</span></div>';
         if(obl>0) html += '<div class="fin-pl-row" style="padding:3px 0"><span>− التزامات دفعها</span><span class="fin-pl-amount neg" style="direction:ltr">−'+n3(obl)+'</span></div>';
+        if(adv>0) html += '<div class="fin-pl-row" style="padding:3px 0"><span>− سلف منحها</span><span class="fin-pl-amount neg" style="direction:ltr">−'+n3(adv)+'</span></div>';
         if(sal>0) html += '<div class="fin-pl-row" style="padding:3px 0"><span>− رواتب دفعها</span><span class="fin-pl-amount neg" style="direction:ltr">−'+n3(sal)+'</span></div>';
         html += '</div>';
       });
