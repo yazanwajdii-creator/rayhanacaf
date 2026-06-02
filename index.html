@@ -2316,7 +2316,7 @@ body.dark .ss-card{background:var(--surf)}
         <div class="kpi-tile tc-gold"><div class="kt-bg">📦</div><div class="kt-label">تكلفة البضاعة COGS</div><div class="kt-value" id="kv2-cogs">0.000</div><div class="kt-sub" id="kv-cogs-ratio">0% من البيع</div></div>
         <div class="kpi-tile tc-blue"><div class="kt-bg">🌿</div><div class="kt-label">مجمل الربح</div><div class="kt-value" id="kv2-gp">0.000</div><div class="kt-sub" id="kv-margin">هامش 0%</div></div>
         <div class="kpi-tile tc-green"><div class="kt-bg">📊</div><div class="kt-label">متوسط يومي</div><div class="kt-value" id="kv2-avg">0.000</div><div class="kt-sub" id="kv-avg-daily">— JD/يوم</div></div>
-        <div class="kpi-tile tc-red"><div class="kt-bg">⚖️</div><div class="kt-label">نسبة التكاليف</div><div class="kt-value" id="kv2-expr">0.0%</div><div class="kt-sub" id="kv-exp-ratio">من صافي البيع</div></div>
+        <div class="kpi-tile tc-red"><div class="kt-bg">⚖️</div><div class="kt-label">نسبة التكاليف</div><div class="kt-value" id="kv2-expr">0.0%</div><div class="kt-sub" id="kv-exp-ratio">من صافي الإيرادات</div></div>
       </div>
       <!-- شريط تحذير الرواتب المستحقة -->
       <div id="kv-accrued" style="display:none;background:var(--ywl);border:1px solid var(--ywb);border-radius:8px;padding:7px 13px;font-size:12px;font-weight:600;color:var(--ywd);margin-bottom:10px;display:flex;align-items:center;gap:7px">
@@ -2748,7 +2748,7 @@ body.dark .ss-card{background:var(--surf)}
         </div>
         <div class="qe-totals">
           <div class="qe-tot" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3)">
-            <div class="qe-tot-label" style="color:#93C5FD">صافي البيع</div>
+            <div class="qe-tot-label" style="color:#93C5FD">صافي الإيرادات</div>
             <div class="qe-tot-val" id="qeNs" style="color:#60A5FA">0.000</div>
           </div>
           <div class="qe-tot" style="background:rgba(200,146,15,.15);border:1px solid rgba(200,146,15,.3)">
@@ -3031,7 +3031,7 @@ body.dark .ss-card{background:var(--surf)}
           <div class="rpt-mini-card">
             <div class="rpt-mini-icon" style="background:rgba(34,197,94,.15);color:var(--gn)">💰</div>
             <div>
-              <div class="rpt-mini-lbl">صافي البيع</div>
+              <div class="rpt-mini-lbl">صافي الإيرادات</div>
               <div class="rpt-mini-val" id="r-nrev">0.000 JD</div>
             </div>
           </div>
@@ -3107,7 +3107,7 @@ body.dark .ss-card{background:var(--surf)}
             <span class="rpt-row-val green" id="r-visa">0.000 JD</span>
           </div>
           <div class="rpt-row rpt-row-highlight">
-            <span class="rpt-row-lbl" style="font-weight:700">صافي البيع (نقد + فيزا)</span>
+            <span class="rpt-row-lbl" style="font-weight:700">صافي الإيرادات (نقد + فيزا)</span>
             <span class="rpt-row-val green bold" id="r-nrev-2">0.000 JD</span>
           </div>
           <div class="rpt-row rpt-row-sub rpt-row-muted">
@@ -4590,7 +4590,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v77';
+const APP_VERSION='v78';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -6808,18 +6808,18 @@ function saveRev(){if(isLocked()){toast("🔒 الشهر مغلق");return;}save
       - الالتزامات غير المدفوعة لا تُسبب خسارة وهمية
    
    المعادلة الصحيحة:
-   - صافي البيع = نقدي + فيزا
+   - صافي الإيرادات = نقدي + فيزا
    - إجمالي الإيراد = نقدي + فيزا + مدفوعات (للتوثيق)
    - المصروفات = COGS + التزامات مدفوعة + رواتب شهرية صافية
-   - صافي الربح = صافي البيع - المصروفات
+   - صافي الربح = صافي الإيرادات - المصروفات
 ═══════════════════════════════════════════════════════════════════════════ */
 function totals(){
   const d=G();let cash=0,visa=0,pmts=0;
   d.sales.forEach(s=>{cash+=s.cash||0;visa+=s.visa||0;pmts+=s.pmts||0;});
   
-  // صافي البيع = نقدي + فيزا (هذا هو الإيراد الحقيقي)
+  // صافي الإيرادات = نقدي + فيزا (هذا هو الإيراد الحقيقي)
   const netSales=cash+visa;
-  // إجمالي الإيراد = صافي البيع + المدفوعات (للتوثيق)
+  // إجمالي الإيراد = صافي الإيرادات + المدفوعات (للتوثيق)
   const rev=cash+visa+pmts;
   
   const bycat={COGS:0,OPS:0,ADM:0,MKT:0,OTHER:0,total:0};
@@ -6872,7 +6872,7 @@ function totals(){
   const advancesAsExpense = (d.advances||[]).reduce(function(s,a){return s+(a.amt||0);},0);
   const totalExp=bycat.total+oblPaid+mSalPaid+advancesAsExpense;
 
-  // صافي الربح = صافي البيع - إجمالي المصروفات الفعلية
+  // صافي الربح = صافي الإيرادات - إجمالي المصروفات الفعلية
   const profit=netSales-totalExp;
   const margin=netSales>0?profit/netSales*100:0;
   
@@ -7001,8 +7001,8 @@ function updateDash(){
   T("kv-margin","هامش "+t.margin.toFixed(1)+"% · صحة "+_hs+"/100");
   // تحديث البيانات الفرعية للبطاقات
   T("kv-avg-daily", t.avgDaily>0 ? `متوسط ${n3(t.avgDaily)} JD/يوم` : 'لا توجد بيانات بعد');
-  T("kv-cogs-ratio", t.netSales>0 ? `COGS ${t.cogsRatio.toFixed(1)}%` : 'صافي البيع');
-  T("kv-exp-ratio", t.netSales>0 ? `${t.expRatio.toFixed(1)}% من صافي البيع` : 'المصروفات الفعلية');
+  T("kv-cogs-ratio", t.netSales>0 ? `COGS ${t.cogsRatio.toFixed(1)}%` : 'صافي الإيرادات');
+  T("kv-exp-ratio", t.netSales>0 ? `${t.expRatio.toFixed(1)}% من صافي الإيرادات` : 'المصروفات الفعلية');
   // ألوان ديناميكية لبطاقة الربح
   var profitTile=document.getElementById('kv-profit-tile');
   if(profitTile){
@@ -7043,7 +7043,7 @@ function updateDash(){
     const g2=lx.getContext("2d").createLinearGradient(0,0,0,270);g2.addColorStop(0,"rgba(59,130,246,.25)");g2.addColorStop(1,"rgba(59,130,246,0)");
     CH.l=new Chart(lx,{type:"line",data:{labels:d.sales.map(s=>s.day),datasets:[
       {label:"إجمالي الإيراد",data:d.sales.map(s=>(s.cash||0)+(s.visa||0)+(s.pmts||0)),borderColor:"#C8920F",backgroundColor:g,tension:.4,fill:true,borderWidth:2.5,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:"#C8920F",pointBorderColor:"#fff",pointBorderWidth:1.5},
-      {label:"صافي البيع",data:d.sales.map(s=>(s.cash||0)+(s.visa||0)),borderColor:"#3B82F6",backgroundColor:g2,tension:.4,fill:true,borderWidth:2,pointRadius:2.5,pointHoverRadius:5}
+      {label:"صافي الإيرادات",data:d.sales.map(s=>(s.cash||0)+(s.visa||0)),borderColor:"#3B82F6",backgroundColor:g2,tension:.4,fill:true,borderWidth:2,pointRadius:2.5,pointHoverRadius:5}
     ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
       plugins:{legend:{labels:{boxWidth:12,font:{size:12,family:"IBM Plex Sans Arabic"}}},tooltip:{backgroundColor:"rgba(15,6,4,.92)",titleFont:{family:"IBM Plex Sans Arabic"},bodyFont:{family:"IBM Plex Mono"},padding:11,cornerRadius:8,callbacks:{label:c=>`${c.dataset.label}: ${n3(c.raw)} JD`}}},
       scales:{y:{beginAtZero:true,ticks:{callback:v=>v+" JD",font:{size:10,family:"IBM Plex Mono"}},grid:{color:"rgba(0,0,0,.05)"}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});}
@@ -9821,7 +9821,7 @@ function exportExcelPro(){
     '<tr><td colspan="2" style="color:#666;padding:0 10px 10px">'+mn+' '+y+' · صادر '+new Date().toLocaleDateString('ar-JO')+'</td></tr>'+
     '<tr><td style="'+sec+'">💰 الإيرادات</td><td style="'+sec+'"></td></tr>'+
     r('النقدي',n3(t.cash))+r('الفيزا',n3(t.visa))+
-    r('صافي البيع (نقد+فيزا)',n3(t.netSales),';font-weight:bold;background:#eef6ff')+
+    r('صافي الإيرادات (نقد+فيزا)',n3(t.netSales),';font-weight:bold;background:#eef6ff')+
     (momPct!==null?r('التغيّر عن '+MN[(mo+10)%12],(momPct>=0?'+':'')+momPct.toFixed(1)+'%',';color:'+(momPct>=0?'#080':'#c00')):'')+
     r('مدفوعات يومية (توثيق)',n3(t.pmts),';color:#888')+
     '<tr><td style="'+sec+'">📦 التكاليف</td><td style="'+sec+'"></td></tr>'+
@@ -9869,7 +9869,7 @@ function _exportExcelXLSX(){
   if(!window.XLSX){ exportCSV(); return; }
   const t=totals(),d=G();const[y,m]=S.activeKey.split("-");const mn=MN[parseInt(m)-1];
   const wb=XLSX.utils.book_new();
-  const rv=[["ريحانة كافيه — الإيرادات"],[],["اليوم","نقدي","فيزا","مدفوعات","صافي البيع","إجمالي الإيراد","ملاحظات"]];
+  const rv=[["ريحانة كافيه — الإيرادات"],[],["اليوم","نقدي","فيزا","مدفوعات","صافي الإيرادات","إجمالي الإيراد","ملاحظات"]];
   let tC=0,tV=0,tP=0;
   d.sales.forEach(s=>{if((s.cash||0)+(s.visa||0)+(s.pmts||0)>0){const c=s.cash||0,v=s.visa||0,p=s.pmts||0;rv.push([`${s.day}/${m}`,c,v,p,c+v,c+v+p,s.notes||""]);tC+=c;tV+=v;tP+=p;}});
   rv.push(["المجموع",tC,tV,tP,tC+tV,tC+tV+tP,""]);
@@ -9910,7 +9910,7 @@ function _exportExcelXLSX(){
   const is = [["ريحانة كافيه — قائمة الدخل"], [`${mn} ${y}`], [],
     ["البند", "المبلغ (JD)"],
     ["═══ الإيرادات ═══", ""],
-    ["نقدي", t.cash], ["فيزا", t.visa], ["صافي البيع", t.netSales],
+    ["نقدي", t.cash], ["فيزا", t.visa], ["صافي الإيرادات", t.netSales],
     ["مدفوعات أجور يومية (من النقدي)", t.pmts],
     ["إجمالي الإيرادات", t.rev], [],
     ["═══ تكلفة البضاعة ═══", ""],
@@ -9953,7 +9953,7 @@ function exportCSV(){
   add("البند","المبلغ (JD)");
   add("النقدي الصافي",n3(t.cash));
   add("الفيزا",n3(t.visa));
-  add("صافي البيع (نقد + فيزا)",n3(t.netSales));
+  add("صافي الإيرادات (نقد + فيزا)",n3(t.netSales));
   add("مدفوعات يومية (توثيق)",n3(t.pmts));
   add("إجمالي الإيرادات",n3(t.rev));
   add("COGS","("+n3(t.bycat.COGS)+")");
@@ -10063,7 +10063,7 @@ function _renderPDFFromElement(el){
       <div style="font-size:11px;color:#999;margin-top:2px">${new Date().toLocaleDateString('ar-JO',{year:'numeric',month:'long',day:'numeric'})}</div>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:18px">
-      <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#F8FAFC"><div style="font-size:10px;color:#888">صافي البيع</div><div style="font-size:17px;font-weight:700;color:#1d4ed8;font-family:monospace">${n3(t.netSales)}</div></div>
+      <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#F8FAFC"><div style="font-size:10px;color:#888">صافي الإيرادات</div><div style="font-size:17px;font-weight:700;color:#1d4ed8;font-family:monospace">${n3(t.netSales)}</div></div>
       <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:${t.profit>=0?'#F0FDF4':'#FEF2F2'}"><div style="font-size:10px;color:#888">صافي الربح</div><div style="font-size:17px;font-weight:700;color:${t.profit>=0?'#047857':'#B91C1C'};font-family:monospace">${n3(t.profit)}</div></div>
       <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#F8FAFC"><div style="font-size:10px;color:#888">الهامش</div><div style="font-size:17px;font-weight:700;color:#1a1a1a;font-family:monospace">${t.margin.toFixed(1)}%</div></div>
       <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#FFFBEB"><div style="font-size:10px;color:#888">متوقّع آخر الشهر</div><div style="font-size:17px;font-weight:700;color:#B45309;font-family:monospace">${n3(_fc.projected)}</div></div>
@@ -10074,7 +10074,7 @@ function _renderPDFFromElement(el){
         <tr style="background:#f8f4ee"><td style="padding:8px 10px;font-weight:700;color:#C8920F">💰 الإيرادات</td><td></td></tr>
         <tr><td style="padding:6px 10px 6px 20px">النقدي الصافي</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:#059669">${n3(t.cash)}</td></tr>
         <tr><td style="padding:6px 10px 6px 20px">الفيزا</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:#059669">${n3(t.visa)}</td></tr>
-        <tr style="background:#EFF6FF"><td style="padding:8px 10px 8px 20px;font-weight:700">صافي البيع (نقد + فيزا)</td><td style="padding:8px 10px;text-align:left;font-family:monospace;font-weight:700;color:#1d4ed8">${n3(t.netSales)}</td></tr>
+        <tr style="background:#EFF6FF"><td style="padding:8px 10px 8px 20px;font-weight:700">صافي الإيرادات (نقد + فيزا)</td><td style="padding:8px 10px;text-align:left;font-family:monospace;font-weight:700;color:#1d4ed8">${n3(t.netSales)}</td></tr>
         <tr style="color:#888"><td style="padding:6px 10px 6px 20px;font-size:11px">مدفوعات يومية (توثيق)</td><td style="padding:6px 10px;text-align:left;font-family:monospace;font-size:11px">${n3(t.pmts)}</td></tr>
         <tr style="background:#FEF9C3"><td style="padding:8px 10px;font-weight:700">إجمالي الإيرادات</td><td style="padding:8px 10px;text-align:left;font-family:monospace;font-weight:700">${n3(t.rev)}</td></tr>
         
@@ -11060,7 +11060,7 @@ function buildCafeContext(){
     '',
     '## الإيرادات',
     '- إجمالي: '+n3(t.rev)+' JD | نقدي: '+n3(t.cash)+' | فيزا: '+n3(t.visa)+' | مدفوعات للعمال: '+n3(t.pmts),
-    '- صافي البيع (نقدي+فيزا): '+n3(t.netSales)+' JD',
+    '- صافي الإيرادات (نقدي+فيزا): '+n3(t.netSales)+' JD',
     '- أيام مُدخلة: '+active.length+'/'+days+' | متوسط يومي: '+n3(avg)+' JD | متبقي: '+daysLeft+' يوم',
     '- إسقاط متوقع نهاية الشهر: '+n3(t.rev+avg*daysLeft)+' JD',
     '- الشهر السابق: '+n3(prevRev)+' JD'+(prevRev>0?' | التغيير: '+(((t.rev-prevRev)/prevRev)*100).toFixed(1)+'%':''),
@@ -11732,7 +11732,7 @@ function getLocalAIResponse(question) {
     
     response += '💰 **الإيرادات:**\n';
     response += '• إجمالي الإيراد: ' + n3(t.rev) + ' JD\n';
-    response += '• صافي البيع (نقد+فيزا): ' + n3(t.netSales) + ' JD\n';
+    response += '• صافي الإيرادات (نقد+فيزا): ' + n3(t.netSales) + ' JD\n';
     response += '• متوسط اليومي: ' + n3(avg) + ' JD\n';
     response += '• أيام التشغيل: ' + active.length + ' من ' + days + '\n\n';
     
@@ -12513,7 +12513,7 @@ function formatAdvisorReport(opts){
   var F=cafeAdvisor();
   var mn=MN[parseInt(S.activeKey.split('-')[1])-1];
   var head='🧑‍💼 **تشخيص المستشار — '+mn+'**\n';
-  head+='صافي البيع '+n3(c.netSales)+' · صافي الربح '+n3(c.profit)+' JD · هامش '+(c.margin||0).toFixed(1)+'٪ · صحة '+(c.healthScore||0)+'/100\n\n';
+  head+='صافي الإيرادات '+n3(c.netSales)+' · صافي الربح '+n3(c.profit)+' JD · هامش '+(c.margin||0).toFixed(1)+'٪ · صحة '+(c.healthScore||0)+'/100\n\n';
   if(!F.length || (F.length===1 && F[0].sev==='info' && F[0].impact===0 && c.activeDays>=3 && c.profit>=0)){
     return head+'✅ لا مشاكل جوهرية. أداؤك ضمن معايير القطاع — حافظ على الجودة وراقب تكلفة البضاعة.';
   }
@@ -12550,7 +12550,7 @@ function iqAnswerSpecific(question){
       if(q.indexOf(name)>-1){
         var dow=wdMap[name]; var st=iqWeekdayStats()[dow];
         if(!st.count) return 'لا توجد بيانات كافية ليوم '+IQ_DAYS[dow]+' بعد.';
-        return '📅 يوم '+IQ_DAYS[dow]+': متوسط صافي البيع <b>'+n3(st.avg)+' JD</b> (من '+st.count+' يوم في آخر 3 أشهر).';
+        return '📅 يوم '+IQ_DAYS[dow]+': متوسط صافي الإيرادات <b>'+n3(st.avg)+' JD</b> (من '+st.count+' يوم في آخر 3 أشهر).';
       }
     }
     // 2) أفضل/أسوأ يوم
@@ -12569,7 +12569,7 @@ function iqAnswerSpecific(question){
     if(dm){
       var dd=parseInt(dm[1]); var s=(d.sales||[]).find(function(x){return x.day===dd;});
       if(!s||net(s)+(s.pmts||0)<=0) return 'لا توجد بيانات مُدخلة ليوم '+dd+' من '+mn+'.';
-      return '📆 يوم '+dd+' '+mn+': نقدي '+n3(s.cash||0)+' · فيزا '+n3(s.visa||0)+' · صافي البيع <b>'+n3(net(s))+' JD</b>'+(s.receivedBy?' · استلمه '+esc(s.receivedBy):'')+'.';
+      return '📆 يوم '+dd+' '+mn+': نقدي '+n3(s.cash||0)+' · فيزا '+n3(s.visa||0)+' · صافي الإيرادات <b>'+n3(net(s))+' JD</b>'+(s.receivedBy?' · استلمه '+esc(s.receivedBy):'')+'.';
     }
     // 4) الموردون
     var supMap={}; (d.purchases||[]).forEach(function(p){ if(p.sName) supMap[p.sName]=(supMap[p.sName]||0)+(p.amt||0); });
@@ -12594,7 +12594,7 @@ function iqAnswerSpecific(question){
     if(/كم.*(يوم|ايام)/.test(q) && /(ادخل|أدخل|سجل|فيه بيانات|عملت)/.test(q)) return '🗓️ أدخلت بيانات <b>'+active.length+'</b> يوم من أصل '+daysIn(S.activeKey)+' في '+mn+'.';
     // 7) المشتريات/الإيراد الكلي
     if(/(كم|قديش).*(مشتري|اشتري|صرف)/.test(q) && /(شهر|اجمالي|كل|الكلي)/.test(q)) return '🛒 إجمالي المشتريات في '+mn+': <b>'+n3(t.bycat.total)+' JD</b>.';
-    if(/(كم|قديش).*(بعت|بيع|ايراد|إيراد|دخل)/.test(q)) return '💰 صافي البيع في '+mn+': <b>'+n3(t.netSales)+' JD</b> (نقدي '+n3(t.cash)+' + فيزا '+n3(t.visa)+').';
+    if(/(كم|قديش).*(بعت|بيع|ايراد|إيراد|دخل)/.test(q)) return '💰 صافي الإيرادات في '+mn+': <b>'+n3(t.netSales)+' JD</b> (نقدي '+n3(t.cash)+' + فيزا '+n3(t.visa)+').';
     // 7) الهدف
     if(q.indexOf('هدف')>-1){
       var goal=(S.targets&&S.targets[S.activeKey])||0;
@@ -12604,7 +12604,7 @@ function iqAnswerSpecific(question){
       return '🎯 الهدف '+n3(goal)+' JD · المتبقّي <b>'+n3(rem)+' JD</b>'+(left>0?'، تحتاج ~'+n3(rem/left)+' JD/يوم خلال '+left+' يوم متبقّي.':'.');
     }
     // 8) متوسط
-    if(q.indexOf('متوسط')>-1) return '📊 متوسط صافي البيع اليومي في '+mn+': <b>'+n3(active.length?(t.netSales/active.length):0)+' JD</b> (من '+active.length+' يوم).';
+    if(q.indexOf('متوسط')>-1) return '📊 متوسط صافي الإيرادات اليومي في '+mn+': <b>'+n3(active.length?(t.netSales/active.length):0)+' JD</b> (من '+active.length+' يوم).';
     return null;
   }catch(e){ return null; }
 }
@@ -14741,7 +14741,7 @@ function renderMenu(){
 // ═══════════════════════════════════════════════════════════════════════════
 var IQ_DAYS = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 
-// متوسط صافي البيع (نقد+فيزا) حسب يوم الأسبوع من آخر 3 أشهر
+// متوسط صافي الإيرادات (نقد+فيزا) حسب يوم الأسبوع من آخر 3 أشهر
 function iqWeekdayStats(){
   var stats=[]; for(var i=0;i<7;i++) stats.push({sum:0,count:0,avg:0});
   var keys=Object.keys(S.months||{}).sort().slice(-3);
@@ -14780,7 +14780,7 @@ function iqForecast(){
   return {projected:projected, projProfit:projProfit, margin:margin, activeDays:activeDays, predictedDays:predictedDays, stats:stats, dim:dim, actualSum:actualSum};
 }
 
-// مجموع صافي البيع لشهر معيّن
+// مجموع صافي الإيرادات لشهر معيّن
 function iqMonthNet(key){
   var m=S.months[key]; if(!m) return 0;
   return (m.sales||[]).reduce(function(s,x){ return s+(x.cash||0)+(x.visa||0); },0);
