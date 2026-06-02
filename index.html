@@ -2170,7 +2170,7 @@ body.dark .ss-card{background:var(--surf)}
       <div class="kpi-grid-v22">
         <div class="kpi-v22 rev">
           <div class="kv-icon">💰</div>
-          <div class="kv-label">الإيراد</div>
+          <div class="kv-label">الإيرادات</div>
           <div class="kv-value" id="kpiRevenue">0</div>
           <div class="kv-change up" id="kpiRevChange">—</div>
         </div>
@@ -2280,7 +2280,7 @@ body.dark .ss-card{background:var(--surf)}
             <div class="ac-trend" id="revTrend">—</div>
           </div>
           <div class="ac-value" id="acRevenue">0.000</div>
-          <div class="ac-label">إجمالي الإيراد</div>
+          <div class="ac-label">إجمالي الإيرادات</div>
           <div class="ac-compare" id="acRevCompare">— مقارنة بالشهر السابق</div>
         </div>
         <div class="analytics-card expense">
@@ -2594,7 +2594,7 @@ body.dark .ss-card{background:var(--surf)}
 
 
       <div class="card" style="margin-top:10px">
-        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">⚖</span>حساب المسؤوليات — يزن · عبدالرحمن</div></div>
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">⚖</span>حساب المسؤوليات</div></div>
         <div class="card-body">
           <div style="font-size:10px;color:var(--tx4);text-align:center;margin-bottom:10px;padding:6px;background:var(--surf3);border-radius:6px">💡 النقد المستلم = صافي بعد خصم يوميات الموظفين من الموظفة</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
@@ -3498,7 +3498,7 @@ body.dark .ss-card{background:var(--surf)}
         </div>
         <div class="cloud-wizard-card">
           <div class="cloud-wizard-title">🚀 إعداد Supabase — مرة واحدة فقط</div>
-          <div class="cloud-wizard-sub">بعد الإعداد: بياناتك محمية في السحابة مجاناً، ويزن وعبدالرحمن يرون نفس البيانات</div>
+          <div class="cloud-wizard-sub">بعد الإعداد: بياناتك محمية في السحابة مجاناً، والمسؤولون يرون نفس البيانات من أي جهاز</div>
 
           <!-- Step 1 -->
           <div class="cloud-step">
@@ -3612,7 +3612,7 @@ create policy "allow_all" on rh_store
         <div style="display:flex;flex-direction:column;gap:7px">
           <div class="cloud-why-row"><span class="cloud-why-icon">✅</span><span>مجاني تماماً — 500MB كافية لسنوات</span></div>
           <div class="cloud-why-row"><span class="cloud-why-icon">🔒</span><span>بياناتك لا تُمسح أبداً حتى لو مسحت الكاش</span></div>
-          <div class="cloud-why-row"><span class="cloud-why-icon">📱</span><span>يزن وعبدالرحمن يرون نفس البيانات من أي جهاز</span></div>
+          <div class="cloud-why-row"><span class="cloud-why-icon">📱</span><span>كل المسؤولين يرون نفس البيانات من أي جهاز</span></div>
           <div class="cloud-why-row"><span class="cloud-why-icon">⚡</span><span>كل حفظ يُرفع تلقائياً للسحابة خلال 3 ثواني</span></div>
           <div class="cloud-why-row"><span class="cloud-why-icon">🔄</span><span>عند أي تحديث للنظام بياناتك تبقى كاملة</span></div>
         </div>
@@ -4605,7 +4605,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v80';
+const APP_VERSION='v81';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5267,7 +5267,7 @@ function openRespReport(){
     // v76: السلف صارت مصروفاً فعلياً في totals() — unifiedProfit الآن = الربح المحاسبي مباشرةً
     // ═══ HERO ═══
     html += '<div class="resp-hero">';
-    html += '<div class="resp-hero-formula">صافي حساب المسؤوليات = صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>';
+    html += '<div class="resp-hero-formula">صافي حساب المسؤوليات = مجموع صوافي المسؤولين + رصيد الفيزا</div>';
     html += '<div class="resp-hero-val">' + n3(unifiedProfit) + '</div>';
     html += '<div class="resp-hero-unit">دينار أردني (JD) — يطابق صافي الربح في الملخّص المالي</div>';
     html += '<div class="resp-tiles">';
@@ -5646,7 +5646,7 @@ function openFinSummary(){
       // البطل
       html += '<div style="background:linear-gradient(135deg,#065f46,#022c22);color:#fff;padding:18px;border-radius:14px;text-align:center;margin-bottom:14px">';
       html += '<div style="font-size:11px;opacity:.85;margin-bottom:6px;letter-spacing:.3px">الربح النهائي الموحَّد</div>';
-      html += '<div style="font-size:11px;opacity:.7;margin-bottom:8px">= صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>';
+      html += '<div style="font-size:11px;opacity:.7;margin-bottom:8px">= مجموع صوافي المسؤولين + رصيد الفيزا</div>';
       html += '<div style="font-size:34px;font-weight:800;letter-spacing:-1px;direction:ltr">'+n3(unifiedProfit)+' JD</div>';
       html += '</div>';
 
@@ -7191,7 +7191,7 @@ function updateDash(){
     const g=lx.getContext("2d").createLinearGradient(0,0,0,270);g.addColorStop(0,"rgba(200,146,15,.3)");g.addColorStop(1,"rgba(200,146,15,0)");
     const g2=lx.getContext("2d").createLinearGradient(0,0,0,270);g2.addColorStop(0,"rgba(59,130,246,.25)");g2.addColorStop(1,"rgba(59,130,246,0)");
     CH.l=new Chart(lx,{type:"line",data:{labels:d.sales.map(s=>s.day),datasets:[
-      {label:"إجمالي الإيراد",data:d.sales.map(s=>(s.cash||0)+(s.visa||0)+(s.pmts||0)),borderColor:"#C8920F",backgroundColor:g,tension:.4,fill:true,borderWidth:2.5,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:"#C8920F",pointBorderColor:"#fff",pointBorderWidth:1.5},
+      {label:"إجمالي الإيرادات",data:d.sales.map(s=>(s.cash||0)+(s.visa||0)+(s.pmts||0)),borderColor:"#C8920F",backgroundColor:g,tension:.4,fill:true,borderWidth:2.5,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:"#C8920F",pointBorderColor:"#fff",pointBorderWidth:1.5},
       {label:"صافي الإيرادات",data:d.sales.map(s=>(s.cash||0)+(s.visa||0)),borderColor:"#3B82F6",backgroundColor:g2,tension:.4,fill:true,borderWidth:2,pointRadius:2.5,pointHoverRadius:5}
     ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
       plugins:{legend:{labels:{boxWidth:12,font:{size:12,family:"IBM Plex Sans Arabic"}}},tooltip:{backgroundColor:"rgba(15,6,4,.92)",titleFont:{family:"IBM Plex Sans Arabic"},bodyFont:{family:"IBM Plex Mono"},padding:11,cornerRadius:8,callbacks:{label:c=>`${c.dataset.label}: ${n3(c.raw)} JD`}}},
@@ -10018,7 +10018,7 @@ function _exportExcelXLSX(){
   if(!window.XLSX){ exportCSV(); return; }
   const t=totals(),d=G();const[y,m]=S.activeKey.split("-");const mn=MN[parseInt(m)-1];
   const wb=XLSX.utils.book_new();
-  const rv=[["ريحانة كافيه — الإيرادات"],[],["اليوم","نقدي","فيزا","مدفوعات","صافي الإيرادات","إجمالي الإيراد","ملاحظات"]];
+  const rv=[["ريحانة كافيه — الإيرادات"],[],["اليوم","نقدي","فيزا","مدفوعات","صافي الإيرادات","إجمالي الإيرادات","ملاحظات"]];
   let tC=0,tV=0,tP=0;
   d.sales.forEach(s=>{if((s.cash||0)+(s.visa||0)+(s.pmts||0)>0){const c=s.cash||0,v=s.visa||0,p=s.pmts||0;rv.push([`${s.day}/${m}`,c,v,p,c+v,c+v+p,s.notes||""]);tC+=c;tV+=v;tP+=p;}});
   rv.push(["المجموع",tC,tV,tP,tC+tV,tC+tV+tP,""]);
