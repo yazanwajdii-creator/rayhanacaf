@@ -2594,7 +2594,7 @@ body.dark .ss-card{background:var(--surf)}
 
 
       <div class="card" style="margin-top:10px">
-        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">⚖</span>حساب المسؤوليات</div></div>
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">⚖</span>حساب المسؤوليات — يزن · عبدالرحمن</div></div>
         <div class="card-body">
           <div style="font-size:10px;color:var(--tx4);text-align:center;margin-bottom:10px;padding:6px;background:var(--surf3);border-radius:6px">💡 النقد المستلم = صافي بعد خصم يوميات الموظفين من الموظفة</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
@@ -3498,7 +3498,7 @@ body.dark .ss-card{background:var(--surf)}
         </div>
         <div class="cloud-wizard-card">
           <div class="cloud-wizard-title">🚀 إعداد Supabase — مرة واحدة فقط</div>
-          <div class="cloud-wizard-sub">بعد الإعداد: بياناتك محمية في السحابة مجاناً، والمسؤولون يرون نفس البيانات من أي جهاز</div>
+          <div class="cloud-wizard-sub">بعد الإعداد: بياناتك محمية في السحابة مجاناً، ويزن وعبدالرحمن يرون نفس البيانات</div>
 
           <!-- Step 1 -->
           <div class="cloud-step">
@@ -3612,7 +3612,7 @@ create policy "allow_all" on rh_store
         <div style="display:flex;flex-direction:column;gap:7px">
           <div class="cloud-why-row"><span class="cloud-why-icon">✅</span><span>مجاني تماماً — 500MB كافية لسنوات</span></div>
           <div class="cloud-why-row"><span class="cloud-why-icon">🔒</span><span>بياناتك لا تُمسح أبداً حتى لو مسحت الكاش</span></div>
-          <div class="cloud-why-row"><span class="cloud-why-icon">📱</span><span>كل المسؤولين يرون نفس البيانات من أي جهاز</span></div>
+          <div class="cloud-why-row"><span class="cloud-why-icon">📱</span><span>يزن وعبدالرحمن يرون نفس البيانات من أي جهاز</span></div>
           <div class="cloud-why-row"><span class="cloud-why-icon">⚡</span><span>كل حفظ يُرفع تلقائياً للسحابة خلال 3 ثواني</span></div>
           <div class="cloud-why-row"><span class="cloud-why-icon">🔄</span><span>عند أي تحديث للنظام بياناتك تبقى كاملة</span></div>
         </div>
@@ -4605,7 +4605,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v82';
+const APP_VERSION='v83';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5267,7 +5267,7 @@ function openRespReport(){
     // v76: السلف صارت مصروفاً فعلياً في totals() — unifiedProfit الآن = الربح المحاسبي مباشرةً
     // ═══ HERO ═══
     html += '<div class="resp-hero">';
-    html += '<div class="resp-hero-formula">صافي حساب المسؤوليات = مجموع صوافي المسؤولين + رصيد الفيزا</div>';
+    html += '<div class="resp-hero-formula">صافي حساب المسؤوليات = صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>';
     html += '<div class="resp-hero-val">' + n3(unifiedProfit) + '</div>';
     html += '<div class="resp-hero-unit">دينار أردني (JD) — يطابق صافي الربح في الملخّص المالي</div>';
     html += '<div class="resp-tiles">';
@@ -5290,7 +5290,13 @@ function openRespReport(){
       if(obl>0) html += '<div class="resp-row expense"><span class="l">− التزامات</span><span class="v">−' + n3(obl) + '</span></div>';
       if(sal>0) html += '<div class="resp-row expense"><span class="l">− رواتب</span><span class="v">−' + n3(sal) + '</span></div>';
       if(adv>0) html += '<div class="resp-row expense"><span class="l">− سلف منحها</span><span class="v">−' + n3(adv) + '</span></div>';
-      html += '<div class="resp-row total"><span>= الصافي بيده</span><span class="v">' + n3(netByP[p]) + ' JD</span></div>';
+      // v83: توضيح القيمة السالبة — تعني أن المسؤول دفع من جيبه/الفيزا أكثر مما استلم
+      var netLabel = netByP[p] >= 0 ? '= صافي بيده' : '= مستحق له على الكافيه';
+      var netColor = netByP[p] >= 0 ? '' : 'color:#dc2626';
+      html += '<div class="resp-row total" style="'+netColor+'"><span>' + netLabel + '</span><span class="v">' + n3(Math.abs(netByP[p])) + ' JD' + (netByP[p]<0?' 💼':'') + '</span></div>';
+      if(netByP[p] < 0){
+        html += '<div style="font-size:10.5px;color:var(--tx4);padding:6px 8px 0;line-height:1.5;text-align:right">💡 الرقم سالب → '+p+' دفع من جيبه/الفيزا أكثر مما استلم. الكافيه مدين له بهذا المبلغ.</div>';
+      }
       html += '</div>';
     });
     html += '</div></div>';
@@ -5364,6 +5370,26 @@ function openRespReport(){
     if((t.totalAdvancesGiven||0)>0) expBits.push('سلف موظفين '+n3(t.totalAdvancesGiven));
     if(expBits.length) html += 'وبعد المصاريف التشغيلية ('+expBits.join('، ')+')، ';
     html += '<b style="color:'+(t.profit>=0?'#059669':'#dc2626')+'">صافي الربح '+n3(t.profit)+' JD</b> (هامش '+t.margin.toFixed(1)+'%).';
+
+    // v83: قسم خاص لتسوية مستحقات المسؤولين
+    var settlements = [];
+    persons.forEach(function(p){
+      if(netByP[p] < -0.5) settlements.push({name:p, amt:Math.abs(netByP[p]), type:'owe'});  // الكافيه مدين له
+      else if(netByP[p] > 0.5) settlements.push({name:p, amt:netByP[p], type:'has'});         // كاش بيده
+    });
+    if(settlements.length){
+      html += '<div style="margin-top:12px;padding:10px 12px;background:rgba(220,38,38,.06);border-right:3px solid #dc2626;border-radius:8px;font-size:11.5px;line-height:1.7;text-align:right">';
+      html += '<b>💼 تسويات نهاية الشهر:</b><br>';
+      settlements.forEach(function(s){
+        if(s.type==='owe'){
+          html += '• الكافيه مدين لـ<b>'+s.name+'</b> بمبلغ <b style="color:#dc2626">'+n3(s.amt)+' JD</b> (دفعه من جيبه/الفيزا — يجب ردّه له)<br>';
+        } else {
+          html += '• <b>'+s.name+'</b> يحوز <b style="color:#16a34a">'+n3(s.amt)+' JD</b> نقداً من الكافيه (يُسلَّمه عند الإغلاق)<br>';
+        }
+      });
+      html += '</div>';
+    }
+
     html += '<div style="margin-top:10px;padding:10px 12px;background:'+(_isLocked?'rgba(34,197,94,.1)':_monthEnded?'rgba(245,158,11,.1)':'rgba(59,130,246,.1)')+';border-radius:8px;font-size:12px;font-weight:600;color:'+(_isLocked?'#065f46':_monthEnded?'#92400E':'#1e40af')+'">';
     if(_isLocked) html += '🔒 الشهر مُغلَق رسمياً — البيانات نهائية ولا تُعدَّل.';
     else if(_monthEnded) html += '✅ الشهر انتهى — اضغط زرّ <b>«إغلاق الشهر»</b> لتثبيت البيانات نهائياً.';
@@ -5646,7 +5672,7 @@ function openFinSummary(){
       // البطل
       html += '<div style="background:linear-gradient(135deg,#065f46,#022c22);color:#fff;padding:18px;border-radius:14px;text-align:center;margin-bottom:14px">';
       html += '<div style="font-size:11px;opacity:.85;margin-bottom:6px;letter-spacing:.3px">الربح النهائي الموحَّد</div>';
-      html += '<div style="font-size:11px;opacity:.7;margin-bottom:8px">= مجموع صوافي المسؤولين + رصيد الفيزا</div>';
+      html += '<div style="font-size:11px;opacity:.7;margin-bottom:8px">= صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>';
       html += '<div style="font-size:34px;font-weight:800;letter-spacing:-1px;direction:ltr">'+n3(unifiedProfit)+' JD</div>';
       html += '</div>';
 
