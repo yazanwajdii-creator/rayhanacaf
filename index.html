@@ -4590,7 +4590,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v78';
+const APP_VERSION='v79';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -10050,8 +10050,12 @@ function _renderPDFFromElement(el){
   var _cogsP=_ns>0?t.bycat.COGS/_ns*100:0;
   var _laborP=_ns>0?(t.mSalPaid+t.dwTotal)/_ns*100:0;
   var _primeP=_ns>0?(t.bycat.COGS+t.mSalPaid+t.dwTotal)/_ns*100:0;
-  var _prevNet=iqMonthNet(getPrevMonthKey());
-  var _momTxt = _prevNet>0 ? ((t.netSales-_prevNet)/_prevNet*100>=0?'بارتفاع ':'بانخفاض ')+Math.abs((t.netSales-_prevNet)/_prevNet*100).toFixed(0)+'% عن الشهر السابق' : 'لا توجد مقارنة بالشهر السابق';
+  // v79: تحقّق هل الشهر انتهى — لا تُظهر "متوقع" و"يُتوقّع إغلاق" إن انتهى
+  var _ymA = S.activeKey.split('-');
+  var _today = new Date();
+  var _monthEnded = (_today.getFullYear() > parseInt(_ymA[0])) ||
+                    (_today.getFullYear() === parseInt(_ymA[0]) && _today.getMonth() + 1 > parseInt(_ymA[1]));
+  // v79: حُذفت "_momTxt" — المستخدم لا يريد مقارنة الشهر السابق
   function _bench(label,val,good,warn,lower){var ok=lower?val<=good:val>=good;var mid=lower?val<=warn:val>=warn;var col=ok?'#047857':mid?'#B45309':'#B91C1C';var ic=ok?'✅':mid?'🟡':'🔴';return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:11px;color:#444">'+ic+' '+label+'</span><span style="font-family:monospace;font-weight:700;color:'+col+'">'+val.toFixed(1)+'%</span></div>';}
   // بناء HTML مؤقت للطباعة
   const printDiv=document.createElement('div');
@@ -10066,7 +10070,7 @@ function _renderPDFFromElement(el){
       <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#F8FAFC"><div style="font-size:10px;color:#888">صافي الإيرادات</div><div style="font-size:17px;font-weight:700;color:#1d4ed8;font-family:monospace">${n3(t.netSales)}</div></div>
       <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:${t.profit>=0?'#F0FDF4':'#FEF2F2'}"><div style="font-size:10px;color:#888">صافي الربح</div><div style="font-size:17px;font-weight:700;color:${t.profit>=0?'#047857':'#B91C1C'};font-family:monospace">${n3(t.profit)}</div></div>
       <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#F8FAFC"><div style="font-size:10px;color:#888">الهامش</div><div style="font-size:17px;font-weight:700;color:#1a1a1a;font-family:monospace">${t.margin.toFixed(1)}%</div></div>
-      <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#FFFBEB"><div style="font-size:10px;color:#888">متوقّع آخر الشهر</div><div style="font-size:17px;font-weight:700;color:#B45309;font-family:monospace">${n3(_fc.projected)}</div></div>
+      ${_monthEnded ? `<div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#F0FDF4"><div style="font-size:10px;color:#888">حالة الشهر</div><div style="font-size:13px;font-weight:700;color:#047857;margin-top:4px">✅ مُغلَق</div></div>` : `<div style="flex:1;border:1px solid #eee;border-radius:10px;padding:12px;text-align:center;background:#FFFBEB"><div style="font-size:10px;color:#888">متوقّع آخر الشهر</div><div style="font-size:17px;font-weight:700;color:#B45309;font-family:monospace">${n3(_fc.projected)}</div></div>`}
     </div>
     <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
       <thead><tr style="background:#faf6ee;border-bottom:2px solid #C8920F"><th style="padding:10px;text-align:right;color:#1a1a1a;font-weight:700">البند</th><th style="padding:10px;text-align:left;font-family:monospace;color:#1a1a1a;font-weight:700">المبلغ (JD)</th></tr></thead>
@@ -10089,8 +10093,8 @@ function _renderPDFFromElement(el){
         ${t.bycat.MKT>0?`<tr><td style="padding:6px 10px 6px 20px">تسويق (MKT)</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:#DC2626">(${n3(t.bycat.MKT)})</td></tr>`:''}
         ${t.bycat.OTHER>0?`<tr><td style="padding:6px 10px 6px 20px">مصاريف أخرى</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:#DC2626">(${n3(t.bycat.OTHER)})</td></tr>`:''}
         <tr><td style="padding:6px 10px 6px 20px">رواتب شهرية مدفوعة ✅</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:#DC2626">(${n3(t.mSalPaid)})</td></tr>
+        ${(t.totalAdvancesGiven||0)>0?`<tr><td style="padding:6px 10px 6px 20px">سلف موظفين (راتب مدفوع مسبقاً)</td><td style="padding:6px 10px;text-align:left;font-family:monospace;color:#DC2626">(${n3(t.totalAdvancesGiven)})</td></tr>`:''}
         ${t.mSalAccrued>0?`<tr style="opacity:.6"><td style="padding:6px 10px 6px 20px;font-size:11px">رواتب مستحقة ⏳ (لا تُطرح)</td><td style="padding:6px 10px;text-align:left;font-family:monospace;font-size:11px;color:#92400E">[${n3(t.mSalAccrued)}]</td></tr>`:''}
-        <tr style="opacity:.5"><td style="padding:6px 10px 6px 20px;font-size:11px">أجور يومية (توثيق)</td><td style="padding:6px 10px;text-align:left;font-family:monospace;font-size:11px">(${n3(t.dwTotal)})</td></tr>
         
         <tr style="background:#FEF2F2"><td style="padding:8px 10px;font-weight:700">إجمالي التكاليف الفعلية</td><td style="padding:8px 10px;text-align:left;font-family:monospace;font-weight:700;color:#DC2626">(${n3(t.totalExp)})</td></tr>
       </tbody>
@@ -10105,9 +10109,9 @@ function _renderPDFFromElement(el){
       <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:14px;background:#FCFCFD">
         <div style="font-size:13px;font-weight:700;color:#C8920F;margin-bottom:8px">📋 الملخص التنفيذي</div>
         <div style="font-size:11.5px;color:#333;line-height:1.9">
-          سجّل الكافيه صافي بيع ${n3(t.netSales)} JD خلال ${_fc.activeDays} يوم عمل، ${_momTxt}.
-          ${t.profit>=0?('حقّق ربحاً صافياً '+n3(t.profit)+' JD بهامش '+t.margin.toFixed(1)+'%'+(t.margin>=15?' وهو أداء ممتاز.':t.margin>=10?' وهو أداء جيد.':' ويُنصح بتحسين الهامش.')):('سجّل خسارة '+n3(Math.abs(t.profit))+' JD وتجب مراجعة التكاليف عاجلاً.')}
-          ${_fc.projected>0?(' يُتوقّع إغلاق الشهر على نحو '+n3(_fc.projected)+' JD صافي بيع.'):''}
+          سجّل الكافيه إيراد ${n3(t.netSales)} JD (نقد + فيزا) خلال ${_fc.activeDays} يوم عمل.
+          ${t.profit>=0?('بعد طرح COGS '+n3(t.bycat.COGS)+' (مجمل ربح '+n3(t.grossP)+') ثم التزامات مدفوعة '+n3(t.oblPaid)+' ورواتب '+n3(t.mSalPaid)+((t.totalAdvancesGiven||0)>0?' وسلف موظفين '+n3(t.totalAdvancesGiven):'')+'، أُغلق الشهر بصافي ربح '+n3(t.profit)+' JD (هامش '+t.margin.toFixed(1)+'%)'+(t.margin>=15?' — أداء ممتاز.':t.margin>=10?' — أداء جيد.':' — يُنصح بمراجعة التكاليف.')):(' سجّل خسارة '+n3(Math.abs(t.profit))+' JD — تجب مراجعة التكاليف عاجلاً.')}
+          ${!_monthEnded && _fc.projected>0 ? (' يُتوقّع إغلاق الشهر على نحو '+n3(_fc.projected)+' JD.') : ''}
         </div>
       </div>
       <div style="flex:1;border:1px solid #eee;border-radius:10px;padding:14px;background:#FCFCFD">
@@ -17366,12 +17370,29 @@ async function syncWorkerTick(){
     _queueBumpAttempts();
     var head2 = _queueGetHead();
     var attempts = head2 ? head2.attempts : 0;
-    console.warn('[Sync] push failed (attempt ' + attempts + '):', e && e.message);
     var msg = e && e.message ? e.message : 'فشل غير معروف';
+    console.warn('[Sync] push failed (attempt ' + attempts + '):', msg, e);
+    // v79: سجّل آخر خطأ مزامنة في localStorage حتى نراه في التشخيص
+    try {
+      safeLS.setItem('rh_last_sync_error', JSON.stringify({
+        msg: msg.slice(0, 200),
+        at: new Date().toISOString(),
+        attempts: attempts,
+        snapshotSize: head && head.snapshot ? JSON.stringify(head.snapshot).length : 0
+      }));
+    } catch(_e){}
+    // v79: رسائل أوضح حسب نوع الخطأ
     if(/network|fetch|failed|timeout/i.test(msg)){
       supaSetStatus('warn', '⏳ بدون إنترنت — في قائمة الانتظار (' + attempts + ')');
+    } else if(/payload|size|too large|413/i.test(msg)){
+      supaSetStatus('error', '⚠️ البيانات أكبر من الحد المسموح — تواصل مع الدعم');
+      toast('⚠️ حجم البيانات يتجاوز الحدّ — راجع التشخيص');
+    } else if(/auth|key|jwt|401|403/i.test(msg)){
+      supaSetStatus('error', '🔑 خطأ مصادقة Supabase');
+      toast('🔑 خطأ في مفاتيح المزامنة — أعد ربط Supabase');
     } else {
-      supaSetStatus('error', '⚠️ فشل المزامنة — سيُعاد لاحقاً');
+      supaSetStatus('error', '⚠️ فشل المزامنة: ' + msg.slice(0,40));
+      // لا تُظهر toast لكل فشل لتجنّب الإزعاج (تظهر فقط في supaSetStatus)
     }
     // exponential backoff: 2s, 4s, 8s, 16s, ثم كل 60s
     var delay = attempts < 5 ? Math.pow(2, attempts) * 1000 : 60000;
