@@ -8,8 +8,8 @@ android {
         applicationId "com.rayhanacafe.app"
         minSdk 26
         targetSdk 34
-        versionCode 79
-        versionName "79.0.0"
+        versionCode 80
+        versionName "80.0.0"
     }
 
     // v58: مفتاح debug ثابت مُحفوظ في المستودع — كل بناء يُوقَّع بنفس المفتاح

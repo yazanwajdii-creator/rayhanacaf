@@ -2156,9 +2156,10 @@ body.dark .ss-card{background:var(--surf)}
       </div>
 
       <!-- v63: زرّ بارز للملخّص المالي الاحترافي -->
-      <div style="margin:14px 0 8px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button onclick="openFinSummary()" style="font-size:13px;padding:14px 10px;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#1a3a2a,#0c2118);color:#fff;border:none;border-radius:14px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(26,58,42,.2);cursor:pointer"><span style="font-size:18px">📊</span><span>الملخّص المالي</span></button>
-        <button onclick="openRespReport()" style="font-size:13px;padding:14px 10px;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#065f46,#022c22);color:#fff;border:none;border-radius:14px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(6,95,70,.2);cursor:pointer"><span style="font-size:18px">⚖️</span><span>تقرير المسؤوليات</span></button>
+      <div style="margin:14px 0 8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        <button onclick="openFinSummary()" style="font-size:11.5px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1a3a2a,#0c2118);color:#fff;border:none;border-radius:12px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(26,58,42,.2);cursor:pointer;min-height:64px"><span style="font-size:18px">📊</span><span>الملخّص المالي</span></button>
+        <button onclick="openRespReport()" style="font-size:11.5px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#065f46,#022c22);color:#fff;border:none;border-radius:12px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(6,95,70,.2);cursor:pointer;min-height:64px"><span style="font-size:18px">⚖️</span><span>تقرير المسؤوليات</span></button>
+        <button onclick="openMonthCompare()" style="font-size:11.5px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#b45309,#92400e);color:#fff;border:none;border-radius:12px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(180,83,9,.2);cursor:pointer;min-height:64px"><span style="font-size:18px">📈</span><span>مقارنة الشهور</span></button>
       </div>
       <!-- v55: موجز للمشاركة — يولّد نصاً جاهزاً لإرساله للمالك عبر واتساب -->
       <div style="margin:10px 0 6px"><button class="btn btn-g" onclick="shareDailyBriefing()" style="width:100%;font-size:13px;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><span>📋</span><span>موجز اليوم — جاهز للمشاركة على واتساب</span></button></div>
@@ -3826,6 +3827,20 @@ create policy "allow_all" on rh_store
   <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="savePurch()">✅ حفظ</button><button class="btn btn-ghost" style="flex:1" onclick="closePurchModal()">إلغاء</button></div>
 </div></div>
 
+<!-- v80: صفحة مقارنة الشهور -->
+<div class="mo-ov" id="moCompare" onclick="moOut(event,'moCompare')">
+<div class="mo-sh fin-sh"><div class="mo-bar"></div>
+  <div class="fin-hdr">
+    <button class="mo-x" style="position:static;flex-shrink:0" onclick="cmo('moCompare')">×</button>
+    <div style="flex:1;text-align:center">
+      <div class="fin-title">📊 مقارنة الشهور</div>
+      <div class="fin-subtitle" id="cmpSubt">—</div>
+    </div>
+    <div style="width:30px;flex-shrink:0"></div>
+  </div>
+  <div id="cmpBody"></div>
+</div></div>
+
 <!-- v73: صفحة المسؤوليات المستقلّة — تصميم مميّز -->
 <div class="mo-ov" id="moResp" onclick="moOut(event,'moResp')">
 <div class="mo-sh resp-sh"><div class="mo-bar"></div>
@@ -4590,7 +4605,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v79';
+const APP_VERSION='v80';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5252,9 +5267,9 @@ function openRespReport(){
     // v76: السلف صارت مصروفاً فعلياً في totals() — unifiedProfit الآن = الربح المحاسبي مباشرةً
     // ═══ HERO ═══
     html += '<div class="resp-hero">';
-    html += '<div class="resp-hero-formula">صافي الربح الموحَّد = صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>';
+    html += '<div class="resp-hero-formula">صافي حساب المسؤوليات = صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>';
     html += '<div class="resp-hero-val">' + n3(unifiedProfit) + '</div>';
-    html += '<div class="resp-hero-unit">دينار أردني (JD) — يطابق "صافي الربح" في الملخّص المالي</div>';
+    html += '<div class="resp-hero-unit">دينار أردني (JD) — يطابق صافي الربح في الملخّص المالي</div>';
     html += '<div class="resp-tiles">';
     html += '<div class="resp-tile"><div class="resp-tile-ico">👤</div><div class="resp-tile-lbl">يزن</div><div class="resp-tile-val">' + n3(netByP['يزن']) + '</div><div class="resp-tile-unit">JD</div></div>';
     html += '<div class="resp-tile"><div class="resp-tile-ico">👤</div><div class="resp-tile-lbl">عبدالرحمن</div><div class="resp-tile-val">' + n3(netByP['عبدالرحمن']) + '</div><div class="resp-tile-unit">JD</div></div>';
@@ -5333,11 +5348,145 @@ function openRespReport(){
     }
     html += '</div>'; // close resp-section
 
+    // v80: الملخّص التنفيذي — يشرح كيف أتى الربح وكيف أُغلق الشهر
+    var _ymR = S.activeKey.split('-');
+    var _todayR = new Date();
+    var _monthEnded = (_todayR.getFullYear() > parseInt(_ymR[0])) || (_todayR.getFullYear() === parseInt(_ymR[0]) && _todayR.getMonth()+1 > parseInt(_ymR[1]));
+    var _isLocked = (S.lockedMonths||[]).indexOf(S.activeKey) > -1;
+    html += '<div class="resp-section" style="background:linear-gradient(135deg,rgba(200,146,15,.04),rgba(180,120,8,.02));border-color:rgba(200,146,15,.3)">';
+    html += '<div class="resp-section-title" style="color:#B45309">📋 الملخّص التنفيذي — كيف أتى الربح</div>';
+    html += '<div style="font-size:12.5px;line-height:1.85;color:var(--tx)">';
+    html += 'سجّل الكافيه إيراداً قدره <b>'+n3(t.netSales)+' JD</b> (نقد + فيزا) خلال <b>'+(t.daysActive||0)+'</b> يوم عمل.<br>';
+    html += 'بعد طرح <b>تكلفة البضاعة COGS '+n3(t.bycat.COGS)+'</b> JD، بلغ <b>مجمل الربح '+n3(t.grossP)+'</b> JD (هامش '+(t.netSales>0?(t.grossP/t.netSales*100).toFixed(1):'0')+'%).<br>';
+    var expBits = [];
+    if(t.mSalPaid>0) expBits.push('رواتب مدفوعة '+n3(t.mSalPaid));
+    if(t.oblPaid>0) expBits.push('التزامات '+n3(t.oblPaid));
+    if((t.totalAdvancesGiven||0)>0) expBits.push('سلف موظفين '+n3(t.totalAdvancesGiven));
+    if(expBits.length) html += 'وبعد المصاريف التشغيلية ('+expBits.join('، ')+')، ';
+    html += '<b style="color:'+(t.profit>=0?'#059669':'#dc2626')+'">صافي الربح '+n3(t.profit)+' JD</b> (هامش '+t.margin.toFixed(1)+'%).';
+    html += '<div style="margin-top:10px;padding:10px 12px;background:'+(_isLocked?'rgba(34,197,94,.1)':_monthEnded?'rgba(245,158,11,.1)':'rgba(59,130,246,.1)')+';border-radius:8px;font-size:12px;font-weight:600;color:'+(_isLocked?'#065f46':_monthEnded?'#92400E':'#1e40af')+'">';
+    if(_isLocked) html += '🔒 الشهر مُغلَق رسمياً — البيانات نهائية ولا تُعدَّل.';
+    else if(_monthEnded) html += '✅ الشهر انتهى — اضغط زرّ <b>«إغلاق الشهر»</b> لتثبيت البيانات نهائياً.';
+    else html += '⏳ الشهر جارٍ — ما زالت البيانات قابلة للتعديل.';
+    html += '</div></div></div>';
+
+    // v80: زرّ إغلاق/فتح الشهر
+    if(t.netSales > 0){
+      html += '<div style="padding:0 14px 14px"><button onclick="lockMonthFromResp()" style="width:100%;padding:14px;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;background:'+(_isLocked?'linear-gradient(135deg,#16a34a,#15803d)':'linear-gradient(135deg,#1d4ed8,#1e40af)')+';color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.15)">';
+      html += _isLocked ? '🔓 فتح الشهر (إلغاء الإغلاق)' : '🔒 إغلاق الشهر — تثبيت البيانات نهائياً';
+      html += '</button></div>';
+    }
+
     document.getElementById('respBody').innerHTML = html;
     openMo('moResp');
   } catch(e){
     console.error('openRespReport:', e);
     toast('⚠️ تعذّر فتح التقرير: ' + e.message);
+  }
+}
+
+// v80: زرّ إغلاق الشهر من تقرير المسؤوليات
+function lockMonthFromResp(){
+  cmo('moResp');
+  setTimeout(function(){ toggleLockMonth(); setTimeout(openRespReport, 300); }, 100);
+}
+
+// v80: صفحة مقارنة الشهور — الشهر الحالي vs السابق
+function openMonthCompare(){
+  try {
+    var t = totals();
+    var d = G();
+    var ymA = S.activeKey.split('-');
+    var mnCur = MN[parseInt(ymA[1])-1];
+    var prevKey = (typeof getPrevMonthKey==='function') ? getPrevMonthKey() : null;
+    var prevM = prevKey ? S.months[prevKey] : null;
+    if(!prevM){
+      T('cmpSubt', 'لا توجد بيانات للشهر السابق');
+      document.getElementById('cmpBody').innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--tx3)">لا يوجد بيانات شهر سابق للمقارنة.</div>';
+      openMo('moCompare');
+      return;
+    }
+    var ymP = prevKey.split('-');
+    var mnPrev = MN[parseInt(ymP[1])-1];
+    T('cmpSubt', mnPrev + ' ' + ymP[0] + '  ←→  ' + mnCur + ' ' + ymA[0]);
+
+    // احسب أرقام الشهرين
+    function calcMonth(m){
+      var sales = (m.sales||[]).filter(function(s){return (s.cash||0)+(s.visa||0)+(s.pmts||0)>0;});
+      var cash = sales.reduce(function(s,x){return s+(x.cash||0);},0);
+      var visa = sales.reduce(function(s,x){return s+(x.visa||0);},0);
+      var pmts = sales.reduce(function(s,x){return s+(x.pmts||0);},0);
+      var purch = (m.purchases||[]).reduce(function(s,p){return s+(p.amt||0);},0);
+      var advs = (m.advances||[]).reduce(function(s,a){return s+(a.amt||0);},0);
+      var oblPaid = (m.obligations||[]).filter(function(o){return o.paid;}).reduce(function(s,o){return s+(o.amt||0);},0);
+      var mSalPaid = 0;
+      (S.monthlyEmps||[]).forEach(function(e){
+        var sObj = (m.mSal||{})[e.id] || {};
+        if(sObj.paid){
+          var adv = 0;
+          (m.advances||[]).forEach(function(a){ if(a.empId===e.id && (a.status==='مستحقة'||a.status==='مسددة جزئياً')) adv += (a.amt||0); });
+          mSalPaid += Math.max(0, (sObj.base||0)+(sObj.allow||0)-(sObj.ded||0)-adv);
+        }
+      });
+      var netSales = cash + visa;
+      var totalExp = purch + oblPaid + mSalPaid + advs;
+      var profit = netSales - totalExp;
+      return {cash:cash, visa:visa, pmts:pmts, netSales:netSales, purch:purch, advs:advs, oblPaid:oblPaid, mSalPaid:mSalPaid, profit:profit, days:sales.length};
+    }
+    var pv = calcMonth(prevM);
+    var cu = calcMonth(d);
+
+    function fmtDiff(cur, prev){
+      var diff = cur - prev;
+      var pct = prev !== 0 ? (diff / Math.abs(prev) * 100) : 0;
+      var arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '=';
+      var color = diff > 0 ? '#16a34a' : diff < 0 ? '#dc2626' : '#6b7280';
+      return '<span style="color:'+color+';font-weight:700;direction:ltr;display:inline-block">' + arrow + ' ' + n3(Math.abs(diff)) + (prev!==0 ? ' ('+(diff>=0?'+':'')+pct.toFixed(0)+'%)' : '') + '</span>';
+    }
+    function row(label, cur, prev, neg){
+      var color = neg ? '#dc2626' : '#0f172a';
+      return '<tr><td style="padding:11px 12px;font-size:13px;font-weight:600">'+label+'</td>'+
+             '<td style="padding:11px 12px;text-align:left;direction:ltr;font-variant-numeric:tabular-nums;color:'+color+';font-weight:700">'+n3(prev)+'</td>'+
+             '<td style="padding:11px 12px;text-align:left;direction:ltr;font-variant-numeric:tabular-nums;color:'+color+';font-weight:700">'+n3(cur)+'</td>'+
+             '<td style="padding:11px 12px;text-align:left">'+fmtDiff(cur, prev)+'</td></tr>';
+    }
+    var html = '';
+    html += '<div style="padding:14px">';
+    html += '<div style="background:var(--bg2);border:1px solid var(--br);border-radius:14px;overflow:hidden">';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+    html += '<thead><tr style="background:linear-gradient(135deg,#1a3a2a,#0c2118);color:#fff">';
+    html += '<th style="padding:12px;text-align:right;font-size:12px">البند</th>';
+    html += '<th style="padding:12px;text-align:left;font-size:12px">'+mnPrev+'</th>';
+    html += '<th style="padding:12px;text-align:left;font-size:12px">'+mnCur+'</th>';
+    html += '<th style="padding:12px;text-align:left;font-size:12px">الفرق</th>';
+    html += '</tr></thead><tbody>';
+    html += '<tr style="background:rgba(34,197,94,.06)"><td colspan="4" style="padding:8px 12px;font-weight:700;color:#16a34a;font-size:12px">💰 الإيرادات</td></tr>';
+    html += row('نقد', cu.cash, pv.cash);
+    html += row('فيزا', cu.visa, pv.visa);
+    html += row('مدفوعات يومية (pmts)', cu.pmts, pv.pmts);
+    html += '<tr style="background:rgba(59,130,246,.08);font-weight:800">'+row('صافي الإيرادات (نقد+فيزا)', cu.netSales, pv.netSales).slice(4);
+
+    html += '<tr style="background:rgba(220,38,38,.06)"><td colspan="4" style="padding:8px 12px;font-weight:700;color:#dc2626;font-size:12px">📉 المصاريف</td></tr>';
+    html += row('المشتريات', cu.purch, pv.purch, true);
+    html += row('الرواتب المدفوعة', cu.mSalPaid, pv.mSalPaid, true);
+    html += row('السلف للموظفين', cu.advs, pv.advs, true);
+    html += row('الالتزامات المدفوعة', cu.oblPaid, pv.oblPaid, true);
+
+    html += '<tr style="background:'+(cu.profit>=0?'rgba(34,197,94,.12)':'rgba(220,38,38,.12)')+';font-weight:800;border-top:2px solid '+(cu.profit>=0?'#16a34a':'#dc2626')+'">'+
+            '<td style="padding:14px 12px;font-size:14px">💎 صافي الربح</td>'+
+            '<td style="padding:14px 12px;text-align:left;direction:ltr;color:'+(pv.profit>=0?'#16a34a':'#dc2626')+'">'+n3(pv.profit)+'</td>'+
+            '<td style="padding:14px 12px;text-align:left;direction:ltr;color:'+(cu.profit>=0?'#16a34a':'#dc2626')+'">'+n3(cu.profit)+'</td>'+
+            '<td style="padding:14px 12px;text-align:left">'+fmtDiff(cu.profit, pv.profit)+'</td></tr>';
+    html += '<tr style="background:var(--bg)"><td style="padding:8px 12px;font-size:11px;color:var(--tx3)">أيام النشاط</td>'+
+            '<td style="padding:8px 12px;text-align:left;font-size:11px;color:var(--tx3)">'+pv.days+'</td>'+
+            '<td style="padding:8px 12px;text-align:left;font-size:11px;color:var(--tx3)">'+cu.days+'</td>'+
+            '<td style="padding:8px 12px;text-align:left">'+fmtDiff(cu.days, pv.days)+'</td></tr>';
+    html += '</tbody></table></div></div>';
+    document.getElementById('cmpBody').innerHTML = html;
+    openMo('moCompare');
+  } catch(e){
+    console.error('openMonthCompare:', e);
+    toast('⚠️ تعذّر فتح المقارنة: ' + e.message);
   }
 }
 
