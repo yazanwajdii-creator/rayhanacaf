@@ -4605,7 +4605,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v81';
+const APP_VERSION='v82';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -4926,7 +4926,7 @@ window.addEventListener("load",function(){
     if(banner){ banner.style.display='flex'; }
     if(desc) desc.textContent = 'اضغط تثبيت لإضافة التطبيق لشاشتك الرئيسية';
     if(btn) btn.onclick = function(){
-      if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt.userChoice.then(function(r){ if(r.outcome==='accepted'){banner.style.display='none';toast('✅ تم التثبيت!');}  deferredPrompt=null; }); }
+      if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt.userChoice.then(function(r){ if(r.outcome==='accepted'){ if(banner) banner.style.display='none'; toast('✅ تم التثبيت!');}  deferredPrompt=null; }); }
     };
   });
   // Check if already installed
