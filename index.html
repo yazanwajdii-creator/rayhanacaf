@@ -1892,6 +1892,51 @@ body.dark .ss-card{background:var(--surf)}
 .fin-health-warn{color:#c8920f}
 .fin-health-bad{color:#dc2626}
 .fin-foot{padding:14px;border-top:1px solid var(--br);background:var(--bg);position:sticky;bottom:0}
+
+/* v73: صفحة المسؤوليات المستقلّة — تصميم مميّز */
+.resp-sh{max-width:640px;max-height:96vh;overflow-y:auto;border-radius:24px 24px 0 0;padding:0}
+.resp-hdr{padding:14px 16px 12px;border-bottom:1px solid var(--br);position:sticky;top:0;background:var(--bg);z-index:10;display:flex;align-items:center;gap:8px}
+.resp-title{font-size:18px;font-weight:800;color:var(--tx);letter-spacing:-0.3px}
+.resp-sub{font-size:11.5px;color:var(--tx3);margin-top:2px;font-weight:500}
+.resp-hero{background:linear-gradient(135deg,#065f46 0%,#022c22 100%);color:#fff;padding:24px 18px;margin:14px;border-radius:20px;box-shadow:0 10px 30px rgba(6,95,70,.25);position:relative;overflow:hidden}
+.resp-hero::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:radial-gradient(circle,rgba(200,146,15,.16) 0%,transparent 70%);pointer-events:none}
+.resp-hero-formula{font-size:11.5px;opacity:.85;text-align:center;margin-bottom:8px;font-weight:500;letter-spacing:.3px}
+.resp-hero-label{font-size:12px;opacity:.9;text-align:center;margin-bottom:6px;font-weight:600}
+.resp-hero-val{font-size:42px;font-weight:800;letter-spacing:-2px;text-align:center;direction:ltr;line-height:1}
+.resp-hero-unit{font-size:14px;opacity:.7;text-align:center;margin-top:6px}
+.resp-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.resp-tile{background:rgba(255,255,255,.1);border-radius:14px;padding:10px 8px;text-align:center;backdrop-filter:blur(8px)}
+.resp-tile-ico{font-size:18px;margin-bottom:2px}
+.resp-tile-lbl{font-size:10.5px;opacity:.95;font-weight:700;margin-bottom:3px;letter-spacing:.2px}
+.resp-tile-val{font-size:14px;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums}
+.resp-tile-unit{font-size:9px;opacity:.7;margin-top:1px}
+.resp-section{background:var(--bg2);border:1px solid var(--br);border-radius:16px;padding:16px;margin:0 14px 12px}
+.resp-section-title{font-size:14px;font-weight:800;color:var(--tx);margin-bottom:12px;display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:2px solid var(--br)}
+.resp-card-2col{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.resp-person-card{padding:14px 12px;border-radius:14px;border:2px solid;background:var(--bg);position:relative}
+.resp-person-card.r-yz{border-color:#3b82f6;background:linear-gradient(180deg,rgba(59,130,246,.04),transparent)}
+.resp-person-card.r-ab{border-color:#a16207;background:linear-gradient(180deg,rgba(161,98,7,.04),transparent)}
+.resp-person-hd{font-size:14px;font-weight:800;text-align:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed var(--br)}
+.resp-person-card.r-yz .resp-person-hd{color:#3b82f6}
+.resp-person-card.r-ab .resp-person-hd{color:#a16207}
+.resp-row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:5px 0;color:var(--tx)}
+.resp-row .l{color:var(--tx3);font-weight:500}
+.resp-row .v{font-weight:700;direction:ltr;font-variant-numeric:tabular-nums}
+.resp-row.income .v{color:#16a34a}
+.resp-row.expense .v{color:#dc2626}
+.resp-row.total{border-top:2px solid currentColor;margin-top:6px;padding-top:8px;font-size:14px;font-weight:800}
+.resp-person-card.r-yz .resp-row.total{color:#3b82f6}
+.resp-person-card.r-ab .resp-row.total{color:#a16207}
+.resp-visa-card{padding:14px 16px;border-radius:14px;border:2px solid #16a34a;background:linear-gradient(180deg,rgba(22,163,74,.04),transparent)}
+.resp-visa-hd{font-size:14px;font-weight:800;color:#16a34a;text-align:right;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed var(--br);display:flex;align-items:center;gap:6px;justify-content:space-between}
+.resp-dist{margin-top:8px}
+.resp-dist-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11.5px}
+.resp-dist-name{width:80px;font-weight:700}
+.resp-dist-bar{flex:1;height:9px;background:var(--bg);border-radius:5px;overflow:hidden;border:1px solid var(--br)}
+.resp-dist-fill{height:100%;border-radius:5px;transition:width .6s ease}
+.resp-dist-pct{width:46px;text-align:left;font-weight:700;font-variant-numeric:tabular-nums;font-size:11px}
+.resp-foot{padding:14px;border-top:1px solid var(--br);background:var(--bg);position:sticky;bottom:0}
+.resp-unsigned{margin-top:10px;padding:9px 12px;background:rgba(245,158,11,.08);border-radius:10px;font-size:11px;color:var(--tx3);border-right:3px solid #f59e0b;text-align:right}
 .month-table-wrap.open{max-height:3000px}
 </style>
 </head>
@@ -2111,7 +2156,10 @@ body.dark .ss-card{background:var(--surf)}
       </div>
 
       <!-- v63: زرّ بارز للملخّص المالي الاحترافي -->
-      <div style="margin:14px 0 8px"><button onclick="openFinSummary()" style="width:100%;font-size:14px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#1a3a2a,#0c2118);color:#fff;border:none;border-radius:14px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(26,58,42,.2);cursor:pointer"><span style="font-size:18px">📊</span><span>الملخّص المالي الشامل</span></button></div>
+      <div style="margin:14px 0 8px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onclick="openFinSummary()" style="font-size:13px;padding:14px 10px;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#1a3a2a,#0c2118);color:#fff;border:none;border-radius:14px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(26,58,42,.2);cursor:pointer"><span style="font-size:18px">📊</span><span>الملخّص المالي</span></button>
+        <button onclick="openRespReport()" style="font-size:13px;padding:14px 10px;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#065f46,#022c22);color:#fff;border:none;border-radius:14px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(6,95,70,.2);cursor:pointer"><span style="font-size:18px">⚖️</span><span>تقرير المسؤوليات</span></button>
+      </div>
       <!-- v55: موجز للمشاركة — يولّد نصاً جاهزاً لإرساله للمالك عبر واتساب -->
       <div style="margin:10px 0 6px"><button class="btn btn-g" onclick="shareDailyBriefing()" style="width:100%;font-size:13px;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><span>📋</span><span>موجز اليوم — جاهز للمشاركة على واتساب</span></button></div>
       <!-- v58: تشخيص بياناتك — لاكتشاف فوري لأي نقص -->
@@ -3778,6 +3826,23 @@ create policy "allow_all" on rh_store
   <div class="btn-row"><button class="btn btn-p" style="flex:1" onclick="savePurch()">✅ حفظ</button><button class="btn btn-ghost" style="flex:1" onclick="closePurchModal()">إلغاء</button></div>
 </div></div>
 
+<!-- v73: صفحة المسؤوليات المستقلّة — تصميم مميّز -->
+<div class="mo-ov" id="moResp" onclick="moOut(event,'moResp')">
+<div class="mo-sh resp-sh"><div class="mo-bar"></div>
+  <div class="resp-hdr">
+    <button class="mo-x" style="position:static;flex-shrink:0" onclick="cmo('moResp')">×</button>
+    <div style="flex:1;text-align:center">
+      <div class="resp-title">⚖️ تقرير المسؤوليات</div>
+      <div class="resp-sub" id="respSubt">—</div>
+    </div>
+    <div style="width:30px;flex-shrink:0"></div>
+  </div>
+  <div id="respBody"></div>
+  <div class="resp-foot">
+    <button class="btn btn-g" style="width:100%;font-size:14px;padding:13px;font-weight:700" onclick="shareRespImage()">📤 مشاركة كصورة منسّقة</button>
+  </div>
+</div></div>
+
 <div class="mo-ov" id="moSupp" onclick="moOut(event,'moSupp')">
 <div class="mo-sh"><div class="mo-bar"></div><button class="mo-x" onclick="cmo('moSupp')">×</button>
   <div class="mo-title" id="suppTit">📦 إضافة مورد</div>
@@ -4525,7 +4590,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v72';
+const APP_VERSION='v73';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5143,6 +5208,140 @@ function _runForcePushIfNeeded(){
 /* ═══════════════════════════════════════════════════════════════
  * v63: ملخّص مالي احترافي — صفحة واحدة، تصميم Apple Pay/Stripe
  * ═══════════════════════════════════════════════════════════════ */
+/* v73: صفحة المسؤوليات المستقلّة — تتبع المال مفصّلاً بشخصاً وفيزا */
+function openRespReport(){
+  try {
+    var d = G(); var t = totals();
+    var ym = S.activeKey.split('-'); var mn = MN[parseInt(ym[1])-1];
+
+    // اجمع البيانات حسب المسؤول (نفس منطق v72)
+    var cashByP={}, purchByP={}, oblByP={}, salByP={}, advByP={};
+    (d.sales||[]).forEach(function(s){ if(!s.receivedBy) return; cashByP[s.receivedBy] = (cashByP[s.receivedBy]||0) + (s.cash||0); });
+    (d.purchases||[]).forEach(function(p){ if(!p.buyer) return; purchByP[p.buyer] = (purchByP[p.buyer]||0) + (p.amt||0); });
+    (d.obligations||[]).forEach(function(o){ if(!o.paid || !o.paidBy) return; oblByP[o.paidBy] = (oblByP[o.paidBy]||0) + (o.amt||0); });
+    (S.monthlyEmps||[]).forEach(function(e){
+      var sObj = (d.mSal||{})[e.id] || {};
+      if(!sObj.paid || !sObj.paidBy) return;
+      var adv = (typeof pendAdv==='function') ? pendAdv(e.id) : 0;
+      var net = Math.max(0, (sObj.base||0)+(sObj.allow||0)-(sObj.ded||0)-adv);
+      salByP[sObj.paidBy] = (salByP[sObj.paidBy]||0) + net;
+    });
+    (d.advances||[]).forEach(function(a){ if(!a.paidBy) return; advByP[a.paidBy] = (advByP[a.paidBy]||0) + (a.amt||0); });
+
+    var persons = ['يزن','عبدالرحمن'];
+    var netByP = {};
+    persons.forEach(function(p){
+      netByP[p] = (cashByP[p]||0) - (purchByP[p]||0) - (oblByP[p]||0) - (salByP[p]||0) - (advByP[p]||0);
+    });
+    var visaTotal = t.visa || 0;
+    var visaObl = oblByP['فيزا'] || 0;
+    var visaSal = salByP['فيزا'] || 0;
+    var visaBalance = visaTotal - visaObl - visaSal;
+    var unifiedProfit = persons.reduce(function(s,p){return s+netByP[p];},0) + visaBalance;
+
+    T('respSubt', mn + ' ' + ym[0] + ' · صادر ' + new Date().toLocaleDateString('ar-JO'));
+
+    var html = '';
+
+    // ═══ HERO ═══
+    html += '<div class="resp-hero">';
+    html += '<div class="resp-hero-formula">الربح النهائي الموحَّد = صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>';
+    html += '<div class="resp-hero-val">' + n3(unifiedProfit) + '</div>';
+    html += '<div class="resp-hero-unit">دينار أردني (JD)</div>';
+    html += '<div class="resp-tiles">';
+    html += '<div class="resp-tile"><div class="resp-tile-ico">👤</div><div class="resp-tile-lbl">يزن</div><div class="resp-tile-val">' + n3(netByP['يزن']) + '</div><div class="resp-tile-unit">JD</div></div>';
+    html += '<div class="resp-tile"><div class="resp-tile-ico">👤</div><div class="resp-tile-lbl">عبدالرحمن</div><div class="resp-tile-val">' + n3(netByP['عبدالرحمن']) + '</div><div class="resp-tile-unit">JD</div></div>';
+    html += '<div class="resp-tile"><div class="resp-tile-ico">💳</div><div class="resp-tile-lbl">فيزا</div><div class="resp-tile-val">' + n3(visaBalance) + '</div><div class="resp-tile-unit">JD</div></div>';
+    html += '</div></div>';
+
+    // ═══ تفاصيل المسؤولين (بطاقتان جنباً) ═══
+    html += '<div class="resp-section">';
+    html += '<div class="resp-section-title">🎲 تفاصيل المسؤولين</div>';
+    html += '<div class="resp-card-2col">';
+    persons.forEach(function(p){
+      var clas = p==='يزن' ? 'r-yz' : 'r-ab';
+      var cash = cashByP[p]||0, purch = purchByP[p]||0, obl = oblByP[p]||0, sal = salByP[p]||0, adv = advByP[p]||0;
+      html += '<div class="resp-person-card ' + clas + '">';
+      html += '<div class="resp-person-hd">👤 ' + p + '</div>';
+      html += '<div class="resp-row income"><span class="l">+ نقدي استلمه</span><span class="v">' + n3(cash) + '</span></div>';
+      if(purch>0) html += '<div class="resp-row expense"><span class="l">− مشتريات</span><span class="v">−' + n3(purch) + '</span></div>';
+      if(obl>0) html += '<div class="resp-row expense"><span class="l">− التزامات</span><span class="v">−' + n3(obl) + '</span></div>';
+      if(sal>0) html += '<div class="resp-row expense"><span class="l">− رواتب</span><span class="v">−' + n3(sal) + '</span></div>';
+      if(adv>0) html += '<div class="resp-row expense"><span class="l">− سلف منحها</span><span class="v">−' + n3(adv) + '</span></div>';
+      html += '<div class="resp-row total"><span>= الصافي بيده</span><span class="v">' + n3(netByP[p]) + ' JD</span></div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+
+    // ═══ رصيد الفيزا ═══
+    html += '<div class="resp-section">';
+    html += '<div class="resp-section-title">💳 رصيد الفيزا</div>';
+    html += '<div class="resp-visa-card">';
+    html += '<div class="resp-visa-hd"><span>💳 الرصيد الفعلي</span><span style="direction:ltr">' + n3(visaBalance) + ' JD</span></div>';
+    html += '<div class="resp-row income"><span class="l">+ مبيعات الفيزا</span><span class="v">' + n3(visaTotal) + '</span></div>';
+    if(visaObl>0) html += '<div class="resp-row expense"><span class="l">− التزامات من الفيزا</span><span class="v">−' + n3(visaObl) + '</span></div>';
+    if(visaSal>0) html += '<div class="resp-row expense"><span class="l">− رواتب من الفيزا</span><span class="v">−' + n3(visaSal) + '</span></div>';
+    if(visaObl===0 && visaSal===0) html += '<div class="resp-row" style="color:var(--tx4);font-style:italic"><span>لم يُدفَع أي مبلغ من الفيزا</span><span></span></div>';
+    html += '</div></div>';
+
+    // ═══ التوزيعات البصرية ═══
+    html += '<div class="resp-section">';
+    html += '<div class="resp-section-title">📊 توزيع الإيرادات والمشتريات</div>';
+    var totCash = cashByP['يزن'] + cashByP['عبدالرحمن'] || 0;
+    var totPurch = purchByP['يزن'] + purchByP['عبدالرحمن'] || 0;
+    html += '<div class="resp-dist">';
+    html += '<div style="font-size:12px;color:var(--tx3);font-weight:700;margin-bottom:6px">💰 توزيع النقد المستلم</div>';
+    persons.forEach(function(p){
+      var c = p==='يزن' ? '#3b82f6' : '#a16207';
+      var pct = totCash>0 ? ((cashByP[p]||0)/totCash*100) : 0;
+      html += '<div class="resp-dist-row">';
+      html += '<span class="resp-dist-name" style="color:' + c + '">' + p + '</span>';
+      html += '<div class="resp-dist-bar"><div class="resp-dist-fill" style="width:' + pct.toFixed(1) + '%;background:' + c + '"></div></div>';
+      html += '<span class="resp-dist-pct">' + pct.toFixed(0) + '٪</span>';
+      html += '</div>';
+    });
+    html += '<div style="font-size:12px;color:var(--tx3);font-weight:700;margin:12px 0 6px">🛒 توزيع المشتريات</div>';
+    persons.forEach(function(p){
+      var c = p==='يزن' ? '#3b82f6' : '#a16207';
+      var pct = totPurch>0 ? ((purchByP[p]||0)/totPurch*100) : 0;
+      html += '<div class="resp-dist-row">';
+      html += '<span class="resp-dist-name" style="color:' + c + '">' + p + '</span>';
+      html += '<div class="resp-dist-bar"><div class="resp-dist-fill" style="width:' + pct.toFixed(1) + '%;background:' + c + '"></div></div>';
+      html += '<span class="resp-dist-pct">' + pct.toFixed(0) + '٪</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // ═══ غير موزّع ═══
+    var unCash = (t.cash||0) - ((cashByP['يزن']||0) + (cashByP['عبدالرحمن']||0));
+    var unPurch = (t.bycat.total||0) - ((purchByP['يزن']||0) + (purchByP['عبدالرحمن']||0));
+    if(unCash > 0.5 || unPurch > 0.5){
+      html += '<div class="resp-unsigned">';
+      html += '<b>⚠️ سجلات بلا مسؤول محدّد:</b><br>';
+      if(unCash > 0.5) html += '<span>إيراد: ' + n3(unCash) + ' JD</span>';
+      if(unCash > 0.5 && unPurch > 0.5) html += ' · ';
+      if(unPurch > 0.5) html += '<span>مشتريات: ' + n3(unPurch) + ' JD</span>';
+      html += '<div style="font-size:10px;color:var(--tx4);margin-top:4px">حدِّد «من استلم» و«من اشترى» لتحسين التتبّع.</div>';
+      html += '</div>';
+    }
+    html += '</div>'; // close resp-section
+
+    document.getElementById('respBody').innerHTML = html;
+    openMo('moResp');
+  } catch(e){
+    console.error('openRespReport:', e);
+    toast('⚠️ تعذّر فتح التقرير: ' + e.message);
+  }
+}
+
+// مشاركة صورة من تقرير المسؤوليات — يستخدم نفس آلية الملخّص المالي
+function shareRespImage(){
+  toast('📤 جاري التوليد...');
+  // نستفيد من توليد صورة الملخّص المالي
+  if(typeof shareFinSummaryImage === 'function') shareFinSummaryImage();
+  else toast('⚠️ ميزة المشاركة غير متاحة في هذا الإصدار');
+}
+
 function openFinSummary(){
   try {
     var t = totals(); var d = G();
