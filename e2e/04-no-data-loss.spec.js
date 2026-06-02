@@ -12,7 +12,7 @@ async function login({ page }) {
 
 test.describe('Data persistence (لا فقد بيانات)', () => {
   test('saveAll يحفظ كل الحقول الحرجة', async ({ page }) => {
-    await login(page);
+    await login({ page });
     // اكتب بيانات
     await page.evaluate(() => {
       window.S.itemCatalog = { 'قهوة': { unit: 'كيلو', price: 25 } };
@@ -36,7 +36,7 @@ test.describe('Data persistence (لا فقد بيانات)', () => {
   });
 
   test('Reload بعد التعديل = يحتفظ بكل البيانات', async ({ page }) => {
-    await login(page);
+    await login({ page });
     await page.evaluate(() => {
       window.S.itemCatalog = { 'سكر': { unit: 'كيلو', price: 2 } };
       window.saveAll();
@@ -52,7 +52,7 @@ test.describe('Data persistence (لا فقد بيانات)', () => {
   });
 
   test('JSON تالف في localStorage لا يكتب فوق البيانات', async ({ page }) => {
-    await login(page);
+    await login({ page });
     // أفسد البيانات
     await page.evaluate(() => {
       localStorage.setItem('rh_v6', '{INVALID_JSON');

@@ -4590,7 +4590,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v73';
+const APP_VERSION='v74';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -4701,6 +4701,12 @@ function resetInact(){
 }
 const daysIn=k=>{const[y,m]=k.split("-").map(Number);return new Date(y,m,0).getDate();};
 function G(){return getMonth(S.activeKey);}
+// v74: عرض S والدوال الجوهرية على window حتى تتمكن اختبارات E2E من الوصول إليها
+// (`let S` block-scoped فلا يضيف نفسه لـwindow تلقائياً)
+try {
+  window.S = S;
+  window.G = G;
+} catch(e){}
 function isLocked(){return(S.lockedMonths||[]).includes(S.activeKey);}
 function getMonth(key){
   if(!S.months[key]){
@@ -8073,6 +8079,7 @@ function initSalTables(){
   applyRoles(); // v39.2: حماية أدوار بعد كل re-render
 }
 const pendAdv=empId=>G().advances.filter(a=>a.empId===empId&&(a.status==="مستحقة"||a.status==="مسددة جزئياً")).reduce((s,a)=>s+(a.amt||0),0);
+try { window.pendAdv = pendAdv; } catch(e){} // v74: expose for E2E tests
 // حساب إجمالي أجر موظفة يومية مع مراعاة الأجر المخصص لكل يوم
 function _dwTotal(w){
   const att=w.att||[],ovr=w.rateOverrides||{},base=w.rate||0;

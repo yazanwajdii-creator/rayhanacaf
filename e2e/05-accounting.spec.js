@@ -87,7 +87,7 @@ test.describe('Accounting math — هذه أرقام مال، يجب أن تكو
 
 test.describe('Multi-month comparison', () => {
   test('analyzeTrends تستخدم نفس معادلة المصاريف عبر الأشهر', async ({ page }) => {
-    await login(page);
+    await login({ page });
     const trends = await page.evaluate(() => {
       const r = window.analyzeTrends();
       return r;
