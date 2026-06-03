@@ -185,11 +185,11 @@ jobs:
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 30
 
-      - name: Publish APK to v83 release
+      - name: Publish APK to v84 release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v83
-          name: ريحانة كافيه v83.0.0
+          tag_name: v84
+          name: ريحانة كافيه v84.0.0
           prerelease: false
           files: android/app/build/outputs/apk/debug/*.apk
           body: |

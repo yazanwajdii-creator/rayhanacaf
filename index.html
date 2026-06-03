@@ -2158,7 +2158,7 @@ body.dark .ss-card{background:var(--surf)}
       <!-- v63: زرّ بارز للملخّص المالي الاحترافي -->
       <div style="margin:14px 0 8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
         <button onclick="openFinSummary()" style="font-size:11.5px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1a3a2a,#0c2118);color:#fff;border:none;border-radius:12px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(26,58,42,.2);cursor:pointer;min-height:64px"><span style="font-size:18px">📊</span><span>الملخّص المالي</span></button>
-        <button onclick="openRespReport()" style="font-size:11.5px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#065f46,#022c22);color:#fff;border:none;border-radius:12px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(6,95,70,.2);cursor:pointer;min-height:64px"><span style="font-size:18px">⚖️</span><span>تقرير المسؤوليات</span></button>
+        <button onclick="openRespReport()" style="font-size:11.5px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#065f46,#022c22);color:#fff;border:none;border-radius:12px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(6,95,70,.2);cursor:pointer;min-height:64px"><span style="font-size:18px">⚖️</span><span>تقرير حسابات الإدارة</span></button>
         <button onclick="openMonthCompare()" style="font-size:11.5px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#b45309,#92400e);color:#fff;border:none;border-radius:12px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(180,83,9,.2);cursor:pointer;min-height:64px"><span style="font-size:18px">📈</span><span>مقارنة الشهور</span></button>
       </div>
       <!-- v55: موجز للمشاركة — يولّد نصاً جاهزاً لإرساله للمالك عبر واتساب -->
@@ -2594,7 +2594,7 @@ body.dark .ss-card{background:var(--surf)}
 
 
       <div class="card" style="margin-top:10px">
-        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">⚖</span>حساب المسؤوليات — يزن · عبدالرحمن</div></div>
+        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">⚖</span>حساب الإدارة — يزن · عبدالرحمن</div></div>
         <div class="card-body">
           <div style="font-size:10px;color:var(--tx4);text-align:center;margin-bottom:10px;padding:6px;background:var(--surf3);border-radius:6px">💡 النقد المستلم = صافي بعد خصم يوميات الموظفين من الموظفة</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
@@ -3847,7 +3847,7 @@ create policy "allow_all" on rh_store
   <div class="resp-hdr">
     <button class="mo-x" style="position:static;flex-shrink:0" onclick="cmo('moResp')">×</button>
     <div style="flex:1;text-align:center">
-      <div class="resp-title">⚖️ تقرير المسؤوليات</div>
+      <div class="resp-title">⚖️ تقرير حسابات الإدارة</div>
       <div class="resp-sub" id="respSubt">—</div>
     </div>
     <div style="width:30px;flex-shrink:0"></div>
@@ -4605,7 +4605,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v83';
+const APP_VERSION='v84';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -5267,7 +5267,7 @@ function openRespReport(){
     // v76: السلف صارت مصروفاً فعلياً في totals() — unifiedProfit الآن = الربح المحاسبي مباشرةً
     // ═══ HERO ═══
     html += '<div class="resp-hero">';
-    html += '<div class="resp-hero-formula">صافي حساب المسؤوليات = صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>';
+    html += '<div class="resp-hero-formula">صافي حساب الإدارة = صافي يزن + صافي عبدالرحمن + رصيد الفيزا</div>';
     html += '<div class="resp-hero-val">' + n3(unifiedProfit) + '</div>';
     html += '<div class="resp-hero-unit">دينار أردني (JD) — يطابق صافي الربح في الملخّص المالي</div>';
     html += '<div class="resp-tiles">';
@@ -5276,9 +5276,9 @@ function openRespReport(){
     html += '<div class="resp-tile"><div class="resp-tile-ico">💳</div><div class="resp-tile-lbl">فيزا</div><div class="resp-tile-val">' + n3(visaBalance) + '</div><div class="resp-tile-unit">JD</div></div>';
     html += '</div></div>';
 
-    // ═══ تفاصيل المسؤوليات (بطاقتان جنباً) ═══
+    // ═══ تفاصيل حسابات يزن · عبدالرحمن (بطاقتان جنباً) ═══
     html += '<div class="resp-section">';
-    html += '<div class="resp-section-title">⚖️ تفاصيل المسؤوليات</div>';
+    html += '<div class="resp-section-title">⚖️ تفاصيل حسابات يزن · عبدالرحمن</div>';
     html += '<div class="resp-card-2col">';
     persons.forEach(function(p){
       var clas = p==='يزن' ? 'r-yz' : 'r-ab';
@@ -5411,7 +5411,7 @@ function openRespReport(){
   }
 }
 
-// v80: زرّ إغلاق الشهر من تقرير المسؤوليات
+// v80: زرّ إغلاق الشهر من تقرير حسابات الإدارة
 function lockMonthFromResp(){
   cmo('moResp');
   setTimeout(function(){ toggleLockMonth(); setTimeout(openRespReport, 300); }, 100);
@@ -5516,7 +5516,7 @@ function openMonthCompare(){
   }
 }
 
-// مشاركة صورة من تقرير المسؤوليات — يستخدم نفس آلية الملخّص المالي
+// مشاركة صورة من تقرير حسابات الإدارة — يستخدم نفس آلية الملخّص المالي
 function shareRespImage(){
   toast('📤 جاري التوليد...');
   // نستفيد من توليد صورة الملخّص المالي
@@ -5624,7 +5624,7 @@ function openFinSummary(){
     html += '</div>';
 
 
-    // v66: تقرير المسؤوليات — صافي يزن + صافي عبدالرحمن + رصيد الفيزا = الربح النهائي الموحّد
+    // v66: تقرير حسابات الإدارة — صافي يزن + صافي عبدالرحمن + رصيد الفيزا = الربح النهائي الموحّد
     try {
       // اجمع البيانات حسب المسؤول
       var cashByP={}, purchByP={}, oblByP={}, salByP={}, advByP={};
@@ -5667,7 +5667,7 @@ function openFinSummary(){
       var unifiedProfit = persons.reduce(function(s,p){return s+netByP[p];},0) + visaBalance;
 
       html += '<div class="fin-section" style="border-color:rgba(16,185,129,.3);background:linear-gradient(135deg,rgba(16,185,129,.05),rgba(5,150,105,.02))">';
-      html += '<div class="fin-sec-title" style="color:#065f46">👥 تقرير المسؤوليات — تتبّع المال حسب المسؤول</div>';
+      html += '<div class="fin-sec-title" style="color:#065f46">👥 تتبّع المال — يزن · عبدالرحمن · الفيزا</div>';
 
       // البطل
       html += '<div style="background:linear-gradient(135deg,#065f46,#022c22);color:#fff;padding:18px;border-radius:14px;text-align:center;margin-bottom:14px">';
@@ -5771,11 +5771,8 @@ function openFinSummary(){
     if(unpaidOblForAccrual>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) التزامات لم تُدفع بعد</span><span class="fin-pl-amount neg">−' + n3(unpaidOblForAccrual) + '</span></div>';
     if((t.mSalAccrued||0)>0) html += '<div class="fin-pl-row fin-pl-sub"><span>(−) رواتب مستحقة لم تُدفع</span><span class="fin-pl-amount neg">−' + n3(t.mSalAccrued) + '</span></div>';
     html += '<div class="fin-pl-row fin-pl-grand" style="border-top-color:#5B2FA6"><span>الربح بعد سداد كل المستحقات</span><span class="fin-pl-amount ' + (accrualProfit>=0?'pos':'neg') + '">' + n3(accrualProfit) + ' JD</span></div>';
-    var advOutAcc = (d.advances||[]).filter(function(a){return a.status==='مستحقة'||a.status==='مسددة جزئياً';}).reduce(function(s,a){return s+(a.amt||0);},0);
-    if(advOutAcc>0){
-      html += '<div class="fin-pl-row fin-pl-sub" style="margin-top:6px;border-top:1px dashed var(--br);padding-top:8px"><span>(+) سلف معلّقة قابلة للاسترداد</span><span class="fin-pl-amount pos">+' + n3(advOutAcc) + '</span></div>';
-      html += '<div class="fin-pl-row fin-pl-total" style="font-size:12.5px"><span>الربح المتوقَّع بعد استرداد السلف</span><span class="fin-pl-amount ' + ((accrualProfit+advOutAcc)>=0?'pos':'neg') + '">' + n3(accrualProfit+advOutAcc) + ' JD</span></div>';
-    }
+    // v84: السلف ليست ذمماً للاسترداد — هي راتب مدفوع مسبقاً (cash out نهائي)
+    // أُزيلت بطاقة "الربح المتوقَّع بعد استرداد السلف" لأنها تعطي انطباعاً خاطئاً
     html += '</div>';
 
     // الكاش حسب المُستلِم
@@ -5836,15 +5833,13 @@ function openFinSummary(){
     html += hRow('مصاريف كلية من الإيراد', t.expRatio||0, 70, 85, true);
     html += '</div>';
 
-    // تحذيرات
+    // تحذيرات — v84: السلف ليست تنبيهاً (هي راتب مدفوع مسبقاً، انتهى)
     var unpaidObl = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;}).reduce(function(s,o){return s+(o.amt||0);},0);
-    var advOut = (d.advances||[]).filter(function(a){return a.status==='مستحقة'||a.status==='مسددة جزئياً';}).reduce(function(s,a){return s+(a.amt||0);},0);
-    if(unpaidObl > 0 || (t.mSalAccrued||0) > 0 || advOut > 0){
+    if(unpaidObl > 0 || (t.mSalAccrued||0) > 0){
       html += '<div class="fin-section" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.04)">';
-      html += '<div class="fin-sec-title" style="color:#dc2626">⚠️ تنبيهات مستحقات</div>';
+      html += '<div class="fin-sec-title" style="color:#dc2626">⚠️ مستحقات غير مدفوعة</div>';
       if(unpaidObl > 0) html += '<div class="fin-pl-row"><span>التزامات لم تُدفع بعد</span><span class="fin-pl-amount neg">' + n3(unpaidObl) + ' JD</span></div>';
       if((t.mSalAccrued||0) > 0) html += '<div class="fin-pl-row"><span>رواتب مستحقة (غير مدفوعة)</span><span class="fin-pl-amount neg">' + n3(t.mSalAccrued) + ' JD</span></div>';
-      if(advOut > 0) html += '<div class="fin-pl-row"><span>سلف معلّقة على الموظفين</span><span class="fin-pl-amount pos">' + n3(advOut) + ' JD</span></div>';
       html += '</div>';
     }
 
@@ -9547,11 +9542,11 @@ function _buildExecutiveSummary(t, prev){
   rows.push([{v:'═══ تحذيرات ومستحقات ═══', s:4}]);
   var unpaidObl = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;}).reduce(function(s,o){return s+(o.amt||0);},0);
   var unpaidObCount = (d.obligations||[]).filter(function(o){return !o.paid && (o.amt||0)>0;}).length;
-  var advOut = (d.advances||[]).filter(function(a){return a.status==='مستحقة'||a.status==='مسددة جزئياً';}).reduce(function(s,a){return s+(a.amt||0);},0);
   rows.push(['التزامات معلَّقة لم تُدفع', {v:unpaidObl,t:'n',s:unpaidObl>0?5:3}, {v:unpaidObCount+' بند'}]);
   rows.push(['رواتب مستحقة لم تُدفع', {v:t.mSalAccrued||0,t:'n',s:(t.mSalAccrued||0)>0?5:3}]);
-  rows.push(['سلف معلّقة على الموظفين (للقبض)', {v:advOut,t:'n',s:advOut>0?6:3}]);
-  rows.push(['مدفوعات يومية (بضاعة بالأجل)', {v:t.pmts,t:'n',s:3}]);
+  // v84: السلف ليست ذمماً للقبض — تُحتسب كمصروف عمالة عند منحها
+  rows.push(['سلف موظفين هذا الشهر (راتب مدفوع مسبقاً)', {v:t.totalAdvancesGiven||0,t:'n',s:3}]);
+  rows.push(['مدفوعات يومية (مخصومة من النقد)', {v:t.pmts,t:'n',s:3}]);
 
   rows.push([]);
   rows.push([{v:'═══ مؤشرات الصحة (نسب) ═══', s:4}]);
@@ -9774,16 +9769,16 @@ function _buildRecPay(t){
 
   rows.push([{v:'═ ذمم مدينة (لنا) ═', s:4}]);
   rows.push(['مدفوعات يومية (عملاء بالأجل)', {v:t.pmts,t:'n',s:3}]);
-  var advOut = (d.advances||[]).filter(function(a){return a.status==='مستحقة'||a.status==='مسددة جزئياً';});
-  var advOutSum = advOut.reduce(function(s,a){return s+(a.amt||0);},0);
-  rows.push(['سلف معلّقة على الموظفين', {v:advOutSum,t:'n',s:3}]);
-  rows.push([{v:'إجمالي الذمم المدينة',s:1}, {v:t.pmts+advOutSum,t:'n',s:10}]);
+  // v84: السلف ليست ذمماً مدينة — أُزيلت من هذا القسم
+  rows.push([{v:'إجمالي الذمم المدينة',s:1}, {v:t.pmts,t:'n',s:10}]);
   rows.push([]);
-  if(advOut.length){
-    rows.push([{v:'تفصيل السلف المعلّقة:',s:1}]);
-    rows.push([{v:'الموظف',s:2},{v:'التاريخ',s:2},{v:'المبلغ',s:2},{v:'الحالة',s:2},{v:'الملاحظة',s:2}]);
-    advOut.forEach(function(a){
-      rows.push([a.empName||'',a.date||'',{v:a.amt||0,t:'n',s:3},a.status||'',a.note||'']);
+  // قسم إخباري: السلف الممنوحة هذا الشهر (للمرجعية، ليست ذمم)
+  var advThisMonth = (d.advances||[]);
+  if(advThisMonth.length){
+    rows.push([{v:'═ السلف الممنوحة هذا الشهر (راتب مدفوع مسبقاً) ═',s:4}]);
+    rows.push([{v:'الموظف',s:2},{v:'التاريخ',s:2},{v:'المبلغ',s:2},{v:'المُسلِّم',s:2},{v:'الملاحظة',s:2}]);
+    advThisMonth.forEach(function(a){
+      rows.push([a.empName||'',a.date||'',{v:a.amt||0,t:'n',s:3},a.paidBy||'—',a.note||'']);
     });
     rows.push([]);
   }
@@ -9805,7 +9800,7 @@ function _buildRecPay(t){
   }
 
   rows.push([{v:'═ صافي رأس المال العامل ═', s:4}]);
-  var wc = (t.pmts+advOutSum) - ((t.mSalAccrued||0)+oblUnpaidSum);
+  var wc = t.pmts - ((t.mSalAccrued||0)+oblUnpaidSum); // v84: السلف لا تدخل
   rows.push([{v:'صافي رأس المال العامل (الذمم المدينة − الدائنة)',s:1}, {v:wc,t:'n',s:wc>=0?6:5}]);
   rows.push(['ملاحظة: قيمة موجبة تعني فائض سيولة مستحقّة، سالبة تعني عجز التزامات يجب تسديدها', {v:'',s:0}]);
 
