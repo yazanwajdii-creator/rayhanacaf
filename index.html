@@ -4680,7 +4680,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v85';
+const APP_VERSION='v86';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -17794,6 +17794,10 @@ async function syncWorkerTick(){
   if(_syncWorkerBusy) return;
   if(!SUPA) return;
   if(safeLS.getItem('rh_supa_disabled') === '1') return;
+  // v86: إن كانت المزامنة موقوفة تلقائياً بسبب فشل متكرر، لا تحاول
+  if(typeof _supaAutoPausedUntil !== 'undefined' && Date.now() < _supaAutoPausedUntil) return;
+  // v86: إن المتصفّح يقول إنه offline، لا تحاول الاتصال أصلاً
+  if(typeof navigator !== 'undefined' && navigator.onLine === false) return;
   var head = _queueGetHead();
   if(!head) return;
 
@@ -17868,6 +17872,8 @@ async function syncWorkerTick(){
     safeLS.setItem('rh_supa_last', new Date().toLocaleTimeString('ar'));
     safeLS.setItem('rh_last_push_at', head.snapshot.savedAt);
     safeLS.setItem('rh_push_seq', String(head.snapshot.seq || 0));
+    // v86: نجح — صفّر العدّادات والكتم
+    try { _supaConsecutiveFailures = 0; _supaErrorShownThisSession = false; _supaAutoPausedUntil = 0; } catch(_e){}
     supaSetStatus('ok', '✅ محفوظ في السحابة');
     setTimeout(function(){ supaSetStatus('ok', '✅ متصل بـ Supabase'); }, 2500);
   } catch(e){
@@ -18332,25 +18338,46 @@ var _supaLastErrorMsg = '';
 var _supaPushInProgress = false; // قفل: يمنع رفعين في نفس الوقت
 var _supaPullInProgress = false; // قفل: يمنع الرفع أثناء السحب
 var _supaPendingSync    = false; // علامة: يوجد بيانات لم تُرفع بعد
+// v86: كتم التنبيه المتكرر — لا تُظهر نفس التحذير أكثر من مرة في الجلسة
+var _supaErrorShownThisSession = false;
+var _supaConsecutiveFailures = 0;
+var _supaAutoPausedUntil = 0;
 
 function supaHandleSyncError(e) {
   _supaRetryCount++;
+  _supaConsecutiveFailures++;
   var errMsg = (e && e.message) ? e.message : String(e);
   var isNetwork = /fetch|network|failed|timeout/i.test(errMsg);
 
+  // v86: إن فشلت 8 محاولات متتالية، أوقف المزامنة تلقائياً لساعة كاملة
+  // (يمنع استنزاف البطارية + يمنع تكرار التنبيه + يحمي البيانات)
+  if (_supaConsecutiveFailures >= 8) {
+    _supaAutoPausedUntil = Date.now() + 3600000; // ساعة
+    _supaRetryCount = 0;
+    if (_supaRetryTimer) { clearTimeout(_supaRetryTimer); _supaRetryTimer = null; }
+    _supaPendingSync = true;
+    supaSetStatus('warn', '⏸️ المزامنة موقوفة مؤقّتاً — بياناتك آمنة محلياً');
+    if (!_supaErrorShownThisSession) {
+      toast('⏸️ المزامنة موقوفة — السحابة غير متاحة. بياناتك آمنة محلياً.');
+      _supaErrorShownThisSession = true;
+    }
+    return;
+  }
+
   if (_supaRetryCount <= 3) {
     var delay = Math.pow(2, _supaRetryCount) * 1000; // 2s → 4s → 8s
-    var delaySec = delay / 1000;
-    _supaLastErrorMsg = '⚠️ فشل الحفظ في السحابة — إعادة المحاولة خلال ' + delaySec + 'ث';
-    toast(_supaLastErrorMsg);
-    supaSetStatus('error', _supaLastErrorMsg);
+    // v86: لا تُظهر toast لكل retry — فقط حالة في الشريط (silently)
+    _supaLastErrorMsg = '⚠️ إعادة المحاولة...';
+    supaSetStatus('warn', _supaLastErrorMsg);
     if (_supaRetryTimer) clearTimeout(_supaRetryTimer);
     _supaRetryTimer = setTimeout(function() {
       if (!SUPA) return;
+      if (Date.now() < _supaAutoPausedUntil) return; // متوقف
       supaSync('push').then(function() {
         _supaRetryCount = 0;
+        _supaConsecutiveFailures = 0;
         _supaRetryTimer = null;
-        toast('✅ تم الحفظ في السحابة');
+        // v86: لا تُظهر toast نجاح بعد فشل صامت
         supaSetStatus('ok', '✅ متصل بـ Supabase');
       }).catch(function(e2) {
         supaHandleSyncError(e2);
@@ -18361,12 +18388,16 @@ function supaHandleSyncError(e) {
     _supaRetryCount = 0;
     _supaRetryTimer = null;
     _supaPendingSync = true; // علامة: توجد بيانات لم تُرفع — سيُعاد المحاولة عند عودة الإنترنت
-    var finalMsg = '❌ تعذّر الوصول للسحابة — بياناتك محفوظة محلياً، وستُرفع تلقائياً عند عودة الاتصال';
-    toast(finalMsg);
-    supaSetStatus('error', finalMsg);
-    if (typeof addNotification === 'function') {
-      addNotification('warn', finalMsg);
+    var finalMsg = '⚠️ السحابة غير متاحة — بياناتك محفوظة محلياً';
+    // v86: أظهر التنبيه مرة واحدة فقط في الجلسة
+    if (!_supaErrorShownThisSession) {
+      toast(finalMsg);
+      _supaErrorShownThisSession = true;
+      if (typeof addNotification === 'function') {
+        addNotification('warn', finalMsg);
+      }
     }
+    supaSetStatus('error', finalMsg);
   }
 }
 
