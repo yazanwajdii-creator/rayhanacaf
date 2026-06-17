@@ -17795,7 +17795,7 @@ async function syncWorkerTick(){
   if(!SUPA) return;
   if(safeLS.getItem('rh_supa_disabled') === '1') return;
   // v86: إن كانت المزامنة موقوفة تلقائياً بسبب فشل متكرر، لا تحاول
-  if(typeof _supaAutoPausedUntil !== 'undefined' && Date.now() < _supaAutoPausedUntil) return;
+  if(_supaAutoPausedUntil && Date.now() < _supaAutoPausedUntil) return;
   // v86: إن المتصفّح يقول إنه offline، لا تحاول الاتصال أصلاً
   if(typeof navigator !== 'undefined' && navigator.onLine === false) return;
   var head = _queueGetHead();
