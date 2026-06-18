@@ -3992,6 +3992,7 @@ create policy "allow_all" on rh_store
       <button class="btn btn-ghost" style="flex:1;font-size:13px;padding:11px;font-weight:700" onclick="shareFinSummaryHTML()">📋 نسخ كنص</button>
     </div>
     <button class="btn btn-p" style="width:100%;font-size:14px;padding:13px;font-weight:700" onclick="exportExcel();cmo('moFinSum')">📗 تصدير التقرير الكامل (Excel — 13 ورقة IFRS)</button>
+    <button class="btn btn-g" style="width:100%;font-size:14px;padding:13px;font-weight:700;margin-top:8px;background:linear-gradient(135deg,#1a3a2a,#2d5a3d);color:#fff;border:none" onclick="exportMasterArchive();cmo('moFinSum')">🗄️ أرشيف شامل — كل الأشهر + احتياطي JSON</button>
   </div>
 </div></div>
 
@@ -4003,8 +4004,11 @@ create policy "allow_all" on rh_store
   <div id="diagContent" style="max-height:60vh;overflow-y:auto;font-family:'Courier New',monospace;font-size:11.5px;line-height:1.7;background:var(--bg2);padding:10px;border-radius:8px;border:1px solid var(--br);direction:ltr;text-align:left"></div>
   <div class="btn-row" style="margin-top:10px">
     <button class="btn btn-p" style="flex:1" onclick="diagCopy()">📋 نسخ التقرير</button>
-    <button class="btn btn-g" style="flex:1" onclick="exportJSON()">💾 احتياطي JSON كامل</button>
+    <button class="btn btn-g" style="flex:1" onclick="exportJSON()">💾 احتياطي JSON</button>
     <button class="btn btn-ghost" onclick="cmo('moDiag')">إغلاق</button>
+  </div>
+  <div style="margin-top:8px">
+    <button class="btn" style="width:100%;background:linear-gradient(135deg,#1a3a2a,#2d5a3d);color:#fff;border:none;padding:13px;font-weight:700;font-size:14px" onclick="exportMasterArchive()">🗄️ أرشيف شامل — كل الأشهر (Excel + JSON)</button>
   </div>
 </div></div>
 
@@ -10298,6 +10302,214 @@ function exportExcelReal(){
   }
   _downloadBlob(blob,fn);
   toast('📗 تم تصدير Excel احترافي'); log('تصدير Excel — '+mn+' '+y);
+}
+
+// v87: تصدير شامل لكل البيانات — كل الأشهر في ملف واحد + نسخة JSON احتياطية
+// الغاية: حماية البيانات قبل أي ترحيل أو إعادة بناء معماري
+function exportMasterArchive(){
+  try{
+    var origKey = S.activeKey;
+    var monthKeys = Object.keys(S.months||{}).sort();
+    if(monthKeys.length === 0){ toast('⚠️ لا توجد بيانات للتصدير'); return; }
+
+    // ورقة 1: فهرس + ملخّص كل شهر (سطر لكل شهر)
+    var idxRows = [
+      [{v:'📊 ريحانة كافيه — أرشيف شامل لكل البيانات', s:4}],
+      [{v:'تاريخ التصدير: '+new Date().toLocaleString('ar-JO'), s:0}],
+      [{v:'عدد الأشهر: '+monthKeys.length, s:0}],
+      [],
+      [{v:'الشهر',s:2},{v:'نقد',s:2},{v:'فيزا',s:2},{v:'صافي إيرادات',s:2},{v:'COGS',s:2},{v:'رواتب مدفوعة',s:2},{v:'التزامات مدفوعة',s:2},{v:'سلف',s:2},{v:'إجمالي مصاريف',s:2},{v:'صافي الربح',s:2},{v:'هامش %',s:2}]
+    ];
+    var grandRev=0, grandExp=0, grandProf=0;
+    monthKeys.forEach(function(k){
+      try{
+        S.activeKey = k;
+        var t = totals();
+        var ym = k.split('-'); var mo=parseInt(ym[1]); var mn=(MN&&MN[mo-1])||mo;
+        var advTot = ((S.months[k]||{}).advances||[]).reduce(function(s,a){return s+(a.amt||0);},0);
+        idxRows.push([
+          {v:mn+' '+ym[0], s:1},
+          {v:t.cash||0,t:'n',s:3},
+          {v:t.visa||0,t:'n',s:3},
+          {v:t.netSales||0,t:'n',s:3},
+          {v:(t.bycat&&t.bycat.COGS)||0,t:'n',s:3},
+          {v:t.mSalPaid||0,t:'n',s:3},
+          {v:t.oblPaid||0,t:'n',s:3},
+          {v:advTot,t:'n',s:3},
+          {v:t.totalExp||0,t:'n',s:3},
+          {v:t.profit||0,t:'n',s:3},
+          {v:(t.margin||0).toFixed(2)+'%', s:1}
+        ]);
+        grandRev+=t.netSales||0; grandExp+=t.totalExp||0; grandProf+=t.profit||0;
+      }catch(e){ /* تخطّ شهر فيه بيانات تالفة لكن لا توقّف */ }
+    });
+    idxRows.push([
+      {v:'الإجمالي العام', s:4},
+      '','',
+      {v:grandRev,t:'n',s:5},
+      '','','','',
+      {v:grandExp,t:'n',s:5},
+      {v:grandProf,t:'n',s:5},
+      ''
+    ]);
+
+    var sheets = [{
+      name:'📋 الفهرس',
+      freezeRow:5,
+      cols:[{w:14},{w:10},{w:10},{w:13},{w:10},{w:13},{w:14},{w:10},{w:14},{w:13},{w:10}],
+      rows:idxRows
+    }];
+
+    // ورقة لكل شهر: تفاصيل المبيعات/المشتريات/الرواتب/السلف/الالتزامات
+    monthKeys.forEach(function(k){
+      try{
+        S.activeKey = k;
+        var d = S.months[k] || {};
+        var ym=k.split('-'); var mo=parseInt(ym[1]); var mn=(MN&&MN[mo-1])||mo;
+        var rows = [[{v:'📅 '+mn+' '+ym[0],s:4}],[]];
+
+        // المبيعات اليومية
+        rows.push([{v:'💰 المبيعات اليومية', s:2}]);
+        rows.push([{v:'اليوم',s:2},{v:'نقد',s:2},{v:'فيزا',s:2},{v:'مدفوعات',s:2},{v:'الإجمالي',s:2},{v:'مَن استلم',s:2},{v:'ملاحظات',s:2}]);
+        var sC=0,sV=0,sP=0;
+        (d.sales||[]).forEach(function(s){
+          if((s.cash||0)+(s.visa||0)+(s.pmts||0) > 0){
+            rows.push([s.day||'', {v:s.cash||0,t:'n'},{v:s.visa||0,t:'n'},{v:s.pmts||0,t:'n'},{v:(s.cash||0)+(s.visa||0),t:'n'}, s.receivedBy||'', s.notes||'']);
+            sC+=s.cash||0; sV+=s.visa||0; sP+=s.pmts||0;
+          }
+        });
+        rows.push([{v:'المجموع',s:4},{v:sC,t:'n',s:5},{v:sV,t:'n',s:5},{v:sP,t:'n',s:5},{v:sC+sV,t:'n',s:5},'','']);
+        rows.push([]);
+
+        // المشتريات
+        rows.push([{v:'🛒 المشتريات', s:2}]);
+        rows.push([{v:'التاريخ',s:2},{v:'المورد',s:2},{v:'الفئة',s:2},{v:'البيان',s:2},{v:'المبلغ',s:2},{v:'المشتري',s:2},{v:'فاتورة',s:2}]);
+        var pTot=0;
+        (d.purchases||[]).slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'');}).forEach(function(p){
+          rows.push([p.date||'', p.sName||'', (typeof catLbl==='function'?catLbl(p.cat||'COGS'):(p.cat||'COGS')), p.desc||'', {v:p.amt||0,t:'n'}, p.buyer||'', p.inv||'']);
+          pTot+=p.amt||0;
+        });
+        rows.push([{v:'المجموع',s:4},'','','',{v:pTot,t:'n',s:5},'','']);
+        rows.push([]);
+
+        // الرواتب
+        rows.push([{v:'💵 الرواتب', s:2}]);
+        rows.push([{v:'الموظف',s:2},{v:'النوع',s:2},{v:'الأساسي',s:2},{v:'البدلات',s:2},{v:'استقطاع',s:2},{v:'الصافي',s:2},{v:'الحالة',s:2}]);
+        (S.monthlyEmps||[]).forEach(function(e){
+          var sl=(d.mSal||{})[e.id]||{};
+          var adv = (typeof pendAdv==='function') ? pendAdv(e.id) : 0;
+          var net = Math.max(0,(sl.base||0)+(sl.allow||0)-(sl.ded||0)-adv);
+          rows.push([e.name||'','شهري',{v:sl.base||0,t:'n'},{v:sl.allow||0,t:'n'},{v:(sl.ded||0)+adv,t:'n'},{v:net,t:'n'}, sl.paid?'✅ مدفوع':'⏳ مستحق']);
+        });
+        (S.dailyEmps||[]).forEach(function(e){
+          var w=(d.dWages||{})[e.id]||{};
+          var dwT = (typeof _dwTotal==='function') ? _dwTotal(w) : 0;
+          rows.push([e.name||'','يومي',{v:w.rate||0,t:'n'},'','',{v:dwT,t:'n'},'—']);
+        });
+        rows.push([]);
+
+        // السلف
+        rows.push([{v:'💰 السلف', s:2}]);
+        rows.push([{v:'الموظف',s:2},{v:'التاريخ',s:2},{v:'المبلغ',s:2},{v:'الحالة',s:2},{v:'ملاحظة',s:2}]);
+        var avTot=0;
+        (d.advances||[]).forEach(function(a){
+          rows.push([a.empName||'', a.date||'', {v:a.amt||0,t:'n'}, a.status||'', a.note||'']);
+          avTot+=a.amt||0;
+        });
+        rows.push([{v:'المجموع',s:4},'',{v:avTot,t:'n',s:5},'','']);
+        rows.push([]);
+
+        // الالتزامات
+        rows.push([{v:'📋 الالتزامات', s:2}]);
+        rows.push([{v:'الالتزام',s:2},{v:'المبلغ',s:2},{v:'الحالة',s:2},{v:'استحقاق',s:2},{v:'دفعه',s:2}]);
+        (d.obligations||[]).forEach(function(o){
+          rows.push([o.name||'', {v:o.amt||0,t:'n'}, o.paid?'✅ مدفوع':'⏳ غير مدفوع', o.due||'', o.paidBy||'']);
+        });
+
+        sheets.push({
+          name: mn+'_'+ym[0],
+          freezeRow:2,
+          cols:[{w:14},{w:18},{w:12},{w:24},{w:11},{w:13},{w:14}],
+          rows:rows
+        });
+      }catch(e){ console.warn('skip month '+k, e); }
+    });
+
+    // ورقة: الموردون
+    var supRows=[
+      [{v:'🏢 جميع الموردين', s:4}],[],
+      [{v:'الاسم',s:2},{v:'المعرّف',s:2},{v:'الهاتف',s:2},{v:'ملاحظات',s:2}]
+    ];
+    (S.suppliers||[]).forEach(function(s){
+      supRows.push([s.name||'', s.id||'', s.phone||'', s.notes||'']);
+    });
+    sheets.push({name:'الموردون', freezeRow:3, cols:[{w:22},{w:12},{w:14},{w:30}], rows:supRows});
+
+    // ورقة: الموظفون
+    var empRows=[
+      [{v:'👥 جميع الموظفين', s:4}],[],
+      [{v:'الاسم',s:2},{v:'النوع',s:2},{v:'المعرّف',s:2}]
+    ];
+    (S.monthlyEmps||[]).forEach(function(e){ empRows.push([e.name||'','شهري',e.id||'']); });
+    (S.dailyEmps||[]).forEach(function(e){ empRows.push([e.name||'','يومي',e.id||'']); });
+    sheets.push({name:'الموظفون', freezeRow:3, cols:[{w:22},{w:12},{w:14}], rows:empRows});
+
+    // أعد activeKey الأصلي قبل أي شيء
+    S.activeKey = origKey;
+
+    // ولّد الـxlsx
+    var blob = _buildXLSX(sheets);
+    var fn = 'ريحانة_كافيه_أرشيف_شامل_'+new Date().toISOString().slice(0,10)+'.xlsx';
+    if(window.AndroidBridge && AndroidBridge.saveBlob){
+      var r=new FileReader();
+      r.onload=function(){
+        try{
+          var b64=r.result.split(',')[1];
+          AndroidBridge.saveBlob(b64, fn, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        }catch(e){ _downloadBlob(blob,fn); }
+      };
+      r.readAsDataURL(blob);
+    } else {
+      _downloadBlob(blob, fn);
+    }
+
+    // ثانياً: نسخة JSON كاملة (احتياطي خام) — تنزّل بعد ثانية
+    setTimeout(function(){
+      try{
+        var jdata = {
+          version:'v87-master-archive',
+          exported:new Date().toISOString(),
+          activeKey:S.activeKey,
+          months:S.months,
+          monthlyEmps:S.monthlyEmps,
+          dailyEmps:S.dailyEmps,
+          lockedMonths:S.lockedMonths||[],
+          suppliers:S.suppliers||[]
+        };
+        var jblob = new Blob([JSON.stringify(jdata,null,2)],{type:'application/json'});
+        var jfn = 'ريحانة_كافيه_احتياطي_خام_'+new Date().toISOString().slice(0,10)+'.json';
+        if(window.AndroidBridge && AndroidBridge.saveBlob){
+          var fr=new FileReader();
+          fr.onload=function(){
+            try{
+              var b64=fr.result.split(',')[1];
+              AndroidBridge.saveBlob(b64, jfn, 'application/json');
+            }catch(e){ _downloadBlob(jblob,jfn); }
+          };
+          fr.readAsDataURL(jblob);
+        } else {
+          _downloadBlob(jblob, jfn);
+        }
+      }catch(e){ console.warn('json backup failed:', e); }
+    }, 1200);
+
+    toast('✅ تم تصدير الأرشيف الشامل — Excel + JSON احتياطي');
+    if(typeof log==='function') log('تصدير أرشيف شامل — '+monthKeys.length+' شهر');
+  }catch(e){
+    console.error('exportMasterArchive failed:', e);
+    toast('❌ فشل التصدير الشامل: '+(e.message||e));
+    if(typeof S!=='undefined' && S && typeof origKey!=='undefined') S.activeKey = origKey;
+  }
 }
 
 function _downloadBlob(blob, fn){
