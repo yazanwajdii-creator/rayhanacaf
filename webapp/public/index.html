@@ -4,44 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>ريحانة كافيه</title>
-<style>
-  :root{
-    --bg:#0f1419; --bg2:#1a2028; --br:#2a3340;
-    --tx:#e8eef5; --tx2:#a8b3c2; --tx3:#6b7888;
-    --acc:#2d5a3d; --acc2:#3d7a5a;
-    --warn:#c8920f; --err:#c0392b;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;font-family:system-ui,-apple-system,'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--tx)}
-  body{display:flex;flex-direction:column}
-  #login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-  .card{background:var(--bg2);border:1px solid var(--br);border-radius:16px;padding:32px;width:100%;max-width:360px}
-  h1{font-size:24px;margin-bottom:6px;color:var(--acc2)}
-  p.sub{color:var(--tx3);font-size:13px;margin-bottom:20px}
-  label{display:block;font-size:13px;margin-bottom:6px;color:var(--tx2)}
-  input{width:100%;padding:12px 14px;font-size:15px;background:var(--bg);border:1px solid var(--br);border-radius:10px;color:var(--tx);font-family:inherit}
-  input:focus{outline:none;border-color:var(--acc2)}
-  button{width:100%;padding:13px;font-size:15px;font-weight:600;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;border-radius:10px;cursor:pointer;margin-top:14px;font-family:inherit}
-  button:hover{filter:brightness(1.1)}
-  button:disabled{opacity:.6;cursor:wait}
-  .err{color:var(--err);font-size:13px;margin-top:10px;min-height:18px}
-  #app{display:none;padding:20px;max-width:900px;margin:0 auto;width:100%}
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--br)}
-  .topbar h2{color:var(--acc2)}
-  .lo{background:transparent;color:var(--tx3);border:1px solid var(--br);padding:8px 14px;font-size:13px;width:auto;margin:0}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
-  .tile{background:var(--bg2);border:1px solid var(--br);border-radius:12px;padding:16px}
-  .tile .l{color:var(--tx3);font-size:12px;margin-bottom:6px}
-  .tile .v{font-size:22px;font-weight:700;color:var(--tx)}
-  .tile.profit .v{color:var(--acc2)}
-  .ym{font-size:14px;color:var(--tx2);margin-bottom:14px}
-  .placeholder{padding:30px;text-align:center;color:var(--tx3);background:var(--bg2);border-radius:12px;border:1px dashed var(--br)}
-</style>
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 
-<div id="login">
-  <div class="card">
+<!-- شاشة الدخول -->
+<div id="login" class="screen">
+  <div class="login-card">
     <h1>☕ ريحانة كافيه</h1>
     <p class="sub">سجّل الدخول للمتابعة</p>
     <form id="loginForm">
@@ -53,91 +22,54 @@
   </div>
 </div>
 
-<div id="app">
-  <div class="topbar">
-    <h2>☕ ريحانة كافيه</h2>
+<!-- التطبيق -->
+<div id="app" class="screen hidden">
+  <header class="topbar">
+    <div class="brand">☕ <span>ريحانة كافيه</span></div>
+    <div class="month-picker">
+      <button class="iconbtn" id="monthPrev" title="الشهر السابق">‹</button>
+      <select id="monthSel"></select>
+      <button class="iconbtn" id="monthNext" title="الشهر التالي">›</button>
+    </div>
     <button class="lo" onclick="logout()">خروج</button>
-  </div>
-  <div class="ym" id="ymLabel"></div>
-  <div class="grid" id="kpis">
-    <div class="tile"><div class="l">نقد</div><div class="v" id="kCash">—</div></div>
-    <div class="tile"><div class="l">فيزا</div><div class="v" id="kVisa">—</div></div>
-    <div class="tile"><div class="l">صافي الإيرادات</div><div class="v" id="kRev">—</div></div>
-    <div class="tile"><div class="l">المصاريف</div><div class="v" id="kExp">—</div></div>
-    <div class="tile profit"><div class="l">صافي الربح</div><div class="v" id="kProfit">—</div></div>
-  </div>
-  <div class="placeholder">
-    باقي الواجهة (الإدخال اليومي، التقارير، الرواتب…) قيد البناء —<br>
-    Backend شغّال ومتاح على <code>/api/*</code>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab on" data-tab="dash">📊 لوحة</button>
+    <button class="tab" data-tab="sales">💰 يومي</button>
+    <button class="tab" data-tab="purchases">🛒 مشتريات</button>
+    <button class="tab" data-tab="salaries">💵 رواتب</button>
+    <button class="tab" data-tab="advances">💸 سلف</button>
+    <button class="tab" data-tab="obligations">📋 التزامات</button>
+    <button class="tab" data-tab="suppliers">🏢 موردون</button>
+    <button class="tab" data-tab="employees">👥 موظفون</button>
+  </nav>
+
+  <main class="content">
+    <section id="tab-dash" class="tab-pane on"></section>
+    <section id="tab-sales" class="tab-pane"></section>
+    <section id="tab-purchases" class="tab-pane"></section>
+    <section id="tab-salaries" class="tab-pane"></section>
+    <section id="tab-advances" class="tab-pane"></section>
+    <section id="tab-obligations" class="tab-pane"></section>
+    <section id="tab-suppliers" class="tab-pane"></section>
+    <section id="tab-employees" class="tab-pane"></section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+</div>
+
+<!-- نموذج عام (modal) -->
+<div id="modal" class="modal-overlay hidden" onclick="closeModalIfBackdrop(event)">
+  <div class="modal">
+    <header>
+      <h3 id="modalTitle"></h3>
+      <button class="modal-x" onclick="closeModal()">×</button>
+    </header>
+    <div id="modalBody"></div>
   </div>
 </div>
 
-<script>
-const $ = (id) => document.getElementById(id);
-const fmt = (n) => Number(n||0).toLocaleString('ar-JO',{minimumFractionDigits:3,maximumFractionDigits:3});
-
-async function api(path, opts = {}) {
-  const r = await fetch('/api'+path, {
-    headers: {'content-type':'application/json'},
-    credentials: 'same-origin',
-    ...opts,
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
-  if (r.status === 401) { showLogin(); throw new Error('غير مصرّح'); }
-  if (!r.ok) {
-    const t = await r.text();
-    let msg = t; try { msg = JSON.parse(t).error || t; } catch {}
-    throw new Error(msg);
-  }
-  return r.json();
-}
-
-function showLogin(){ $('app').style.display='none'; $('login').style.display='flex'; }
-function showApp(){ $('login').style.display='none'; $('app').style.display='block'; }
-
-$('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  $('loginErr').textContent = '';
-  $('loginBtn').disabled = true;
-  try {
-    await api('/login', { method:'POST', body:{ password: $('pw').value } });
-    $('pw').value = '';
-    await boot();
-  } catch (e) {
-    $('loginErr').textContent = e.message;
-  } finally {
-    $('loginBtn').disabled = false;
-  }
-});
-
-async function logout(){
-  try { await api('/logout', { method:'POST' }); } catch {}
-  showLogin();
-}
-
-async function boot(){
-  try {
-    await api('/me'); // يتحقّق من الجلسة
-  } catch { showLogin(); return; }
-  showApp();
-  // الشهر الحالي
-  const now = new Date();
-  const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  $('ymLabel').textContent = `شهر: ${ym}`;
-  try {
-    const t = await api('/reports/totals/'+ym);
-    $('kCash').textContent = fmt(t.cash);
-    $('kVisa').textContent = fmt(t.visa);
-    $('kRev').textContent = fmt(t.netSales);
-    $('kExp').textContent = fmt(t.totalExp);
-    $('kProfit').textContent = fmt(t.profit);
-  } catch (e) {
-    console.warn('تعذّر جلب التقرير:', e.message);
-  }
-}
-
-boot();
-</script>
-
+<script src="/app.js"></script>
 </body>
 </html>
