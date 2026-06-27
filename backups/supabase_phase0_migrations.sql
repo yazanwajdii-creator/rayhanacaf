@@ -8,10 +8,13 @@
 --     - سياسات RLS تعيد للعميل القراءة/الإضافة/التحديث على rh_store
 -- (2) migration: rh_store_grants_for_client_roles
 --     - GRANT select/insert/update على rh_store لدورَي anon, authenticated
--- (3) migration: rh_store_guard_block_empty_overwrite
+-- (3) migration: rh_store_guard_block_empty_overwrite  (ثم consolidated في #4)
 --     - rh_store_nonzero_days(jsonb): عدّ أيام المبيعات الحقيقية
---     - rh_store_guard(): يمنع استبدال بيانات غنية بأخرى شبه فارغة
---       (يُمنع عند old_days>=20 و new_days < 50% من old_days)
+-- (4) migration: rh_store_guard_silent_skip  ← النهائي المعتمد
+--     - مُشغِّل واحد rh_store_before_write() يجمع: الأرشفة + الحارس
+--     - الحارس يتخطّى الكتابة الخطِرة بصمت (return null) بدل رفع خطأ
+--       => العميل يتلقّى "نجاح" ولا يظهر إشعار "فشل حفظ السحابة"، والبيانات محفوظة
+--       (يُفعَّل عند old_days>=20 و new_days < 50% من old_days)
 --       تجاوز يدوي: أرسل القيمة مع "_force": true
 
 -- ─── الحارس (المرجع الكامل) ───────────────────────────────────────────
