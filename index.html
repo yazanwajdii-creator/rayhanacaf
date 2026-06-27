@@ -4303,13 +4303,14 @@ function totals(){
   S.monthlyEmps.forEach(e=>{
     const s=d.mSal[e.id]||{};
     const gross=(s.base||0)+(s.allow||0);
-    const adv=pendAdv(e.id); // السلف المستحقة على الموظف
-    const net=Math.max(0, gross-(s.ded||0)-adv); // الصافي بعد كل الخصومات
+    const adv=pendAdv(e.id); // السلف التي أخذها الموظف هذا الشهر (جزء من راتبه)
+    const net=Math.max(0, gross-(s.ded||0)-adv); // المتبقي المستحق للموظف (للعرض)
     mSalG+=gross;
     mSalNet+=net;
-    // فقط الرواتب المُسجَّلة كمدفوعة تدخل في المصاريف الفعلية
-    if(s.paid) mSalPaid+=net;
-    else mSalAccrued+=net;
+    // مصروف الراتب الفعلي: السلفة خرجت ولا تُسترد فلا تُخصم من المصروف (وإلا زاد الربح زوراً)
+    //   مدفوع  → الراتب الكامل المستحق (يتضمن السلفة)؛  غير مدفوع → السلفة وحدها (خرجت فعلاً)
+    if(s.paid) mSalPaid+=Math.max(0, gross-(s.ded||0));
+    else { mSalPaid+=adv; mSalAccrued+=net; }
   });
   
   // الأجور اليومية من جدول الحضور (للمرجع فقط)
@@ -5303,7 +5304,8 @@ function initSalTables(){
   if(mb){mb.innerHTML="";S.monthlyEmps.forEach(e=>{const sal=d.mSal[e.id]||{base:0,allow:0,ded:0,paid:false};const isPaid=sal.paid||false;const tr=document.createElement("tr");tr.innerHTML=`<td style="font-weight:700">${e.name}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_b" value="${sal.base||""}" placeholder="0" onchange="calcSal()"></td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_a" value="${sal.allow||""}" placeholder="0" onchange="calcSal()"></td><td class="td-y num" id="ms_${e.id}_g">${n3((sal.base||0)+(sal.allow||0))}</td><td><input class="inp" type="number" step="0.001" min="0" id="ms_${e.id}_d" value="${sal.ded||""}" placeholder="0" onchange="calcSal()"></td><td class="td-r num" id="ms_${e.id}_av">${n3(pendAdv(e.id))}</td><td class="td-g num" id="ms_${e.id}_n">${n3((sal.base||0)+(sal.allow||0)-(sal.ded||0)-pendAdv(e.id))}</td><td style="text-align:center"><button class="obl-toggle ${isPaid?'ps':''}" id="salpay_${e.id}" onclick="toggleSalPaid('${e.id}')" style="width:44px;height:36px;font-size:18px" title="${isPaid?'مدفوع — اضغط للإلغاء':'غير مدفوع — اضغط للتأكيد'}">${isPaid?'✅':'⏳'}</button></td>`;mb.appendChild(tr);});}
   buildAttGrid();calcSal();
 }
-const pendAdv=empId=>G().advances.filter(a=>a.empId===empId&&(a.status==="مستحقة"||a.status==="مسددة جزئياً")).reduce((s,a)=>s+(a.amt||0),0);
+// السلف جزء من الراتب أُخذ مقدّماً (غير مستردة) — تُخصم دائماً من صافي راتب الشهر بصرف النظر عن الحالة
+const pendAdv=empId=>G().advances.filter(a=>a.empId===empId).reduce((s,a)=>s+(a.amt||0),0);
 // حساب إجمالي أجر موظفة يومية مع مراعاة الأجر المخصص لكل يوم
 function _dwTotal(w){
   const att=w.att||[],ovr=w.rateOverrides||{},base=w.rate||0;
@@ -11233,14 +11235,16 @@ function _monthSummary(d) {
   var purchases = 0;
   (d.purchases || []).forEach(function(p) { purchases += p.amt || 0; });
   var oblPaid = (d.obligations || []).filter(function(o){return o.paid;}).reduce(function(s,o){return s+(o.amt||0);},0);
-  // الرواتب المدفوعة فقط — مطابق لـ totals()
+  // مصروف الرواتب — مطابق لـ totals()
+  // السلفة جزء من الراتب خرج فعلاً (غير مستردة) فلا تُخصم من المصروف (وإلا زاد الربح زوراً):
+  //   مدفوع  → المصروف = الراتب الكامل المستحق (إجمالي − خصم)، والسلفة ضمنه
+  //   غير مدفوع → المصروف = قيمة السلفة وحدها (لأنها خرجت بالفعل)
   var mSalPaid = 0;
   (S.monthlyEmps || []).forEach(function(e) {
     var sal = (d.mSal||{})[e.id] || {};
-    if (!sal.paid) return;
     var gross = (sal.base||0) + (sal.allow||0);
-    var adv = (d.advances||[]).filter(function(a){return a.empId===e.id && (a.status==='مستحقة'||a.status==='مسددة جزئياً');}).reduce(function(s,a){return s+(a.amt||0);},0);
-    mSalPaid += Math.max(0, gross - (sal.ded||0) - adv);
+    var adv = (d.advances||[]).filter(function(a){return a.empId===e.id;}).reduce(function(s,a){return s+(a.amt||0);},0);
+    mSalPaid += sal.paid ? Math.max(0, gross - (sal.ded||0)) : adv;
   });
   var expenses = purchases + oblPaid + mSalPaid;
   return { revenue: netSales, expenses: expenses, profit: netSales - expenses };
