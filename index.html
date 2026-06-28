@@ -2184,7 +2184,6 @@ body.dark .ss-card{background:var(--surf)}
       <button class="ntab" onclick="pg('cash',this)">🏦 الصندوق</button>
       <button class="ntab" onclick="pg('rpt',this)">📈 التقارير</button>
       <button class="ntab" onclick="pg('iq',this)">🧠 التحليل الذكي</button>
-      <button class="ntab" onclick="pg('menu',this)">☕ المنيو والتسعير</button>
       <button class="ntab" onclick="pg('cloud',this)" id="cloudTab">☁️ السحابة</button>
       <button class="ntab" onclick="pg('settings',this)">⚙️ الإعدادات</button>
     </div>
@@ -2214,15 +2213,12 @@ body.dark .ss-card{background:var(--surf)}
 
       <!-- v63: زرّ بارز للملخّص المالي الاحترافي -->
       <div style="margin:14px 0 6px"><button onclick="openMonthlyReport()" style="width:100%;font-size:14px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#92400E,#451A03);color:#fff;border:none;border-radius:14px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(146,64,14,.25);cursor:pointer"><span style="font-size:18px">📋</span><span>تقرير الوضع المالي الشامل — قابل للتصدير</span></button></div>
-      <div style="margin:8px 0 8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      <div style="margin:8px 0 8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
         <button onclick="openFinSummary()" style="font-size:11.5px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1a3a2a,#0c2118);color:#fff;border:none;border-radius:12px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(26,58,42,.2);cursor:pointer;min-height:64px"><span style="font-size:18px">📊</span><span>الملخّص المالي</span></button>
-        <button onclick="openRespReport()" style="font-size:11.5px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#065f46,#022c22);color:#fff;border:none;border-radius:12px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(6,95,70,.2);cursor:pointer;min-height:64px"><span style="font-size:18px">⚖️</span><span>تقرير حسابات الإدارة</span></button>
         <button onclick="openMonthCompare()" style="font-size:11.5px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#b45309,#92400e);color:#fff;border:none;border-radius:12px;font-weight:700;letter-spacing:.3px;box-shadow:0 4px 14px rgba(180,83,9,.2);cursor:pointer;min-height:64px"><span style="font-size:18px">📈</span><span>مقارنة الشهور</span></button>
       </div>
       <!-- v55: موجز للمشاركة — يولّد نصاً جاهزاً لإرساله للمالك عبر واتساب -->
-      <div style="margin:10px 0 6px"><button class="btn btn-g" onclick="shareDailyBriefing()" style="width:100%;font-size:13px;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><span>📋</span><span>موجز اليوم — جاهز للمشاركة على واتساب</span></button></div>
       <!-- v58: تشخيص بياناتك — لاكتشاف فوري لأي نقص -->
-      <div style="margin:0 0 12px"><button class="btn btn-ghost" onclick="openDataDiag()" style="width:100%;font-size:12px;padding:8px;background:rgba(123,77,191,.08);border:1px solid rgba(123,77,191,.3);color:var(--tx)">🔍 تشخيص بياناتي — اعرض ما هو محفوظ فعلاً</button></div>
 
       <!-- V24 PRO - KPI GRID -->
       <div class="kpi-grid-v22">
@@ -2706,8 +2702,13 @@ body.dark .ss-card{background:var(--surf)}
       <!-- بطاقة التاريخ + المناسبة -->
       <div class="card" id="todayHeaderCard">
         <div class="card-body" style="padding:14px">
-          <div id="todayDateBig" style="font-size:18px;font-weight:700;color:var(--tx);text-align:center">—</div>
+          <div style="display:grid;grid-template-columns:46px 1fr 46px;gap:8px;align-items:center">
+            <div onclick="todayChangeDay(-1)" title="اليوم السابق" style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:24px;color:var(--tx2);user-select:none">&#8249;</div>
+            <div id="todayDateBig" style="font-size:18px;font-weight:700;color:var(--tx);text-align:center">—</div>
+            <div onclick="todayChangeDay(1)" title="اليوم التالي" style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:24px;color:var(--tx2);user-select:none">&#8250;</div>
+          </div>
           <div id="todayHijri" style="font-size:13px;color:var(--tx3);text-align:center;margin-top:4px">—</div>
+          <div style="text-align:center;margin-top:4px"><span onclick="todayGoToToday()" style="font-size:11px;color:var(--gold);cursor:pointer">↺ اليوم الحالي</span></div>
           <div id="todayHolidayBadge" style="display:none;margin-top:10px"></div>
         </div>
       </div>
@@ -3454,31 +3455,7 @@ body.dark .ss-card{background:var(--surf)}
 
     </div>
 
-    <!-- ═══════════ المنيو والتسعير — هندسة المنيو (Menu Engineering) ═══════════ -->
-    <div id="menu" class="pg">
-      <div id="menuVerBadge" style="text-align:center;font-size:10px;color:var(--tx4);margin-bottom:6px"></div>
-
-      <!-- ملخص المنيو -->
-      <div class="card">
-        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-g">☕</span>ملخص المنيو</div><button class="btn btn-p btn-sm" onclick="openMenuModal()">➕ منتج جديد</button></div>
-        <div class="card-body"><div id="menuSummary" style="font-size:12px;line-height:1.8"></div></div>
-      </div>
-
-      <!-- هندسة المنيو (المصفوفة) -->
-      <div class="card">
-        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-b">🎯</span>هندسة المنيو — تصنيف المنتجات</div></div>
-        <div class="card-body">
-          <div style="font-size:11px;color:var(--tx3);margin-bottom:10px">يُصنّف كل منتج حسب <b>الرواج</b> (كم يُباع) و<b>الربحية</b> (هامشه) مقارنةً بالمتوسط:</div>
-          <div id="menuMatrix"></div>
-        </div>
-      </div>
-
-      <!-- قائمة المنتجات -->
-      <div class="card">
-        <div class="card-hd"><div class="card-title"><span class="ct-ico ct-y">📋</span>كل المنتجات</div></div>
-        <div class="card-body"><div id="menuList"></div></div>
-      </div>
-    </div>
+    <!-- (أُزيلت صفحة المنيو والتسعير بناءً على طلب المستخدم) -->
 
     <!-- ═══════════ الإعدادات — مركز موحّد ═══════════ -->
     <div id="settings" class="pg">
@@ -4686,7 +4663,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v88';
+const APP_VERSION='v89';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -15284,7 +15261,6 @@ function onboardSteps(){
     {key:'emp', label:'أضف موظفيك ورواتبهم', tab:'sal', done:((S.monthlyEmps||[]).length+(S.dailyEmps||[]).length)>0},
     {key:'goal', label:'ضع هدف الإيراد الشهري', tab:'dash', done:!!(S.targets&&S.targets[S.activeKey]>0)},
     {key:'rev', label:'أدخل إيراد أول يوم', tab:'today', done:(G().sales||[]).some(function(s){return (s.cash||0)+(s.visa||0)>0;})},
-    {key:'menu', label:'أضف منتجاتك وأسعارها (المنيو)', tab:'menu', done:(S.menu||[]).length>0},
     {key:'cloud', label:'فعّل المزامنة السحابية (نسخة آمنة)', tab:'cloud', done:(function(){try{return typeof SUPA!=='undefined'&&!!SUPA;}catch(e){return false;}})()}
   ];
 }
@@ -18909,29 +18885,34 @@ function injectHolidayBadge(){
 var _todayDayNum = 0; // اليوم الحالي من الشهر النشط
 var _todayPurchRows = []; // مشتريات اليوم المعلَّقة
 
+// v88: يوم العمل الافتراضي — قبل 6 صباحاً (بعد إغلاق المقهى) يُسجَّل لليوم السابق
+function _bizToday(){
+  var n = new Date();
+  return n.getHours() < 6 ? new Date(n.getFullYear(), n.getMonth(), n.getDate()-1) : n;
+}
 function todayPgInit(){
-  var today = new Date();
-  _todayDayNum = today.getDate();
+  var biz = _bizToday();
+  var ym = S.activeKey.split('-');
+  var isCur = (biz.getFullYear()===parseInt(ym[0]) && (biz.getMonth()+1)===parseInt(ym[1]));
+  _todayDayNum = isCur ? biz.getDate() : daysIn(S.activeKey);
+  todayLoadDay();
+}
 
-  // عرض التاريخ
+// v88: تحميل/عرض أي يوم من الشهر النشط (يدعم التنقّل بالأسهم)
+function todayLoadDay(){
+  var ym = S.activeKey.split('-');
+  var dim = daysIn(S.activeKey);
+  if(_todayDayNum < 1) _todayDayNum = 1;
+  if(_todayDayNum > dim) _todayDayNum = dim;
+  var disp = new Date(parseInt(ym[0]), parseInt(ym[1])-1, _todayDayNum);
+  var arDays = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
   var bigEl = document.getElementById('todayDateBig');
-  if(bigEl){
-    var arDays = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-    var arMonths = MN; // من المتغيرات الموجودة
-    bigEl.textContent = arDays[today.getDay()] + ' · ' + today.getDate() + ' ' + arMonths[today.getMonth()] + ' ' + today.getFullYear();
-  }
+  if(bigEl) bigEl.textContent = arDays[disp.getDay()] + ' · ' + _todayDayNum + ' ' + MN[disp.getMonth()] + ' ' + disp.getFullYear();
   var hijriEl = document.getElementById('todayHijri');
-  if(hijriEl) hijriEl.textContent = '🕋 ' + formatHijri(today);
-
-  // شارة العطلة في شاشة اليوم
+  if(hijriEl) hijriEl.textContent = '🕋 ' + formatHijri(disp);
   var badgeEl = document.getElementById('todayHolidayBadge');
-  if(badgeEl){
-    var badge = buildHolidayBadge(today);
-    badgeEl.innerHTML = badge;
-    badgeEl.style.display = badge ? 'block' : 'none';
-  }
+  if(badgeEl){ var badge = buildHolidayBadge(disp); badgeEl.innerHTML = badge; badgeEl.style.display = badge ? 'block' : 'none'; }
 
-  // تحميل بيانات اليوم الحالي إن وُجدت
   var d = G();
   var sale = (d.sales || []).find(function(s){ return s.day === _todayDayNum; }) || {};
   var cashEl = document.getElementById('tdy_cash');
@@ -18942,21 +18923,19 @@ function todayPgInit(){
   if(visaEl) visaEl.value = sale.visa || '';
   if(pmtsEl) pmtsEl.value = sale.pmts || '';
   if(recvEl) recvEl.value = sale.receivedBy || '';
-
-  // بناء الـ chips من ملاحظات اليوم + الأيام السابقة
   todayBuildChips(sale.notes || '');
 
-  // تحميل مشتريات اليوم
   _todayPurchRows = [];
-  var todayStr = today.toISOString().slice(0, 10);
+  var dayStr = S.activeKey + '-' + String(_todayDayNum).padStart(2, '0');
   (d.purchases || []).forEach(function(p, idx){
-    if(p.date === todayStr){
-      _todayPurchRows.push(Object.assign({_origIdx: idx}, p));
-    }
+    if(p.date === dayStr){ _todayPurchRows.push(Object.assign({_origIdx: idx}, p)); }
   });
   todayRenderPurch();
   todayUpdSummary();
 }
+
+function todayChangeDay(delta){ _todayDayNum += delta; todayLoadDay(); }
+function todayGoToToday(){ todayPgInit(); }
 
 // chips ذكية: تجمع أسماء آخر 30 يوم من ملاحظات الإيرادات
 function todayBuildChips(currentNotes){
@@ -19131,10 +19110,10 @@ function todaySaveAll(){
   if(CR !== 'manager'){ toast('⚠️ صلاحية المدير'); return; }
   if(isLocked()){ toast('🔒 الشهر مغلق'); return; }
 
-  var today = new Date();
-  var todayStr = today.toISOString().slice(0, 10);
-  var dayNum = today.getDate();
-  var activeMonthKey = today.toISOString().slice(0, 7);
+  // v88: يحفظ على اليوم المختار (_todayDayNum) في الشهر النشط — يدعم إدخال يوم سابق
+  var dayNum = _todayDayNum;
+  var activeMonthKey = S.activeKey;
+  var todayStr = S.activeKey + '-' + String(_todayDayNum).padStart(2, '0');
 
   // تحقّق أن الشهر النشط = الشهر الحالي
   if(S.activeKey !== activeMonthKey){
@@ -19198,8 +19177,8 @@ function todaySaveAll(){
 
   saveAll();
   try { renderRevTable(); renderPurch(); updateDash(); } catch(e){}
-  toast('💾 تم حفظ بيانات اليوم بنجاح');
-  todayPgInit(); // أعد التحميل لتعكس التغييرات
+  toast('💾 تم حفظ بيانات يوم ' + dayNum + ' بنجاح');
+  todayLoadDay(); // أعد تحميل نفس اليوم لعكس التغييرات (يبقى على اليوم المختار)
 }
 
 // إدخال صوتي للحقل المحدّد
