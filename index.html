@@ -18336,6 +18336,16 @@ function syncEnqueuePush(){
   setTimeout(syncWorkerTick, 100);
 }
 
+// v88: هل لدينا بيانات محلية فعلية (أي يوم مبيعات)؟ — لتخطّي السحب غير الضروري
+function _localHasData(){
+  var ms = S.months || {}, ks = Object.keys(ms);
+  for(var i=0;i<ks.length;i++){
+    var sl = (ms[ks[i]] && ms[ks[i]].sales) || [];
+    for(var j=0;j<sl.length;j++){ if((sl[j].cash||0)+(sl[j].visa||0)+(sl[j].pmts||0)>0) return true; }
+  }
+  return false;
+}
+
 // === Pull آمن مع validation ===
 async function syncPullSafe(opts){
   opts = opts || {};
@@ -18361,6 +18371,19 @@ async function syncPullSafe(opts){
   _supaPullInProgress = true;
   try {
   supaSetStatus('loading', '⬇️ جاري التحميل من السحابة...');
+  // v88 [خفّة]: فحص خفيف أولاً — اجلب updated_at فقط. إن لم تتغيّر السحابة وعندنا بيانات
+  // محلية، تخطَّ التحميل/الدمج/الرسم/الرفع بالكامل (يُنهي حلقة السحب↔الرفع والثِّقل المتكرر)
+  if(opts.silent){
+    try{
+      var _hv = await SUPA.from(SUPA_TABLE).select('updated_at').eq('key', SUPA_ROW).maybeSingle();
+      if(!_hv.error && _hv.data && _hv.data.updated_at
+         && _hv.data.updated_at === safeLS.getItem(SYNC_LAST_CLOUD_VERSION_KEY)
+         && _localHasData()){
+        supaSetStatus('ok','✅ متصل — لا جديد في السحابة');
+        return false;
+      }
+    }catch(_e){}
+  }
   var res = await SUPA
     .from(SUPA_TABLE)
     .select('value, updated_at')
@@ -18471,8 +18494,11 @@ async function syncPullSafe(opts){
   safeLS.setItem(SYNC_LAST_CLOUD_VERSION_KEY, res.data.updated_at);
   _origSaveAll();
 
-  // دائماً ادفع المحلي المدموج للسحابة لتوحيد الجانبين (المحلي قد يكون فيه ما تفتقده السحابة)
-  setTimeout(function(){ try { syncEnqueuePush(); } catch(e){} }, 300);
+  // v88: ادفع فقط إن أضاف المحلي بيانات لا توجد في السحابة (يمنع حلقة سحب↔رفع لا تنتهي والثِّقل)
+  var _cloudActive = _countActive(snap.months);
+  if(after.days > _cloudActive.days || after.purch > _cloudActive.purch){
+    setTimeout(function(){ try { syncEnqueuePush(); } catch(e){} }, 300);
+  }
 
   // إعادة رسم كاملة
   try { if(typeof buildMonthSel === 'function') buildMonthSel(); } catch(e){}
@@ -18484,12 +18510,9 @@ async function syncPullSafe(opts){
   var when = res.data.updated_at ? new Date(res.data.updated_at).toLocaleString('ar') : '—';
   supaSetStatus('ok', '✅ تم التحميل · ' + when);
   if(!opts.silent){
-    var msg = '✅ تم تحميل البيانات من السحابة';
-    if(preservedMonths.length) msg += ' (احتُفظ بـ ' + preservedMonths.length + ' شهر محلي)';
-    if(rejectedReplacement.length) msg += ' (' + rejectedReplacement.length + ' شهر يُرفع للسحابة)';
-    toast(msg);
+    toast('✅ تم تحميل البيانات من السحابة');
   }
-  log('pull آمن من Supabase · ' + when + (rejectedReplacement.length ? ' · رفضنا استبدال: ' + rejectedReplacement.join(',') : ''));
+  log('pull آمن من Supabase · ' + when);
   return true;
   } finally {
     // v39.2: ضمان إغلاق الـ lock حتى لو حدث خطأ
