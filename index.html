@@ -4686,7 +4686,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v86';
+const APP_VERSION='v88';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -18354,9 +18354,16 @@ async function syncPullSafe(opts){
   // إن كان "force-push" مُعلّماً (بعد استيراد أو إعادة تفعيل آمنة)، ألغِ هذا الـpull
   // لأن المحلي أحدث من السحابة. سيُرفع المحلي تلقائياً عبر العامل.
   if(safeLS.getItem('rh_force_push_next') === '1'){
-    console.warn('[Sync] force-push مُعلّم — يُلغى pull لحماية البيانات المُستوردة');
-    syncEnqueuePush && syncEnqueuePush();
-    return false;
+    // v88 [إصلاح حرج]: لا تُلغِ السحب إلا للحماية الفعلية — أي: مزامنة تلقائية صامتة
+    // ومحلي فيه بيانات حقيقية. أمّا السحب اليدوي (المستخدم يطلب التحميل) أو محلي فارغ
+    // → امسح العلم وتابع السحب، وإلا بقي الجهاز فارغاً ولا يحمّل من السحابة أبداً.
+    if(opts.silent && _localHasData()){
+      console.warn('[Sync] force-push مُعلّم — يُلغى pull تلقائي لحماية البيانات المُستوردة');
+      syncEnqueuePush && syncEnqueuePush();
+      return false;
+    }
+    console.warn('[Sync] force-push مُعلّم لكن السحب يدوي/المحلي فارغ — نمسح العلم ونتابع التحميل');
+    safeLS.removeItem('rh_force_push_next');
   }
   // v39.2 [إصلاح Migration #6]: lock حقيقي حول pull (كان flag ميت)
   // يمنع push يحصل بالتوازي ويُربك الـ state
