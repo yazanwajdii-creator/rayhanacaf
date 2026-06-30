@@ -4663,7 +4663,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v89';
+const APP_VERSION='v90';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -9271,11 +9271,18 @@ function saveAll(){
     setTimeout(hideSaveIndicator, 1500);
 
   }catch(e){
+    // v90: لا نبتلع فشل الحفظ بصمت — كل فشل يظهر للمستخدم + يُعلَّم معلّقاً + يُحاوَل احتياطياً في IDB
+    pendingSave = true;
+    showSaveIndicator('error');
     var isQuota = e && (e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||e.code===22||e.code===1014);
     if(isQuota){
       toast('⚠️ الذاكرة المحلية ممتلئة! صدّر نسخة احتياطية الآن ثم امسح البيانات القديمة');
-      showSaveIndicator('error');
+    } else {
+      toast('⚠️ تعذّر حفظ البيانات محلياً — صدّر نسخة JSON احتياطاً الآن');
+      if(typeof addNotification==='function'){ try{ addNotification('warn','تعذّر الحفظ المحلي — بياناتك قد لا تكون محفوظة، صدّر نسخة JSON'); }catch(_e){} }
     }
+    // محاولة حفظ احتياطي في IndexedDB حتى لا تُفقد البيانات حتى لو فشل localStorage
+    try{ if(typeof data==='string'){ idbSet(SK, data).catch(function(){}); } }catch(_e){}
     console.warn("saveAll error:",e);
   }
 }
@@ -18447,6 +18454,9 @@ async function syncPullSafe(opts){
   }
   var before = _countActive(S.months);
 
+  // v90 [خفّة]: أفسح المجال للواجهة لتتنفّس قبل العمل الثقيل (دمج/حفظ) حتى تبقى الأزرار مستجيبة
+  await new Promise(function(r){ setTimeout(r, 0); });
+
   // الدمج الاتحادي الكامل
   var merged = safeUnionMerge(S, snap);
   _applyMergeToState(merged);
@@ -18482,6 +18492,9 @@ async function syncPullSafe(opts){
   if(after.days > _cloudActive.days || after.purch > _cloudActive.purch){
     setTimeout(function(){ try { syncEnqueuePush(); } catch(e){} }, 300);
   }
+
+  // v90 [خفّة]: أفسح المجال للواجهة قبل إعادة الرسم الكامل (يمنع تجمّد الأزرار أثناء المزامنة)
+  await new Promise(function(r){ setTimeout(r, 0); });
 
   // إعادة رسم كاملة
   try { if(typeof buildMonthSel === 'function') buildMonthSel(); } catch(e){}
