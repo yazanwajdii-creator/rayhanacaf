@@ -4665,7 +4665,7 @@ async function changePwd() {
 
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const APP_VERSION='v92';
+const APP_VERSION='v93';
 const SK='rh_v6',LK='rh_v6_log';
 let CR=null,CRN='',CH={},catF='all';
 let iT=null,wT=null;
@@ -6416,144 +6416,122 @@ function sharePartnerReport(){
     // settle = الكاش بيده − حصته: موجب ⇒ بيده أكثر من حصته (يردّ)، سالب ⇒ له عند الشركة
     persons.forEach(function(p){ profitShare[p]=(t.profit||0)*(shareRatio[p]||0); settle[p]=netByP[p]-profitShare[p]; });
 
-    // ===== قياس الارتفاع =====
-    var W=800, PAD=24, font='system-ui, -apple-system, "Segoe UI", Tahoma, Arial';
-    function personLines(p){
-      var L=1; if((purchByP[p]||0)>0)L++; if((oblByP[p]||0)>0)L++; if((advByP[p]||0)>0)L++; if((salByP[p]||0)>0)L++; return L;
-    }
-    var visaLines=1; if(visaObl>0)visaLines++; if(visaSal>0)visaLines++;
-    var blocks=[];
-    blocks.push({type:'title',h:88});
-    blocks.push({type:'hero',h:172});
-    blocks.push({type:'strip',h:104});
-    blocks.push({type:'cards',h:150});
-    persons.forEach(function(p){ blocks.push({type:'person',p:p,h:54+personLines(p)*26+14+96}); });
-    blocks.push({type:'visa',h:54+visaLines*26+14});
-    blocks.push({type:'note',h:96});
-    var totalH=PAD*2+blocks.reduce(function(s,b){return s+b.h+12;},0)+20;
+    // ===== تصميم مستند رسمي احترافي =====
+    var W=820, M=40, font='system-ui, -apple-system, "Segoe UI", Tahoma, Arial';
+    var INK='#1f2937', SUB='#6b7280', LINE='#d8dee6', BRAND='#0f3d2e', GOLD='#b8860b', POS='#15803d', NEG='#b91c1c', HEADbg='#0f3d2e';
+    // ارتفاعات الأقسام (ثابتة لضمان تطابق ارتفاع اللوحة)
+    var PADT=34, GAP=20;
+    var H_HEAD=112, H_S1=26+4*32+14, H_S2=26+32+3*38+30, H_S3=26+30+6*30+14, H_SIGN=110, H_FOOT=28;
+    var totalH=PADT+H_HEAD+GAP+H_S1+GAP+H_S2+GAP+H_S3+GAP+H_SIGN+H_FOOT+PADT;
 
     var canvas=document.createElement('canvas');
     canvas.width=W; canvas.height=totalH;
     var ctx=canvas.getContext('2d');
-    ctx.fillStyle='#f8fafc'; ctx.fillRect(0,0,W,totalH);
-    ctx.direction='rtl'; ctx.textAlign='right';
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,totalH);
+    ctx.direction='rtl';
 
-    function row(label,val,kind,py,bold){
-      ctx.font=(bold?'bold ':'')+'13px '+font; ctx.fillStyle='#475569';
-      ctx.textAlign='right'; ctx.fillText(label, W-PAD-24, py);
-      ctx.fillStyle=kind==='pos'?'#16a34a':kind==='neg'?'#dc2626':'#0f172a';
-      ctx.textAlign='left'; ctx.fillText((kind==='pos'?'+':kind==='neg'?'−':'')+n3(Math.abs(val)), PAD+24, py);
-      ctx.textAlign='right';
-    }
+    function hr(yy,x1,x2,col,lw){ ctx.strokeStyle=col||LINE; ctx.lineWidth=lw||1; ctx.beginPath(); ctx.moveTo(x1==null?M:x1,yy); ctx.lineTo(x2==null?W-M:x2,yy); ctx.stroke(); }
+    function T(s,x,yy,f,col,al){ ctx.font=f; ctx.fillStyle=col; ctx.textAlign=al||'right'; ctx.fillText(s,x,yy); }
+    function sign(v){ return (v>=0?'':'−')+n3(Math.abs(v)); }
 
-    var y=PAD;
-    blocks.forEach(function(b){
-      if(b.type==='title'){
-        ctx.fillStyle='#065f46'; ctx.font='bold 24px '+font; ctx.textAlign='right';
-        ctx.fillText('☕ ريحانة كافيه — تقرير الشركاء', W-PAD, y+26);
-        ctx.fillStyle='#64748b'; ctx.font='14px '+font;
-        ctx.fillText(mn+' '+ym[0]+' · صادر '+new Date().toLocaleDateString('ar-JO'), W-PAD, y+54);
-        ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(PAD,y+76); ctx.lineTo(W-PAD,y+76); ctx.stroke();
-      }
-      else if(b.type==='hero'){
-        var g=ctx.createLinearGradient(0,y,0,y+b.h);
-        if(t.profit>=0){ g.addColorStop(0,'#065f46'); g.addColorStop(1,'#022c22'); } else { g.addColorStop(0,'#7f1d1d'); g.addColorStop(1,'#3f0a0a'); }
-        ctx.fillStyle=g; _roundRect(ctx,PAD,y,W-PAD*2,b.h-12,16); ctx.fill();
-        ctx.textAlign='center';
-        ctx.fillStyle='rgba(255,255,255,.85)'; ctx.font='15px '+font;
-        ctx.fillText('صافي ربح الشهر',W/2,y+38);
-        ctx.fillStyle='#fff'; ctx.font='bold 54px '+font;
-        ctx.fillText(n3(t.profit)+' JD',W/2,y+100);
-        ctx.fillStyle='rgba(255,255,255,.9)'; ctx.font='15px '+font;
-        ctx.fillText('هامش '+t.margin.toFixed(1)+'٪  •  '+(t.daysActive||0)+' يوم نشط',W/2,y+138);
-        ctx.textAlign='right';
-      }
-      else if(b.type==='strip'){
-        var kpis=[['💰 الإيرادات',n3(t.netSales),'#dcfce7'],['📋 المصاريف',n3(t.totalExp),'#fee2e2'],['💳 رصيد الفيزا',n3(visaBalance),'#dbeafe']];
-        var cw=(W-PAD*2-16)/3;
-        kpis.forEach(function(k,i){
-          var x=PAD+i*(cw+8);
-          ctx.fillStyle=k[2]; _roundRect(ctx,x,y,cw,b.h-12,12); ctx.fill();
-          ctx.fillStyle='#0f172a'; ctx.textAlign='center';
-          ctx.font='bold 13px '+font; ctx.fillText(k[0],x+cw/2,y+34);
-          ctx.font='bold 20px '+font; ctx.fillText(k[1],x+cw/2,y+70);
-        });
-        ctx.textAlign='right';
-      }
-      else if(b.type==='cards'){
-        ctx.fillStyle='#0f172a'; ctx.font='bold 16px '+font; ctx.textAlign='right';
-        ctx.fillText('👥 حصة كل شريك من ربح الشهر (مناصفة ٥٠/٥٠)',W-PAD,y+22);
-        var cy=y+38, cw=(W-PAD*2-16)/3, ch=b.h-46;
-        var cards=[
-          {n:'يزن',v:profitShare['يزن'],sub:'٥٠٪ من الربح',c:'#3b82f6'},
-          {n:'عبدالرحمن',v:profitShare['عبدالرحمن'],sub:'٥٠٪ من الربح',c:'#a16207'},
-          {n:'رصيد الفيزا',v:visaBalance,sub:'حساب الشركة',c:'#16a34a'}
-        ];
-        cards.forEach(function(k,i){
-          var x=PAD+i*(cw+8);
-          ctx.fillStyle='#fff'; _roundRect(ctx,x,cy,cw,ch,12); ctx.fill();
-          ctx.strokeStyle=k.c; ctx.lineWidth=2; _roundRect(ctx,x,cy,cw,ch,12); ctx.stroke();
-          ctx.textAlign='center';
-          ctx.fillStyle=k.c; ctx.font='bold 14px '+font; ctx.fillText((i<2?'👤 ':'💳 ')+k.n,x+cw/2,cy+28);
-          ctx.fillStyle='#0f172a'; ctx.font='bold 22px '+font; ctx.fillText(n3(k.v),x+cw/2,cy+62);
-          ctx.fillStyle='#64748b'; ctx.font='12px '+font; ctx.fillText(k.sub,x+cw/2,cy+86);
-        });
-        ctx.textAlign='right';
-      }
-      else if(b.type==='person'){
-        var p=b.p, c=(p==='يزن')?'#3b82f6':'#a16207';
-        ctx.fillStyle='#fff'; _roundRect(ctx,PAD,y,W-PAD*2,b.h-12,12); ctx.fill();
-        ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1; _roundRect(ctx,PAD,y,W-PAD*2,b.h-12,12); ctx.stroke();
-        ctx.fillStyle=c; ctx.font='bold 15px '+font; ctx.textAlign='right';
-        ctx.fillText('👤 '+p,W-PAD-16,y+30);
-        ctx.textAlign='left'; ctx.fillStyle=netByP[p]>=0?'#16a34a':'#dc2626';
-        ctx.fillText(n3(netByP[p])+' JD',PAD+16,y+30);
-        ctx.strokeStyle='#eef2f7'; ctx.beginPath(); ctx.moveTo(PAD+16,y+42); ctx.lineTo(W-PAD-16,y+42); ctx.stroke();
-        var py=y+66;
-        row('+ نقد استلمه',cashByP[p]||0,'pos',py); py+=26;
-        if((purchByP[p]||0)>0){ row('− مشتريات قام بها',purchByP[p],'neg',py); py+=26; }
-        if((oblByP[p]||0)>0){ row('− التزامات دفعها',oblByP[p],'neg',py); py+=26; }
-        if((advByP[p]||0)>0){ row('− سلف منحها',advByP[p],'neg',py); py+=26; }
-        if((salByP[p]||0)>0){ row('− رواتب دفعها',salByP[p],'neg',py); py+=26; }
-        // فاصل + التسوية مقابل حصته من الربح
-        py+=4;
-        ctx.strokeStyle='#cbd5e1'; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(PAD+24,py-6); ctx.lineTo(W-PAD-24,py-6); ctx.stroke(); ctx.setLineDash([]);
-        row('= الكاش الفعلي بيده الآن',netByP[p],netByP[p]>=0?'pos':'neg',py,true); py+=26;
-        row('حصته من ربح الشهر (٥٠٪)',profitShare[p],'normal',py,true); py+=26;
-        var st=settle[p];
-        ctx.font='bold 13px '+font; ctx.fillStyle='#475569'; ctx.textAlign='right';
-        ctx.fillText(st>=0?'⇦ التسوية: عليه يُرجِع للصندوق':'⇨ التسوية: له عند الشركة',W-PAD-24,py);
-        ctx.fillStyle=st>=0?'#dc2626':'#16a34a'; ctx.textAlign='left';
-        ctx.fillText(n3(Math.abs(st))+' JD',PAD+24,py);
-        ctx.textAlign='right';
-      }
-      else if(b.type==='visa'){
-        ctx.fillStyle='#fff'; _roundRect(ctx,PAD,y,W-PAD*2,b.h-12,12); ctx.fill();
-        ctx.strokeStyle='#bbf7d0'; ctx.lineWidth=1; _roundRect(ctx,PAD,y,W-PAD*2,b.h-12,12); ctx.stroke();
-        ctx.fillStyle='#16a34a'; ctx.font='bold 15px '+font; ctx.textAlign='right';
-        ctx.fillText('💳 رصيد الفيزا',W-PAD-16,y+30);
-        ctx.textAlign='left'; ctx.fillStyle=visaBalance>=0?'#16a34a':'#dc2626';
-        ctx.fillText(n3(visaBalance)+' JD',PAD+16,y+30);
-        ctx.strokeStyle='#eef2f7'; ctx.beginPath(); ctx.moveTo(PAD+16,y+42); ctx.lineTo(W-PAD-16,y+42); ctx.stroke();
-        var vy=y+66;
-        row('+ مبيعات الفيزا',visaTotal,'pos',vy); vy+=26;
-        if(visaObl>0){ row('− التزامات من الفيزا',visaObl,'neg',vy); vy+=26; }
-        if(visaSal>0){ row('− رواتب من الفيزا',visaSal,'neg',vy); vy+=26; }
-      }
-      else if(b.type==='note'){
-        ctx.fillStyle='#eff6ff'; _roundRect(ctx,PAD,y,W-PAD*2,b.h-12,12); ctx.fill();
-        ctx.fillStyle='#1e40af'; ctx.font='12.5px '+font; ctx.textAlign='right';
-        ctx.fillText('💡 حصة كل شريك = ٥٠٪ من صافي ربح الشهر ('+n3(t.profit)+' JD). «الكاش بيده» = كم استلم فعلاً.',W-PAD-14,y+30);
-        ctx.fillText('التسوية = الكاش بيده − حصته: موجب ⇒ عليه يُرجِع للصندوق، سالب ⇒ له عند الشركة. الفيزا حساب شركة.',W-PAD-14,y+54);
-        ctx.fillStyle='#64748b'; ctx.font='11.5px '+font;
-        ctx.fillText('الأرقام مطابقة لتقرير حسابات الإدارة داخل التطبيق.',W-PAD-14,y+76);
-      }
-      y+=b.h+12;
+    var y=PADT;
+
+    // ===== ترويسة رسمية =====
+    T('ريحانة كافيه', W-M, y+30, 'bold 30px '+font, BRAND, 'right');
+    T('تقرير توزيع الأرباح الشهري', W-M, y+58, '15px '+font, SUB, 'right');
+    T('الشهر: '+mn+' '+ym[0], M, y+28, '13px '+font, INK, 'left');
+    T('صادر بتاريخ: '+new Date().toLocaleDateString('ar-JO'), M, y+50, '12.5px '+font, SUB, 'left');
+    hr(y+80, M, W-M, GOLD, 2.5); hr(y+85, M, W-M, LINE, 1);
+    y+=H_HEAD+GAP;
+
+    // ===== أولاً: ملخّص النتيجة المالية =====
+    T('أولاً — ملخّص النتيجة المالية', W-M, y+16, 'bold 15px '+font, BRAND, 'right');
+    var s1y=y+26;
+    var s1=[
+      ['إجمالي الإيرادات', n3(t.netSales), INK, false],
+      ['إجمالي المصاريف', n3(t.totalExp), INK, false],
+      ['صافي ربح الشهر', n3(t.profit)+' JD', t.profit>=0?POS:NEG, true],
+      ['هامش الربح', t.margin.toFixed(1)+'٪', INK, false]
+    ];
+    s1.forEach(function(r){
+      T(r[0], W-M-8, s1y+21, (r[3]?'bold ':'')+'14px '+font, r[3]?INK:SUB, 'right');
+      T(r[1], M+8, s1y+21, (r[3]?'bold 16px ':'14px ')+font, r[2], 'left');
+      hr(s1y+32, M, W-M, LINE, 1);
+      s1y+=32;
     });
+    y+=H_S1+GAP;
 
-    // ذيل
-    ctx.fillStyle='#94a3b8'; ctx.font='11px '+font; ctx.textAlign='center';
-    ctx.fillText('ريحانة كافيه · إصدار '+(typeof APP_VERSION==='string'?APP_VERSION:'')+' · '+new Date().toLocaleString('ar-JO'),W/2,totalH-10);
+    // ===== ثانياً: توزيع الأرباح على الشركاء =====
+    T('ثانياً — توزيع الأرباح على الشركاء (مناصفة ٥٠٪)', W-M, y+16, 'bold 15px '+font, BRAND, 'right');
+    var ty=y+26;
+    var cen=[705,585,452,282,120]; // مراكز الأعمدة (RTL): الشريك · نسبته · حصته · الكاش · التسوية
+    // رأس الجدول
+    ctx.fillStyle=HEADbg; ctx.fillRect(M,ty,W-2*M,32);
+    var heads=['الشريك','نسبته','حصته من الربح','الكاش بيده','التسوية'];
+    heads.forEach(function(h,i){ T(h,cen[i],ty+21,'bold 12.5px '+font,'#ffffff','center'); });
+    ty+=32;
+    // صفوف الشركاء
+    persons.forEach(function(p){
+      var pc=(p==='يزن')?'#1d4ed8':'#a16207', st=settle[p];
+      T(p,cen[0],ty+24,'bold 13.5px '+font,pc,'center');
+      T('٥٠٪',cen[1],ty+24,'13px '+font,SUB,'center');
+      T(n3(profitShare[p]),cen[2],ty+24,'bold 14px '+font,INK,'center');
+      T(n3(netByP[p]),cen[3],ty+24,'13.5px '+font,INK,'center');
+      // التسوية: موجب = عليه يُرجِع (أحمر) · سالب = له عند الشركة (أخضر)
+      T(n3(Math.abs(st))+(st>=0?' عليه':' له'),cen[4],ty+24,'bold 12.5px '+font,st>=0?NEG:POS,'center');
+      hr(ty+38, M, W-M, LINE, 1);
+      ty+=38;
+    });
+    // صف الفيزا (حساب الشركة)
+    T('رصيد الفيزا',cen[0],ty+24,'bold 13px '+font,POS,'center');
+    T('الشركة',cen[1],ty+24,'12px '+font,SUB,'center');
+    T(n3(visaBalance),cen[2],ty+24,'bold 14px '+font,INK,'center');
+    T('—',cen[3],ty+24,'13px '+font,SUB,'center');
+    T('—',cen[4],ty+24,'13px '+font,SUB,'center');
+    hr(ty+38, M, W-M, LINE, 1);
+    ty+=38;
+    // ملاحظة تفسيرية موجزة
+    T('التسوية = (الكاش بيده − حصته): «عليه» تعني وجوب إرجاع الفرق للصندوق، «له» تعني استحقاقه لدى الشركة.', W-M, ty+18, '11.5px '+font, SUB, 'right');
+    y+=H_S2+GAP;
+
+    // ===== ثالثاً: تفصيل حركة كل شريك =====
+    T('ثالثاً — تفصيل حركة الكاش لكل شريك', W-M, y+16, 'bold 15px '+font, BRAND, 'right');
+    var dy=y+26, dcen=[630,370,150]; // البند · يزن · عبدالرحمن
+    ctx.fillStyle=HEADbg; ctx.fillRect(M,dy,W-2*M,30);
+    ['البند','يزن','عبدالرحمن'].forEach(function(h,i){ T(h,dcen[i],dy+20,'bold 12.5px '+font,'#ffffff','center'); });
+    dy+=30;
+    var drows=[
+      ['نقد مستلم', cashByP, POS, false, '+'],
+      ['(−) مشتريات', purchByP, NEG, false, '−'],
+      ['(−) التزامات مدفوعة', oblByP, NEG, false, '−'],
+      ['(−) سلف ممنوحة', advByP, NEG, false, '−'],
+      ['(−) رواتب مدفوعة', salByP, NEG, false, '−'],
+      ['= الكاش بيده الآن', netByP, INK, true, '']
+    ];
+    drows.forEach(function(r){
+      T(r[0],dcen[0],dy+20,(r[3]?'bold ':'')+'12.5px '+font,r[3]?INK:SUB,'center');
+      persons.forEach(function(p,pi){
+        var v=r[1][p]||0;
+        var show = r[3] ? (sign(v)) : (v>0 ? (r[4]+n3(v)) : '—');
+        T(show,dcen[pi+1],dy+20,(r[3]?'bold 13px ':'12.5px ')+font,(v===0&&!r[3])?SUB:r[2],'center');
+      });
+      hr(dy+30, M, W-M, LINE, 1);
+      dy+=30;
+    });
+    y+=H_S3+GAP;
+
+    // ===== الاعتماد والتواقيع =====
+    T('اعتماد الشركاء', W-M, y+16, 'bold 14px '+font, BRAND, 'right');
+    var sy=y+64, sxYz=600, sxAb=210, hw=120;
+    hr(sy, sxYz-hw, sxYz+hw, INK, 1); hr(sy, sxAb-hw, sxAb+hw, INK, 1);
+    T('توقيع الشريك: يزن', sxYz, sy+22, '12.5px '+font, INK, 'center');
+    T('توقيع الشريك: عبدالرحمن', sxAb, sy+22, '12.5px '+font, INK, 'center');
+    y+=H_SIGN;
+
+    // ===== الذيل الرسمي =====
+    hr(y+4, M, W-M, LINE, 1);
+    T('حُرِّر هذا التقرير آلياً من نظام ريحانة كافيه — إصدار '+(typeof APP_VERSION==='string'?APP_VERSION:'')+' · '+new Date().toLocaleString('ar-JO'), W/2, y+22, '10.5px '+font, SUB, 'center');
+    ctx.textAlign='right';
 
     canvas.toBlob(function(blob){
       var fname='تقرير_الشركاء_'+mn+'_'+ym[0]+'.png';
