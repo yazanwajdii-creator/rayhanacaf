@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "scripts": {
     "test": "jest --coverage",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "jest": "^29.7.0"
   },
   "jest": {
@@ -15,6 +18,10 @@
         "functions": 70,
         "lines": 70
       }
-    }
+    },
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/e2e/"
+    ]
   }
 }

@@ -1,0 +1,23 @@
+{
+  "name": "rayhana-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rayhana Cafe — Web app (Node/Express + PostgreSQL)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "dev": "node --env-file-if-exists=.env --watch server/index.js",
+    "migrate": "node --env-file-if-exists=.env server/lib/migrate.js",
+    "import-legacy": "node --env-file-if-exists=.env scripts/import-legacy-json.js",
+    "test": "node --test server/__tests__/"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1",
+    "cookie-parser": "^1.4.7",
+    "bcryptjs": "^2.4.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

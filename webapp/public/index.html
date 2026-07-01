@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>ريحانة كافيه</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<!-- شاشة الدخول -->
+<div id="login" class="screen">
+  <div class="login-card">
+    <h1>☕ ريحانة كافيه</h1>
+    <p class="sub">سجّل الدخول للمتابعة</p>
+    <form id="loginForm">
+      <label for="pw">كلمة المرور</label>
+      <input id="pw" type="password" autocomplete="current-password" required>
+      <button type="submit" id="loginBtn">دخول</button>
+      <div class="err" id="loginErr"></div>
+    </form>
+  </div>
+</div>
+
+<!-- التطبيق -->
+<div id="app" class="screen hidden">
+  <header class="topbar">
+    <div class="brand">☕ <span>ريحانة كافيه</span></div>
+    <div class="month-picker">
+      <button class="iconbtn" id="monthPrev" title="الشهر السابق">‹</button>
+      <select id="monthSel"></select>
+      <button class="iconbtn" id="monthNext" title="الشهر التالي">›</button>
+    </div>
+    <button class="lo" onclick="logout()">خروج</button>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab on" data-tab="dash">📊 لوحة</button>
+    <button class="tab" data-tab="sales">💰 يومي</button>
+    <button class="tab" data-tab="purchases">🛒 مشتريات</button>
+    <button class="tab" data-tab="salaries">💵 رواتب</button>
+    <button class="tab" data-tab="advances">💸 سلف</button>
+    <button class="tab" data-tab="obligations">📋 التزامات</button>
+    <button class="tab" data-tab="suppliers">🏢 موردون</button>
+    <button class="tab" data-tab="employees">👥 موظفون</button>
+  </nav>
+
+  <main class="content">
+    <section id="tab-dash" class="tab-pane on"></section>
+    <section id="tab-sales" class="tab-pane"></section>
+    <section id="tab-purchases" class="tab-pane"></section>
+    <section id="tab-salaries" class="tab-pane"></section>
+    <section id="tab-advances" class="tab-pane"></section>
+    <section id="tab-obligations" class="tab-pane"></section>
+    <section id="tab-suppliers" class="tab-pane"></section>
+    <section id="tab-employees" class="tab-pane"></section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+</div>
+
+<!-- نموذج عام (modal) -->
+<div id="modal" class="modal-overlay hidden" onclick="closeModalIfBackdrop(event)">
+  <div class="modal">
+    <header>
+      <h3 id="modalTitle"></h3>
+      <button class="modal-x" onclick="closeModal()">×</button>
+    </header>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
